@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\exxsy\Desktop\GitHub\eXngine\3rdparty\glfw\CMakeFiles\a2db2fae3117c3f061a72e65e4eb61fe\update_mappings.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\exxsy\Desktop\GitHub\eXngine\3rdparty\glfw\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\exxsy\Desktop\GitHub\eXngine\3rdparty\glfw\src\mappings.h.in">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="C:\Users\exxsy\Desktop\GitHub\eXngine\3rdparty\glfw\CMake\GenerateMappings.cmake" />
+    <None Include="C:\Users\exxsy\Desktop\GitHub\eXngine\3rdparty\glfw\src\CMakeFiles\update_mappings" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{50CC308D-C215-33D4-8D95-18C2B35542B4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{0D7FD9C5-1DB7-3E24-BBC3-6C77CCF65C24}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
