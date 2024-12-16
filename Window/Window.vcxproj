@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Output\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)Common;$(SolutionDir)3rdparty\glfw;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)Common;$(SolutionDir)Renderer;$(SolutionDir)3rdparty\glfw;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)3rdparty\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -119,6 +119,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -146,14 +147,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="glfw.h" />
+    <ClInclude Include="Applications\Custom\glfw.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="application.cpp" />
-    <ClCompile Include="glfw.cpp" />
+    <ClCompile Include="Sources\application.cpp" />
+    <ClCompile Include="Sources\glfw.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="application.h" />
+    <None Include="Applications\application.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

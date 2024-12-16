@@ -1,4 +1,4 @@
-#include "application.h"
+#include "../Applications/application.h"
 #include <malloc.h>
 #include <string.h>
 
@@ -29,6 +29,11 @@ Point eXngine::Applications::Application::GetPosition()
 bool eXngine::Applications::Application::IsMaximized()
 {
 	return this->maximized;
+}
+
+void eXngine::Applications::Application::SetRenderer(Renderer*renderer)
+{
+	this->m_pRenderer = renderer;
 }
 
 void eXngine::Applications::Application::SetSize(Size size)
