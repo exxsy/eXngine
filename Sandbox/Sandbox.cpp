@@ -41,9 +41,10 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
 {
     const auto vertex_shader = Utils::ReadFile("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\vert.spv");
     const auto frag_shader = Utils::ReadFile("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\frag.spv");
+	const Size window_size = Size(1024, 768);
 
-    GLFWApplication *app = new GLFWApplication(m_szName, Point(0, 40), Size(1024, 768), false);
-    VulkanRenderer *renderer = new VulkanRenderer(m_szName, app->GetExtensions());
+    GLFWApplication *app = new GLFWApplication(m_szName, Point(0, 40), window_size, false);
+    VulkanRenderer *renderer = new VulkanRenderer(m_szName, window_size, app->GetExtensions());
     renderer->SetShaders(
         {
             {"main", VK_SHADER_STAGE_VERTEX_BIT, vertex_shader},
@@ -51,7 +52,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
         }
     );
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
-    renderer->SetFrameBufferSize(app->GetFrameBufferSize());
 
     app->SetKeyboardHandler(KeyboardHandler);
     app->SetRenderer(reinterpret_cast<Renderer *>(renderer));

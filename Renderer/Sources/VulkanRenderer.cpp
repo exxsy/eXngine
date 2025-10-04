@@ -75,7 +75,16 @@ void eXngine::Renderers::VulkanRenderer::OnRender()
     vkResetFences(m_pDevice, 1, &m_inFlightFences[m_currentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_pDevice, m_pSwapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+    auto result = vkAcquireNextImageKHR(m_pDevice, m_pSwapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        m_bFrameBufferResized.store(false);
+        this->ResetSwapChain();
+        return;
+    }
+
+    assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
+
     vkResetCommandBuffer(m_pCommandBuffers[m_currentFrame], 0);
     RecordCommandBuffer(m_pCommandBuffers[m_currentFrame], imageIndex);
 
@@ -106,7 +115,14 @@ void eXngine::Renderers::VulkanRenderer::OnRender()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    vkQueuePresentKHR(m_pPresentQueue, &presentInfo);
+    result = vkQueuePresentKHR(m_pPresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        this->ResetSwapChain();
+        return;
+    }
+
+    assert(result == VK_SUCCESS);
 
     m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -114,25 +130,17 @@ void eXngine::Renderers::VulkanRenderer::OnRender()
 void eXngine::Renderers::VulkanRenderer::OnExit()
 {
     vkDeviceWaitIdle(m_pDevice);
+ 
+    CleanupSwapChain();
+    
     vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
-    vkDestroySwapchainKHR(m_pDevice, m_pSwapChain, nullptr);
     vkDestroyPipeline(m_pDevice, m_pGraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_pDevice, m_pPipelineLayout, nullptr);
     vkDestroyRenderPass(m_pDevice, m_pRenderPass, nullptr);
 
-    for (auto imageView : m_swapChainImageViews)
-    {
-        vkDestroyImageView(m_pDevice, imageView, nullptr);
-    }
-
     for (auto shaderModule : m_shaderModules)
     {
         vkDestroyShaderModule(m_pDevice, shaderModule, nullptr);
-    }
-
-    for (auto framebuffer : m_swapChainFramebuffers)
-    {
-        vkDestroyFramebuffer(m_pDevice, framebuffer, nullptr);
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -165,11 +173,6 @@ void eXngine::Renderers::VulkanRenderer::SetSurface(VkSurfaceKHR surface)
 void eXngine::Renderers::VulkanRenderer::SetExtensions(std::vector<const char *> ex)
 {
     this->m_extensions = ex;
-}
-
-void eXngine::Renderers::VulkanRenderer::SetFrameBufferSize(Size sz)
-{
-    this->m_frameBufferSize = sz;
 }
 
 void eXngine::Renderers::VulkanRenderer::SetMaxFramesInFlight(int max)
@@ -357,7 +360,7 @@ void eXngine::Renderers::VulkanRenderer::CreateGraphicsPipeline()
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = shaderStages.size();
+    pipelineInfo.stageCount = (uint32_t)shaderStages.size();
     pipelineInfo.pStages = shaderStages.data(); // new VkPipelineShaderStageCreateInfo[2]{ shaderStages[0], shaderStages[1] };//
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -625,6 +628,32 @@ void eXngine::Renderers::VulkanRenderer::CreateRenderPass()
     assert(result == VK_SUCCESS);
 }
 
+void eXngine::Renderers::VulkanRenderer::CleanupSwapChain()
+{
+    for (auto framebuffer : m_swapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(m_pDevice, framebuffer, nullptr);
+    }
+
+    for (auto imageView : m_swapChainImageViews)
+    {
+        vkDestroyImageView(m_pDevice, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_pDevice, m_pSwapChain, nullptr);
+}
+
+void eXngine::Renderers::VulkanRenderer::ResetSwapChain()
+{
+    vkDeviceWaitIdle(m_pDevice);
+
+    CreateSwapChain();
+    CreateImageViews();
+    CreateRenderPass();
+    CreateGraphicsPipeline();
+    CreateFramebuffers();
+}
+
 void eXngine::Renderers::VulkanRenderer::SelectPhysicalDevice()
 {
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -851,7 +880,13 @@ eXngine::Renderers::VulkanRenderer::VulkanRenderer(const char *name) : Renderer(
     CreateInstance(this->m_extensions);
 }
 
-eXngine::Renderers::VulkanRenderer::VulkanRenderer(const char *name, std::vector<const char *> extensions) : Renderer(name), m_frameBufferSize(0, 0)
+eXngine::Renderers::VulkanRenderer::VulkanRenderer(const char* name, Size sz) : Renderer(name), m_frameBufferSize(sz)
+{
+    CreateInstance(this->m_extensions);
+}
+
+
+eXngine::Renderers::VulkanRenderer::VulkanRenderer(const char *name, Size sz, std::vector<const char *> extensions) : Renderer(name), m_frameBufferSize(sz)
 {
     m_extensions.insert(m_extensions.end(), extensions.begin(), extensions.end());
     CreateInstance(this->m_extensions);

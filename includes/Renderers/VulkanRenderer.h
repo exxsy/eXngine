@@ -92,6 +92,8 @@ namespace eXngine
 			void CreateSyncObjects();
 
 			void SelectPhysicalDevice();
+			void ResetSwapChain();
+			void CleanupSwapChain();
 
 			void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 			bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -108,7 +110,8 @@ namespace eXngine
 
 		public:
 			VulkanRenderer(const char *);
-			VulkanRenderer(const char *, std::vector<const char *>);
+			VulkanRenderer(const char *, Size);
+			VulkanRenderer(const char *, Size, std::vector<const char *>);
 			bool Initialize() override;
 			void SetShaders(std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>>);
 			void OnRender() override;

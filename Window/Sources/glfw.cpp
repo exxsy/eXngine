@@ -22,8 +22,7 @@ bool eXngine::Applications::GLFWApplication::Initialize()
 	glfwWindowHint(GLFW_POSITION_X, (int)GetPosition().X);
 	glfwWindowHint(GLFW_POSITION_Y, (int)GetPosition().Y);
 
-	m_window = glfwCreateWindow(GetSize().W, GetSize().H, 
-		GetName(), nullptr, nullptr);
+	m_window = glfwCreateWindow(GetSize().W, GetSize().H, GetName(), nullptr, nullptr);
 
 	assert(m_window != nullptr);
 
@@ -32,6 +31,7 @@ bool eXngine::Applications::GLFWApplication::Initialize()
 	{
 		if (Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window)))
 		{
+			renderer->SetFrameBufferSize(Size(width, height));
 			renderer->SetFrameBufferResize(true);
 		}
 	});
