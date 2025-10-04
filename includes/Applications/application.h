@@ -1,7 +1,8 @@
 #pragma once
 
-#include <eXngine.h>
-#include <Renderers/Renderer.h>
+#include "../../includes/eXngine.h"
+#include "../Renderers/AbstractRenderer.h"
+#include <optional>
 
 using namespace eXngine::Renderers;
 
@@ -17,10 +18,11 @@ namespace eXngine
 			Size m_size;
 			bool maximized;
 
-			Renderer* m_pRenderer = nullptr;
+			std::optional<Renderer*> m_pRenderer = nullptr;
 		public:
 			void* m_pInstance = nullptr;
 			Application(const char* name, Point position, Size size, bool maximized);
+			Application();
 			~Application();
 			virtual bool Initialize() = 0;
 			virtual int Run() = 0;

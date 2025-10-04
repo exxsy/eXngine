@@ -1,6 +1,8 @@
-#include "../Applications/Custom/glfw.h"
-#include "../Applications/application.h"
+#include <Applications/glfw.h>
+#include <Applications/application.h>
 #include <cassert>
+
+#pragma comment(lib, "glfw3.lib")
 
 eXngine::Applications::GLFWApplication::
 	GLFWApplication(const char* name, Point position, Size size, bool maximized): 
@@ -25,7 +27,7 @@ bool eXngine::Applications::GLFWApplication::Initialize()
 
 	assert(m_window != nullptr);
 
-	glfwSetWindowUserPointer(m_window, m_pRenderer);
+	glfwSetWindowUserPointer(m_window, m_pRenderer.value());
 	glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
 	{
 		if (Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window)))
@@ -107,16 +109,20 @@ void eXngine::Applications::GLFWApplication::SetMouseClickHandler(GLFWMouseClick
 
 int eXngine::Applications::GLFWApplication::Loop()
 {
-	assert(m_pRenderer->Initialize());
+	assert(m_pRenderer.has_value());
+
+	auto & pRenderer = m_pRenderer.value();
+
+	assert(pRenderer->Initialize());
 
 	while (!glfwWindowShouldClose(m_window))
 	{
 		glfwPollEvents();
 
-		if (m_pRenderer) m_pRenderer->OnFrame();
+		pRenderer->OnRender();
 	}
 
-	if (m_pRenderer) m_pRenderer->OnExit();
+	pRenderer->OnExit();
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
 

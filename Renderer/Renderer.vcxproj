@@ -19,12 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Renderers\Renderer.h" />
-    <ClInclude Include="Renderers\Custom\VulkanRenderer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Sources\Renderers\Custom\VulkanRenderer.cpp" />
-    <ClCompile Include="Sources\Renderers\Renderer.cpp" />
+    <ClCompile Include="Sources\Renderer.cpp" />
+    <ClCompile Include="Sources\VulkanRenderer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -80,9 +76,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Output\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\vulkan;$(SolutionDir)Common;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)includes;$(SolutionDir)3rdparty\vulkan;$(IncludePath)</IncludePath>
     <ReferencePath>$(SolutionDir)3rdparty\lib;$(ReferencePath)</ReferencePath>
     <SourcePath>$(VC_SourcePath);</SourcePath>
+    <TargetName>eXngine.$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

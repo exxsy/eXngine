@@ -6,10 +6,10 @@
 #include <vulkan/vulkan_win32.h>
 #include <gl/GL.h>
 #include <string>
-#include "../Renderer.h"
 #include <vector>
 #include <optional>
 #include <eXngine.h>
+#include "AbstractRenderer.h"
 
 namespace eXngine
 {

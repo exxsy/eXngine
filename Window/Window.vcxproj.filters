@@ -13,17 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Applications">
-      <UniqueIdentifier>{96362152-cf96-459a-aa67-c62586c6594c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Applications">
       <UniqueIdentifier>{f4ae9680-1132-471f-bfad-6496216f8dd5}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Applications\Custom\glfw.h">
-      <Filter>Header Files\Applications</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Sources\application.cpp">
@@ -32,10 +24,5 @@
     <ClCompile Include="Sources\glfw.cpp">
       <Filter>Source Files\Applications</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Applications\application.h">
-      <Filter>Header Files\Applications</Filter>
-    </None>
   </ItemGroup>
 </Project>

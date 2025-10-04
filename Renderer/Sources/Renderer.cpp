@@ -1,4 +1,4 @@
-#include "../../Renderers/Renderer.h"
+#include <Renderers/AbstractRenderer.h>
 
 eXngine::Renderers::Renderer::Renderer(const char* name) : m_szName(const_cast<char*>(name))
 {

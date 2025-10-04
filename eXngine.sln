@@ -4,12 +4,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Window", "Window\Window.vcxproj", "{0FDB8193-D973-4B98-83CA-1F0EE8A854E4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5AAD9DED-4397-45E1-AA8B-82D6432D36D2} = {5AAD9DED-4397-45E1-AA8B-82D6432D36D2}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sandbox", "Sandbox\Sandbox.vcxproj", "{02B877D9-7088-4437-927D-1BD7B1A8864F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common", "Common\Common.vcxproj", "{DA75DF0E-1982-4310-B855-0B7269E73950}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Renderer", "Renderer\Renderer.vcxproj", "{5AAD9DED-4397-45E1-AA8B-82D6432D36D2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "includes", "includes", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		includes\eXngine.h = includes\eXngine.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Renderers", "Renderers", "{DF638B94-3C02-44D2-9578-77B8A025AABD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,14 +43,6 @@ Global
 		{02B877D9-7088-4437-927D-1BD7B1A8864F}.Release|x64.Build.0 = Release|x64
 		{02B877D9-7088-4437-927D-1BD7B1A8864F}.Release|x86.ActiveCfg = Release|Win32
 		{02B877D9-7088-4437-927D-1BD7B1A8864F}.Release|x86.Build.0 = Release|Win32
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Debug|x64.ActiveCfg = Debug|x64
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Debug|x64.Build.0 = Debug|x64
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Debug|x86.ActiveCfg = Debug|Win32
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Debug|x86.Build.0 = Debug|Win32
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Release|x64.ActiveCfg = Release|x64
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Release|x64.Build.0 = Release|x64
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Release|x86.ActiveCfg = Release|Win32
-		{DA75DF0E-1982-4310-B855-0B7269E73950}.Release|x86.Build.0 = Release|Win32
 		{5AAD9DED-4397-45E1-AA8B-82D6432D36D2}.Debug|x64.ActiveCfg = Debug|x64
 		{5AAD9DED-4397-45E1-AA8B-82D6432D36D2}.Debug|x64.Build.0 = Debug|x64
 		{5AAD9DED-4397-45E1-AA8B-82D6432D36D2}.Debug|x86.ActiveCfg = Debug|Win32
@@ -54,6 +54,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DF638B94-3C02-44D2-9578-77B8A025AABD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7ACDB482-0F67-416E-9D4E-EC7E89254FC5}

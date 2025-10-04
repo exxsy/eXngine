@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Output\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\glfw;$(SolutionDir)3rdparty\imgui;$(SolutionDir)3rdparty\vulkan;..\Renderer;..\Common;..\Window;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)3rdparty\lib\;$(SolutionDir)Output\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\glfw;$(SolutionDir)3rdparty\imgui;$(SolutionDir)3rdparty\vulkan;$(SolutionDir)includes;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)3rdparty\lib\;$(SolutionDir)output\$(Platform)\$(Configuration)\;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\onecore\$(Platform);$(LibraryPath)</LibraryPath>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
     <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
     <SourcePath>$(SolutionDir)3rdparty\imgui;$(VC_SourcePath);</SourcePath>
@@ -117,6 +117,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

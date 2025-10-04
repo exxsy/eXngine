@@ -1,4 +1,4 @@
-#include "../Applications/application.h"
+#include <Applications/application.h>
 #include <malloc.h>
 #include <string.h>
 

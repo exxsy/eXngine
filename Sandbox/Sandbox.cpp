@@ -4,12 +4,12 @@
 #include <iostream>
 #include <Windows.h>
 #include <stdlib.h>
-#include <Renderers/Custom/VulkanRenderer.h>
+#include <Renderers/VulkanRenderer.h>
 #include <cassert>
-#include <Applications/Custom/glfw.h>
+#include <Applications/glfw.h>
 
-#pragma comment(lib, "Window.lib")
-#pragma comment(lib, "Renderer.lib")
+#pragma comment(lib, "eXngine.Window.lib")
+#pragma comment(lib, "eXngine.Renderer.lib")
 #pragma comment(lib, "glfw3.lib")
 
 using namespace eXngine;

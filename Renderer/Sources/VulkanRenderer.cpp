@@ -1,5 +1,5 @@
 #ifdef _VULKAN
-#include "../../../Renderers/Custom/VulkanRenderer.h"
+#include <Renderers/VulkanRenderer.h>
 #include <cassert>
 #include <iostream>
 #include <vector>
@@ -8,7 +8,7 @@
 #include <algorithm>
 #pragma comment(lib, "vulkan-1.lib")
 
-#undef max;
+#undef max
 
 bool eXngine::Renderers::VulkanRenderer::Initialize()
 {
@@ -273,8 +273,7 @@ void eXngine::Renderers::VulkanRenderer::CreateRenderPass()
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    //const std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-    const VkAttachmentDescription* attachments = new VkAttachmentDescription[2] { colorAttachment, depthAttachment };
+    const VkAttachmentDescription attachments[] = { colorAttachment, depthAttachment };
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
