@@ -32,17 +32,15 @@ VkSurfaceKHR CreateWindowSurface(VulkanRenderer *renderer, GLFWwindow *window)
     return surface;
 }
 
-void KeyboardHandler(GLFWwindow *window, int key, int, int, int)
-{
-}
+void KeyboardHandler(GLFWwindow *window, int key, int, int, int) { }
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance,
                     _In_opt_ HINSTANCE hPrevInstance,
                     _In_ LPWSTR lpCmdLine,
                     _In_ int nShowCmd)
 {
-    const auto vertex_shader = Utils::ReadFile("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\vert.spv");
-    const auto frag_shader = Utils::ReadFile("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\frag.spv");
+    const auto vertex_shader = Utils::ReadFile("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
+    const auto frag_shader = Utils::ReadFile("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 	const Size window_size = Size(1024, 768);
 
     GLFWApplication *app = new GLFWApplication(m_szName, Point(0, 40), window_size, false);

@@ -1,5 +1,5 @@
-#include <Applications/glfw.h>
-#include <Applications/application.h>
+#include <windows/glfw.h>
+#include <windows/window.h>
 #include <cassert>
 
 #pragma comment(lib, "glfw3.lib")
