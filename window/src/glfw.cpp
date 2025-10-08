@@ -31,7 +31,7 @@ bool eXngine::Applications::GLFWApplication::Initialize()
 	{
 		if (Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window)))
 		{
-			renderer->SetFrameBufferSize(Size(width, height));
+			//renderer->SetFrameBufferSize(Size(width, height));
 			renderer->SetFrameBufferResize(true);
 		}
 	});

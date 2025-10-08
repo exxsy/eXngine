@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Sources\Renderer.cpp">
+    <ClCompile Include="src\vulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\VulkanRenderer.cpp">
+    <ClCompile Include="src\renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

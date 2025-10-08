@@ -646,6 +646,7 @@ void eXngine::Renderers::VulkanRenderer::CleanupSwapChain()
 void eXngine::Renderers::VulkanRenderer::ResetSwapChain()
 {
     vkDeviceWaitIdle(m_pDevice);
+    CleanupSwapChain();
 
     CreateSwapChain();
     CreateImageViews();
