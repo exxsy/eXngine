@@ -1,4 +1,4 @@
-#include <Renderers/AbstractRenderer.h>
+#include <renderers/renderer.h>
 
 eXngine::Renderers::Renderer::Renderer(const char* name, Size sz) : m_szName(const_cast<char*>(name)), m_szFrameBufferSize(sz)
 {

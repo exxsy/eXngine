@@ -4,13 +4,15 @@
 #include <iostream>
 #include <Windows.h>
 #include <stdlib.h>
-#include <Renderers/VulkanRenderer.h>
 #include <cassert>
-#include <Applications/glfw.h>
+
+#include <renderers/vulkan.h>
+#include <windows/glfw.h>
+
 #include "Utils.h"
 
-#pragma comment(lib, "eXngine.Window.lib")
-#pragma comment(lib, "eXngine.Renderer.lib")
+#pragma comment(lib, "eXngine.window.lib")
+#pragma comment(lib, "eXngine.renderer.lib")
 #pragma comment(lib, "glfw3.lib")
 
 using namespace eXngine;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../includes/eXngine.h"
-#include "../Renderers/AbstractRenderer.h"
+#include "../eXngine.h"
+#include "../renderers/renderer.h"
 #include <optional>
 
 using namespace eXngine::Renderers;

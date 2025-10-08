@@ -1,6 +1,6 @@
 #pragma once
 
-#include "application.h"
+#include "window.h"
 #include <GLFW/glfw3.h>
 #include <vector>
 

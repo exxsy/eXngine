@@ -148,8 +148,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Sources\application.cpp" />
-    <ClCompile Include="Sources\glfw.cpp" />
+    <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="src\glfw.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

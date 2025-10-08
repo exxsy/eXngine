@@ -7,7 +7,7 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
-#include <Renderers/VulkanRenderer.h>
+#include <renderers/vulkan.h>
 
 #pragma comment(lib, "vulkan-1.lib")
 
