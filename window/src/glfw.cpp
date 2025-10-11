@@ -112,7 +112,6 @@ int eXngine::Applications::GLFWApplication::Loop()
 	assert(m_pRenderer.has_value());
 
 	auto & pRenderer = m_pRenderer.value();
-	pRenderer->Initialize();
 
 	while (!glfwWindowShouldClose(m_pWindow))
 	{

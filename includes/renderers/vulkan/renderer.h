@@ -17,7 +17,8 @@
 
 namespace eXngine::Renderers::Vulkan
 {
-	typedef void (*OnUpdateUniformBuffers)(void*, uint32_t);
+	typedef void (*OnUpdateUniformBuffersHandler)(void*, uint32_t);
+	typedef void (*OnRenderHandler)(VkCommandBuffer);
 
 	struct QueueFamilyIndices
 	{
@@ -71,28 +72,13 @@ namespace eXngine::Renderers::Vulkan
 	private:
 		Size m_frameBufferSize;
 		int m_currentFrame = 0;
-		int MAX_FRAMES_IN_FLIGHT = 2;
 		uint32_t m_queueRenderFamily = 0;
-		OnUpdateUniformBuffers m_pOnUpdateUniformBuffers;
+		OnUpdateUniformBuffersHandler m_pOnUpdateUniformBuffers;
+		OnRenderHandler m_pOnRender;
+
 
 		/* VULKAN */
-		VkPhysicalDevice m_pPhysicalDevice = VK_NULL_HANDLE;
-		VkInstance m_pInstance = VK_NULL_HANDLE;
-		VkQueue m_pGraphicsQueue = VK_NULL_HANDLE;
-		VkQueue m_pPresentQueue = VK_NULL_HANDLE;
-		VkSwapchainKHR m_pSwapChain = VK_NULL_HANDLE;
-		VkPipelineLayout m_pPipelineLayout = VK_NULL_HANDLE;
-		VkRenderPass m_pRenderPass = VK_NULL_HANDLE;
-		VkPipeline m_pGraphicsPipeline = VK_NULL_HANDLE;
-		VkCommandPool m_pCommandPool = VK_NULL_HANDLE;
-		VkSurfaceKHR m_pSurface = VK_NULL_HANDLE;
-		VkDescriptorPool m_pDescriptorPool = VK_NULL_HANDLE;
-		VkSampler m_pTextureSampler = VK_NULL_HANDLE;
-		VkDescriptorSetLayout m_pDescriptorSetLayout = VK_NULL_HANDLE;
-		VkBuffer m_pVertexBuffer = VK_NULL_HANDLE;
-		VkDeviceMemory m_pVertexBufferMemory = VK_NULL_HANDLE;
-		VkBuffer m_pIndexBuffer = VK_NULL_HANDLE;
-		VkDeviceMemory m_pIndexBufferMemory = VK_NULL_HANDLE;
+
 
 		std::vector<VkFrameObject> m_pFrameObjects;
 		std::vector<VkImage> m_swapChainImages;
@@ -150,7 +136,6 @@ namespace eXngine::Renderers::Vulkan
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-		QueueFamilyIndices FindQueueFamiliesWithSurfaces(VkPhysicalDevice device);
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
@@ -160,6 +145,24 @@ namespace eXngine::Renderers::Vulkan
 
 	public:
 		VkDevice m_pDevice = VK_NULL_HANDLE;
+		VkPhysicalDevice m_pPhysicalDevice = VK_NULL_HANDLE;
+		VkInstance m_pInstance = VK_NULL_HANDLE;
+		VkQueue m_pGraphicsQueue = VK_NULL_HANDLE;
+		VkQueue m_pPresentQueue = VK_NULL_HANDLE;
+		VkSwapchainKHR m_pSwapChain = VK_NULL_HANDLE;
+		VkPipelineLayout m_pPipelineLayout = VK_NULL_HANDLE;
+		VkRenderPass m_pRenderPass = VK_NULL_HANDLE;
+		VkPipeline m_pGraphicsPipeline = VK_NULL_HANDLE;
+		VkCommandPool m_pCommandPool = VK_NULL_HANDLE;
+		VkSurfaceKHR m_pSurface = VK_NULL_HANDLE;
+		VkDescriptorPool m_pDescriptorPool = VK_NULL_HANDLE;
+		VkSampler m_pTextureSampler = VK_NULL_HANDLE;
+		VkDescriptorSetLayout m_pDescriptorSetLayout = VK_NULL_HANDLE;
+		VkBuffer m_pVertexBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory m_pVertexBufferMemory = VK_NULL_HANDLE;
+		VkBuffer m_pIndexBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory m_pIndexBufferMemory = VK_NULL_HANDLE;
+		const int MAX_FRAMES_IN_FLIGHT = 2;
 
 		Renderer(const char *);
 		Renderer(const char *, Size);
@@ -171,13 +174,14 @@ namespace eXngine::Renderers::Vulkan
 		void SetSurface(VkSurfaceKHR);
 		void SetExtensions(std::vector<const char *>);
 		void SetFrameBufferSize(Size);
-		void SetUpdateUniformBuffersCallback(OnUpdateUniformBuffers);
-		void SetMaxFramesInFlight(int);
+		void SetUpdateUniformBuffersCallback(OnUpdateUniformBuffersHandler);
+		void SetOnRenderCallback(OnRenderHandler);
 		void LoadModel(const char* path);
 		void QueueTexture(const char* path);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+		static QueueFamilyIndices FindQueueFamiliesWithSurfaces(VkSurfaceKHR, VkPhysicalDevice);
 		VkCommandBuffer BeginSingleTimeCommands();
 		VkInstance GetVulkanInstance();
 		VkFormat FindDepthFormat();

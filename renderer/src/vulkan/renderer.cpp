@@ -113,6 +113,9 @@ namespace eXngine::Renderers::Vulkan
                 &m_pFrameObjects[m_currentFrame].descriptorSet, 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
             //vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+			if (m_pOnRender)
+                m_pOnRender(commandBuffer);
         }
         vkCmdEndRenderPass(commandBuffer);
 
@@ -356,11 +359,6 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::SetExtensions(std::vector<const char*> ex)
     {
         this->m_extensions = ex;
-    }
-
-    void Renderer::SetMaxFramesInFlight(int max)
-    {
-        this->MAX_FRAMES_IN_FLIGHT = max;
     }
 
     void Renderer::CreateInstance(std::vector<const char*> extensions)
@@ -654,7 +652,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateCommandPool()
     {
-        QueueFamilyIndices queueFamilyIndices = FindQueueFamiliesWithSurfaces(m_pPhysicalDevice);
+        QueueFamilyIndices queueFamilyIndices = FindQueueFamiliesWithSurfaces(m_pSurface, m_pPhysicalDevice);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -722,14 +720,14 @@ namespace eXngine::Renderers::Vulkan
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // to be used in fragment shaders
 
-        VkDescriptorSetLayoutBinding imGuiSamplerLayoutBinding{};
-        imGuiSamplerLayoutBinding.binding = 2;
-        imGuiSamplerLayoutBinding.descriptorCount = 1;
-        imGuiSamplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        imGuiSamplerLayoutBinding.pImmutableSamplers = nullptr;
-        imGuiSamplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // to be used in fragment shaders
+        VkDescriptorSetLayoutBinding debugProfilerLayoutBinding{};
+        debugProfilerLayoutBinding.binding = 2;
+        debugProfilerLayoutBinding.descriptorCount = 1;
+        debugProfilerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        debugProfilerLayoutBinding.pImmutableSamplers = nullptr;
+        debugProfilerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        const std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding, imGuiSamplerLayoutBinding };
+        const std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, samplerLayoutBinding, debugProfilerLayoutBinding };
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -842,7 +840,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateLogicalDevice()
     {
-        QueueFamilyIndices indices = FindQueueFamiliesWithSurfaces(m_pPhysicalDevice);
+        QueueFamilyIndices indices = FindQueueFamiliesWithSurfaces(m_pSurface, m_pPhysicalDevice);
         {
             std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
             std::vector<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -1162,7 +1160,7 @@ namespace eXngine::Renderers::Vulkan
     }
 
     QueueFamilyIndices
-        Renderer::FindQueueFamiliesWithSurfaces(VkPhysicalDevice device)
+        Renderer::FindQueueFamiliesWithSurfaces(VkSurfaceKHR surface, VkPhysicalDevice device)
     {
         QueueFamilyIndices indices;
 
@@ -1181,7 +1179,7 @@ namespace eXngine::Renderers::Vulkan
             }
 
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_pSurface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
             if (presentSupport)
             {
                 indices.presentFamily = i;
@@ -1286,8 +1284,13 @@ namespace eXngine::Renderers::Vulkan
         assert(false);
         return VkFormat{};
     }
+    
+    void Renderer::SetOnRenderCallback(OnRenderHandler fn)
+    {
+		this->m_pOnRender = fn;
+    }
 
-    void Renderer::SetUpdateUniformBuffersCallback(OnUpdateUniformBuffers fn) 
+    void Renderer::SetUpdateUniformBuffersCallback(OnUpdateUniformBuffersHandler fn)
     {
 		this->m_pOnUpdateUniformBuffers = fn;
     }
