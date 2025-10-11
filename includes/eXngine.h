@@ -28,6 +28,7 @@ typedef int EXINT;
 #define EXENGINE_GET_PATCH_VERSION(version) (((version) >> 16) & 0xFF)
 #define EXENGINE_GET_MAJOR_VERSION(version) (((version) >> 8) & 0xFF)
 #define EXENGINE_GET_MINOR_VERSION(version) ((version) & 0xFF)
+#define EX_ARRAYSIZE(_ARR) ((int)(sizeof(_ARR) / sizeof(*_ARR)))
 
 #define EXENGINE "eXngine"
 #define EXENGINE_VERSION EXENGINE_MAKE_VERSION(1, 0, 0)

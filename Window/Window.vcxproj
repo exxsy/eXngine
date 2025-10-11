@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)output\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt;$(SolutionDir)includes;$(SolutionDir)3rdparty\glfw;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)includes;$(SolutionDir)3rdparty\vulkan;$(SolutionDir)3rdparty\glm;$(SolutionDir)3rdparty\fbx;$(SolutionDir)3rdparty\stb_image;$(SolutionDir)3rdparty\glfw;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)3rdparty\lib;$(LibraryPath)</LibraryPath>
     <TargetName>eXngine.$(ProjectName)</TargetName>
   </PropertyGroup>

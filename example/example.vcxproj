@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Output\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\glfw;$(SolutionDir)3rdparty\imgui;$(SolutionDir)3rdparty\vulkan;$(SolutionDir)includes;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)includes;$(SolutionDir)3rdparty\glfw;$(SolutionDir)3rdparty\imgui;$(SolutionDir)3rdparty\glm;$(SolutionDir)3rdparty\vulkan;$(SolutionDir)3rdparty\fbx;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)3rdparty\lib\;$(SolutionDir)output\$(Platform)\$(Configuration)\;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\onecore\$(Platform);$(LibraryPath)</LibraryPath>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
     <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
@@ -110,7 +110,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_VULKAN;_IMGUI;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>STB_IMAGE_IMPLEMENTATION;_VULKAN;_IMGUI;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -139,6 +139,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src/main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="headers\file.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

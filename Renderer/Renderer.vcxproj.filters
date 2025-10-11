@@ -13,13 +13,31 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\renderers">
+      <UniqueIdentifier>{44635c42-4c5e-42fd-933d-c6fa4cd0560e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\renderers\vulkan">
+      <UniqueIdentifier>{17d8bd17-31b4-48fd-80a0-f535c0df6048}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fbx">
+      <UniqueIdentifier>{839586d0-2c22-4323-8c24-f5c91e894181}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\vulkan.cpp">
+    <ClCompile Include="src\base.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\vulkan\image.cpp">
+      <Filter>Source Files\renderers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\renderer.cpp">
+      <Filter>Source Files\renderers\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fbx\fbx-loader.cpp">
+      <Filter>Source Files\fbx</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\vertex.cpp">
+      <Filter>Source Files\renderers\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

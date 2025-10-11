@@ -31,7 +31,7 @@ bool eXngine::Applications::Application::IsMaximized()
 	return this->maximized;
 }
 
-void eXngine::Applications::Application::SetRenderer(Renderer*renderer)
+void eXngine::Applications::Application::SetRenderer(BaseRenderer*renderer)
 {
 	this->m_pRenderer = renderer;
 }

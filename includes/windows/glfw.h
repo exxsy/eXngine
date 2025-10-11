@@ -18,7 +18,7 @@ namespace eXngine
 		private:
 			int Loop() override;
 
-			GLFWwindow* m_window = nullptr;
+			GLFWwindow* m_pWindow = nullptr;
 			GLFWKeyboardCallback* m_keyboard = nullptr;
 			GLFWCharacterCallback* m_character = nullptr;
 			GLFWMousePosCallback* m_mousePos = nullptr;

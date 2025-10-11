@@ -18,7 +18,7 @@ namespace eXngine
 			Size m_size;
 			bool maximized;
 
-			std::optional<Renderer*> m_pRenderer = nullptr;
+			std::optional<BaseRenderer*> m_pRenderer = nullptr;
 		public:
 			void* m_pInstance = nullptr;
 			Application(const char* name, Point position, Size size, bool maximized);
@@ -31,7 +31,7 @@ namespace eXngine
 			Size GetSize();
 			Point GetPosition();
 			bool IsMaximized();
-			void SetRenderer(Renderer*);
+			void SetRenderer(BaseRenderer*);
 			void SetSize(Size size);
 			void SetPosition(Point position);
 			void SetMaximized(bool maximized);
