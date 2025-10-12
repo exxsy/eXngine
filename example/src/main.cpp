@@ -64,7 +64,7 @@ struct Camera {
 	}
 };
 
-Camera* camera = new Camera(glm::vec3(28.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 1.0f);
+Camera* camera = new Camera(glm::vec3(28.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f);
 float m_fZoomFactor = 0.0f;
 
 #ifdef _DEBUG
@@ -147,12 +147,20 @@ void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
     }
 }
 
-void ImGui_OnRender(VkCommandBuffer commandBuffer)
+void ImGui_OnRender(BaseRenderer* renderer, VkCommandBuffer commandBuffer)
 {
+	const auto VulkanRenderer = dynamic_cast<Renderers::Vulkan::Renderer*>(renderer);
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    //ImGui::ShowDemoWindow();
+
+	ImGui::Begin("eXngine Demo");
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", VulkanRenderer->GetFPS().m_fFPS, 1000.0f * VulkanRenderer->GetFPS().m_fAverageDeltaTime);
+    ImGui::End();
+
+    ImGui::ShowDemoWindow();
     ImGui::Render();
 
     ImDrawData* draw_data = ImGui::GetDrawData();
@@ -201,7 +209,7 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //ubo.view = glm::lookAt(glm::vec3(28.f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(28.f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     //ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
 	ubo.view = camera->GetViewMatrix();
 	ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
@@ -221,6 +229,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
     const std::vector<const char*> debug_extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
     GLFWApplication* app = new GLFWApplication(m_szName, Point(0, 40), window_size, false);
     Renderers::Vulkan::Renderer* renderer = new Renderers::Vulkan::Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
+    app->SetKeyboardHandler(KeyboardHandler);
+    app->SetScrollHandler(ScrollHandler);
+    app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
 
     renderer->SetShaders(
         {
@@ -238,11 +249,6 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
     renderer->SetOnRenderHandler(ImGui_OnRender);
     renderer->SetOnCleanupHandler(ImGui_OnExit);
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
-
-    app->SetKeyboardHandler(KeyboardHandler);
-    app->SetScrollHandler(ScrollHandler);
-    app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
-
 	renderer->Initialize();
 
 #ifdef _DEBUG

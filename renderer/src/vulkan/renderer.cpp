@@ -123,7 +123,7 @@ namespace eXngine::Renderers::Vulkan
                 }
             }
 
-            if (m_fOnRender) m_fOnRender(commandBuffer);
+            if (m_fOnRender) m_fOnRender(this, commandBuffer);
         }
         vkCmdEndRenderPass(commandBuffer);
 
@@ -273,6 +273,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::OnRender()
     {
+        this->UpdateFPS();
         vkWaitForFences(m_pDevice, 1, &m_pFrameObjects[m_currentFrame].inFlightFence, VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
@@ -1321,16 +1322,6 @@ namespace eXngine::Renderers::Vulkan
 
         assert(false);
         return VkFormat{};
-    }
-
-    void Renderer::SetOnRenderHandler(OnRenderHandler fn)
-    {
-        this->m_fOnRender = fn;
-    }
-
-    void Renderer::SetOnCleanupHandler(OnCleanupHandler fn)
-    {
-        this->m_fOnCleanup = fn;
     }
 
     void Renderer::SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler fn)

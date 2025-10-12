@@ -19,8 +19,7 @@
 namespace eXngine::Renderers::Vulkan
 {
 	typedef void (*OnUpdateUniformBuffersHandler)(void *, uint32_t);
-	typedef void (*OnRenderHandler)(VkCommandBuffer);
-	typedef void (*OnCleanupHandler)();
+
 
 	struct QueueFamilyIndices
 	{
@@ -91,7 +90,7 @@ namespace eXngine::Renderers::Vulkan
 		}
 	};
 
-	class Renderer : BaseRenderer
+	class Renderer : public BaseRenderer
 	{
 	private:
 		Size m_frameBufferSize;
@@ -101,8 +100,7 @@ namespace eXngine::Renderers::Vulkan
 		uint32_t m_queueRenderFamily = 0;
 
 		OnUpdateUniformBuffersHandler m_fOnUpdateUniformBuffers;
-		OnRenderHandler m_fOnRender;
-		OnCleanupHandler m_fOnCleanup;
+
 
 		std::vector<VkFrameObject> m_pFrameObjects;
 		std::vector<VkImage> m_swapChainImages;
@@ -191,15 +189,13 @@ namespace eXngine::Renderers::Vulkan
 		Renderer(const char *, Size);
 		Renderer(const char *, Size, std::vector<const char *>);
 		void Initialize() override;
-		void SetShaders(std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>>);
 		void OnRender() override;
 		void OnExit() override;
+		void SetShaders(std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>>);
 		void SetSurface(VkSurfaceKHR);
 		void SetExtensions(std::vector<const char *>);
 		void SetFrameBufferSize(Size);
 		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
-		void SetOnRenderHandler(OnRenderHandler);
-		void SetOnCleanupHandler(OnCleanupHandler);
 		void LoadModel(const char *, std::vector<Utils::Mesh>, const char * = nullptr);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
