@@ -116,7 +116,7 @@ namespace eXngine::Utils
         }
     }
 
-    FbxLoader::Mesh FbxLoader::ReadMesh(FbxNodeAttribute* pAttribute)
+    Mesh FbxLoader::ReadMesh(FbxNodeAttribute* pAttribute)
     {
         Mesh mesh;
 
@@ -125,7 +125,7 @@ namespace eXngine::Utils
             {
                 const FbxVector4* vertexBuffer = fbxMesh->GetControlPoints();
                 const int vertexCount = fbxMesh->GetControlPointsCount();
-                mesh.m_vertices.resize(vertexCount);
+                mesh.vertices.resize(vertexCount);
 
                 for (int vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
                 {
@@ -135,7 +135,7 @@ namespace eXngine::Utils
                     vertex.y = static_cast<float>(buffer[1]);
                     vertex.z = static_cast<float>(buffer[2]);
 
-                    mesh.m_vertices[vertexIndex].pos = vertex;
+                    mesh.vertices[vertexIndex].pos = vertex;
                 }
             }
 
@@ -153,7 +153,7 @@ namespace eXngine::Utils
             const char* uvName = lUVNames[0]; ///
 
             const int polygonCount = fbxMesh->GetPolygonCount();
-            mesh.m_indices.reserve(polygonCount);
+            mesh.indices.reserve(polygonCount);
 
             for (int polygonIndex = 0; polygonIndex < polygonCount; ++polygonIndex)
             {
@@ -161,18 +161,18 @@ namespace eXngine::Utils
                 const int vertexIndex1 = fbxMesh->GetPolygonVertex(polygonIndex, 1);
                 const int vertexIndex2 = fbxMesh->GetPolygonVertex(polygonIndex, 2);
 
-                mesh.m_indices.push_back(vertexIndex0);
-                mesh.m_indices.push_back(vertexIndex1);
-                mesh.m_indices.push_back(vertexIndex2);
+                mesh.indices.push_back(vertexIndex0);
+                mesh.indices.push_back(vertexIndex1);
+                mesh.indices.push_back(vertexIndex2);
 
                 bool unmapped;
                 FbxVector2 uv;
                 bool result = fbxMesh->GetPolygonVertexUV(polygonIndex, 0, uvName, uv, unmapped);
-                mesh.m_vertices[vertexIndex0].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex0].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 1, uvName, uv, unmapped);
-                mesh.m_vertices[vertexIndex1].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex1].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 2, uvName, uv, unmapped);
-                mesh.m_vertices[vertexIndex2].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex2].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
 
                 /*FbxVector4 normal;
                 result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 0, normal );

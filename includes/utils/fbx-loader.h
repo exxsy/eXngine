@@ -3,6 +3,7 @@
 #include <fbxsdk.h>
 #include <vector>
 #include <utils/vertex.h>
+#include <utils/mesh.h>
 
 namespace eXngine::Utils
 {
@@ -10,12 +11,6 @@ namespace eXngine::Utils
     {
     public:
         explicit FbxLoader( const char* pathToFbxFile );
-
-        struct Mesh
-        {
-            std::vector<eXngine::Utils::Vertex> m_vertices;
-            std::vector<uint16_t> m_indices;
-        };
 
         [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return m_meshes; }
 

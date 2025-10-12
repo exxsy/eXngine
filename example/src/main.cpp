@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <cassert>
 #include <algorithm>
+#include <chrono>
 
 #include <glm/glm.hpp>
 #include <renderers/vulkan/renderer.h>
@@ -41,6 +42,31 @@ std::vector<T> merge(std::vector<T> const &a, std::vector<T> const &b) {
     return result;
 }
 
+struct Camera {
+    glm::vec3 position;
+    glm::vec3 up;
+    glm::vec3 front;
+    float yaw;
+    float pitch;
+    float movementSpeed;
+    float mouseSensitivity;
+    Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw, float startPitch) : 
+        position(startPosition), up(startUp), yaw(startYaw), 
+        pitch(startPitch), front(glm::vec3(0.0f, 0.0f, 0.0f)), 
+        movementSpeed(2.5f), mouseSensitivity(0.1f) {
+
+    }
+    glm::mat4 GetViewMatrix() {
+        return glm::lookAt(position, position + front, up);
+    }
+    glm::mat4 GetProjectionMatrix(float aspectRatio) {
+        return glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+	}
+};
+
+Camera* camera = new Camera(glm::vec3(28.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 1.0f);
+float m_fZoomFactor = 0.0f;
+
 #ifdef _DEBUG
 VkDebugUtilsMessengerEXT debugMessenger;
 
@@ -71,29 +97,7 @@ void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& create
 }
 #endif
 
-struct Camera {
-    glm::vec3 position;
-    glm::vec3 up;
-    glm::vec3 front;
-    float yaw;
-    float pitch;
-    float movementSpeed;
-    float mouseSensitivity;
-    Camera(glm::vec3 startPosition, glm::vec3 startUp, float startYaw, float startPitch)
-        : position(startPosition), up(startUp), yaw(startYaw), pitch(startPitch), front(glm::vec3(0.0f, 0.0f, 0.0f)), 
-        movementSpeed(2.5f), mouseSensitivity(0.1f) {
-
-    }
-    glm::mat4 GetViewMatrix() {
-        return glm::lookAt(position, position + front, up);
-    }
-    glm::mat4 GetProjectionMatrix(float aspectRatio) {
-        return glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
-	}
-};
-
-Camera* camera = new Camera(glm::vec3(28.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f);
-
+#ifndef IMGUI_DISABLE
 void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
 {
     // Setup Dear ImGui context
@@ -148,7 +152,7 @@ void ImGui_OnRender(VkCommandBuffer commandBuffer)
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
     ImGui::Render();
 
     ImDrawData* draw_data = ImGui::GetDrawData();
@@ -157,6 +161,15 @@ void ImGui_OnRender(VkCommandBuffer commandBuffer)
     if (!is_minimized)
         ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
 }
+
+void ImGui_OnExit()
+{
+    // Cleanup
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+#endif
 
 VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwindow *window)
 {
@@ -167,21 +180,31 @@ VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwind
     return surface;
 }
 
-void KeyboardHandler(GLFWwindow *window, int key, int, int, int) { }
+void KeyboardHandler(GLFWwindow *window, int key, int, int, int) 
+{ 
+
+}
+
+void ScrollHandler(GLFWwindow* window, double xoffset, double yoffset) 
+{
+    if (yoffset > 0)
+        m_fZoomFactor -= 1.0f;
+    else
+		m_fZoomFactor += 1.0f;
+}
 
 void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    float time = std::chrono::duration<float, std::chrono::minutes::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	//ubo.view = camera->GetViewMatrix();
-	//ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
-
-    ubo.view = glm::lookAt(glm::vec3(28.f, 44.0f, 55.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
+    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    //ubo.view = glm::lookAt(glm::vec3(28.f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    //ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
+	ubo.view = camera->GetViewMatrix();
+	ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
 
     ubo.proj[1][1] *= -1;
 
@@ -193,32 +216,31 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
                     _In_ LPWSTR lpCmdLine,
                     _In_ int nShowCmd)
 {
-    const auto vertex_shader = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
-    const auto frag_shader = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
-
-
     const char* m_szName = "eXngine Demo";
     const Size window_size = Size(1024, 768);
     const std::vector<const char*> debug_extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
     GLFWApplication* app = new GLFWApplication(m_szName, Point(0, 40), window_size, false);
     Renderers::Vulkan::Renderer* renderer = new Renderers::Vulkan::Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
 
-
     renderer->SetShaders(
         {
-            {"main", VK_SHADER_STAGE_VERTEX_BIT, vertex_shader},
-            {"main", VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader}
+            {"main", VK_SHADER_STAGE_VERTEX_BIT, eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv")},
+            {"main", VK_SHADER_STAGE_FRAGMENT_BIT, eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv")}
         }
     );
-    //renderer->LoadModel("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
-    renderer->LoadModel("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
-    //renderer->QueueTexture("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
-    renderer->QueueTexture("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg");
-    renderer->SetUpdateUniformBuffersCallback(UpdateUniformBuffer);
-	renderer->SetOnRenderCallback(ImGui_OnRender);
+
+    const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
+    const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
+
+    renderer->LoadModel("dragon", dragonModel.GetMeshes(), "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg");
+    renderer->LoadModel("ball", ballModel.GetMeshes(), "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
+    renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
+    renderer->SetOnRenderHandler(ImGui_OnRender);
+    renderer->SetOnCleanupHandler(ImGui_OnExit);
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
 
     app->SetKeyboardHandler(KeyboardHandler);
+    app->SetScrollHandler(ScrollHandler);
     app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
 
 	renderer->Initialize();
@@ -240,13 +262,5 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
     ImGui_OnInit(app, renderer, window_size);
 #endif
 
-    int result = app->Run();
-
-#ifndef IMGUI_DISABLE
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-#endif
-
-    return result;
+    return app->Run();
 }
