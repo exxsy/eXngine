@@ -33,11 +33,14 @@ namespace eXngine::Renderers::Vulkan
         CreateDepthResources();
         CreateFramebuffers();
 
+		m_DefaultTexture = new VkTexture(*this);
+		m_DefaultTexture->CreateFromImageData((const unsigned char*)"\xff\x00\x00", 1, 1);
+
         for (const auto &modelPair : m_Models)
         {
             auto &model = modelPair.second;
 
-            if (model.m_pTexture)
+            if (model.m_pTexture && model.m_pTexture->path != nullptr)
             {
                 model.m_pTexture->texture = new VkTexture(*this);
                 model.m_pTexture->texture->CreateFromTextureFile(modelPair.first, model.m_pTexture->path);
@@ -115,7 +118,7 @@ namespace eXngine::Renderers::Vulkan
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1,
-                                            &model.descriptorSet, 0, nullptr);
+                                            &model.descriptorSets[m_currentFrame], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, currIndicesCount, currVertexCount, 0);
 
                     currIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
@@ -195,7 +198,7 @@ namespace eXngine::Renderers::Vulkan
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
             {
                 auto &frame = m_pFrameObjects[i];
-                model.descriptorSet = descriptorSets[i];
+                model.descriptorSets = descriptorSets;
 
                 VkDescriptorBufferInfo bufferInfo{};
                 bufferInfo.buffer = frame.uniformBuffer;
@@ -230,6 +233,21 @@ namespace eXngine::Renderers::Vulkan
                         .descriptorCount = 1,
                         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                         .pImageInfo = &imageInfo});
+                }
+                else {
+                    VkDescriptorImageInfo imageInfo{};
+                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    imageInfo.imageView = m_DefaultTexture->m_pView; // m_Object
+                    imageInfo.sampler = m_pTextureSampler;
+
+                    descriptorWrites.push_back(VkWriteDescriptorSet{
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = descriptorSets[i],
+                        .dstBinding = 1,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .pImageInfo = &imageInfo });
                 }
 
                 vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -538,7 +556,7 @@ namespace eXngine::Renderers::Vulkan
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
         rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f;
@@ -1017,7 +1035,7 @@ namespace eXngine::Renderers::Vulkan
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
-        subpass.pDepthStencilAttachment = nullptr;
+        subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;

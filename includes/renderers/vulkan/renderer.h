@@ -76,7 +76,7 @@ namespace eXngine::Renderers::Vulkan
 	{
 	public:
 		VkTextureObject *m_pTexture = EXN_NULL_HANDLE;
-		VkDescriptorSet descriptorSet;
+		std::vector<VkDescriptorSet> descriptorSets;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
 
 		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, const char* texturePath = EXN_NULL_HANDLE) : m_pTexture(EXN_NULL_HANDLE), m_vMeshes(meshes)
@@ -137,6 +137,7 @@ namespace eXngine::Renderers::Vulkan
 
 		VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
 		VkTexture * m_Depth = nullptr;
+		VkTexture * m_DefaultTexture = nullptr;
 		VkExtent2D m_swapChainExtent{};
 
 #ifdef NDEBUG

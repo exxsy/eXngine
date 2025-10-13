@@ -178,7 +178,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
     const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
     const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
 
-    renderer->LoadModel("dragon", dragonModel.GetMeshes(), "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg");
+    renderer->LoadModel("dragon", dragonModel.GetMeshes(), nullptr);// "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg");
     renderer->LoadModel("ball", ballModel.GetMeshes(), "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
     renderer->SetOnRenderHandler(ImGui_OnRender);
