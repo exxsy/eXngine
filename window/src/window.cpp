@@ -16,12 +16,12 @@ const char* eXngine::Applications::Application::GetName()
 	return this->m_name;
 }
 
-Size eXngine::Applications::Application::GetSize()
+eXngine::Size eXngine::Applications::Application::GetSize()
 {
 	return this->m_size;
 }
 
-Point eXngine::Applications::Application::GetPosition()
+eXngine::Point eXngine::Applications::Application::GetPosition()
 {
 	return this->m_position;
 }

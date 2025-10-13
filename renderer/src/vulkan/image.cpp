@@ -3,7 +3,7 @@
 #include <cstring>
 #include <renderers/vulkan/image.h>
 #include <renderers/vulkan/renderer.h>
-#include <stb_image/stb_image.h>
+#include <3rdparty/stb_image/stb_image.h>
 
 namespace eXngine::Renderers::Vulkan
 {

@@ -6,6 +6,7 @@
 #include <vector>
 #include <optional>
 #include <map>
+#include <type_traits>
 
 #include <utils/mesh.h>
 #include <gl/GL.h>
@@ -16,15 +17,17 @@
 #include <renderers/vulkan/image.h>
 #include <glm/glm.hpp>
 
+#undef EXN_NULL_HANDLE
+#define EXN_NULL_HANDLE VK_NULL_HANDLE
+
 namespace eXngine::Renderers::Vulkan
 {
-	typedef void (*OnUpdateUniformBuffersHandler)(void *, uint32_t);
-
+	typedef void (*OnUpdateUniformBuffersHandler)(void *, EXUINT32);
 
 	struct QueueFamilyIndices
 	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
+		std::optional<EXUINT32> graphicsFamily;
+		std::optional<EXUINT32> presentFamily;
 	};
 
 	struct SwapChainSupportDetails
@@ -36,9 +39,9 @@ namespace eXngine::Renderers::Vulkan
 
 	struct UniformBufferObject
 	{
-		alignas(16) glm::mat4 model;
-		alignas(16) glm::mat4 view;
-		alignas(16) glm::mat4 proj;
+		alignas(16) EXMAT4 model;
+		alignas(16) EXMAT4 view;
+		alignas(16) EXMAT4 proj;
 	};
 
 	struct VkFrameObject
@@ -71,12 +74,12 @@ namespace eXngine::Renderers::Vulkan
 	struct VkModelObject
 	{
 	public:
-		VkImageObject *m_pTexture = nullptr;
+		VkImageObject *m_pTexture = EXN_NULL_HANDLE;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
 
-		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, const char* texturePath = nullptr) : m_pTexture(nullptr), m_vMeshes(meshes)
+		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, const char* texturePath = EXN_NULL_HANDLE) : m_pTexture(EXN_NULL_HANDLE), m_vMeshes(meshes)
 		{
-			if (texturePath != nullptr) m_pTexture = new VkImageObject(texturePath);
+			if (texturePath != EXN_NULL_HANDLE) m_pTexture = new VkImageObject(texturePath);
 		}
 
 		void CleanUp(VkDevice device)
@@ -85,22 +88,41 @@ namespace eXngine::Renderers::Vulkan
 			{
 				m_pTexture->image.Release(device);
 				delete m_pTexture;
-				m_pTexture = nullptr;
+				m_pTexture = EXN_NULL_HANDLE;
 			}
 		}
+	};
+
+	enum PrimitiveTypes : std::underlying_type<eXngine::PrimitiveTypes>::type
+	{
+		Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST, 
+		PointList = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+
+		Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST, 
+		LineStrip = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP, 
+		LineList = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+		LineListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+		LineStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
+
+		Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		TriangleStrip = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+		TriangleFan = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+		TriangleListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
+		TriangleStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY,
+		
+		PatchList = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+		MaxEnum = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM,
 	};
 
 	class Renderer : public BaseRenderer
 	{
 	private:
 		Size m_frameBufferSize;
-		int m_currentFrame = 0;
-		uint32_t m_nVerticesCount = 0;
-		uint32_t m_nIndicesCount = 0;
-		uint32_t m_queueRenderFamily = 0;
-
+		EXINT m_currentFrame = 0;
+		EXUINT32 m_nVerticesCount = 0;
+		EXUINT32 m_nIndicesCount = 0;
+		EXUINT32 m_queueRenderFamily = 0;
 		OnUpdateUniformBuffersHandler m_fOnUpdateUniformBuffers;
-
 
 		std::vector<VkFrameObject> m_pFrameObjects;
 		std::vector<VkImage> m_swapChainImages;
@@ -149,13 +171,13 @@ namespace eXngine::Renderers::Vulkan
 		void CleanupSwapChain();
 		void ResetSwapChain();
 
-		void UpdateUniformBuffer(uint32_t currentImage);
+		void UpdateUniformBuffer(EXUINT32 currentImage);
 
-		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		void RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 		bool IsDeviceSuitable(VkPhysicalDevice device);
 
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		EXUINT32 FindMemoryType(EXUINT32 typeFilter, VkMemoryPropertyFlags properties);
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
@@ -165,24 +187,24 @@ namespace eXngine::Renderers::Vulkan
 		VkShaderModule CreateShaderModule(const std::vector<char> &code);
 
 	public:
-		VkDevice m_pDevice = VK_NULL_HANDLE;
-		VkPhysicalDevice m_pPhysicalDevice = VK_NULL_HANDLE;
-		VkInstance m_pInstance = VK_NULL_HANDLE;
-		VkQueue m_pGraphicsQueue = VK_NULL_HANDLE;
-		VkQueue m_pPresentQueue = VK_NULL_HANDLE;
-		VkSwapchainKHR m_pSwapChain = VK_NULL_HANDLE;
-		VkPipelineLayout m_pPipelineLayout = VK_NULL_HANDLE;
-		VkRenderPass m_pRenderPass = VK_NULL_HANDLE;
-		VkPipeline m_pGraphicsPipeline = VK_NULL_HANDLE;
-		VkCommandPool m_pCommandPool = VK_NULL_HANDLE;
-		VkSurfaceKHR m_pSurface = VK_NULL_HANDLE;
-		VkDescriptorPool m_pDescriptorPool = VK_NULL_HANDLE;
-		VkSampler m_pTextureSampler = VK_NULL_HANDLE;
-		VkDescriptorSetLayout m_pDescriptorSetLayout = VK_NULL_HANDLE;
-		VkBuffer m_pVertexBuffer = VK_NULL_HANDLE;
-		VkDeviceMemory m_pVertexBufferMemory = VK_NULL_HANDLE;
-		VkBuffer m_pIndexBuffer = VK_NULL_HANDLE;
-		VkDeviceMemory m_pIndexBufferMemory = VK_NULL_HANDLE;
+		VkDevice m_pDevice = EXN_NULL_HANDLE;
+		VkPhysicalDevice m_pPhysicalDevice = EXN_NULL_HANDLE;
+		VkInstance m_pInstance = EXN_NULL_HANDLE;
+		VkQueue m_pGraphicsQueue = EXN_NULL_HANDLE;
+		VkQueue m_pPresentQueue = EXN_NULL_HANDLE;
+		VkSwapchainKHR m_pSwapChain = EXN_NULL_HANDLE;
+		VkPipelineLayout m_pPipelineLayout = EXN_NULL_HANDLE;
+		VkRenderPass m_pRenderPass = EXN_NULL_HANDLE;
+		VkPipeline m_pGraphicsPipeline = EXN_NULL_HANDLE;
+		VkCommandPool m_pCommandPool = EXN_NULL_HANDLE;
+		VkSurfaceKHR m_pSurface = EXN_NULL_HANDLE;
+		VkDescriptorPool m_pDescriptorPool = EXN_NULL_HANDLE;
+		VkSampler m_pTextureSampler = EXN_NULL_HANDLE;
+		VkDescriptorSetLayout m_pDescriptorSetLayout = EXN_NULL_HANDLE;
+		VkBuffer m_pVertexBuffer = EXN_NULL_HANDLE;
+		VkDeviceMemory m_pVertexBufferMemory = EXN_NULL_HANDLE;
+		VkBuffer m_pIndexBuffer = EXN_NULL_HANDLE;
+		VkDeviceMemory m_pIndexBufferMemory = EXN_NULL_HANDLE;
 		const int MAX_FRAMES_IN_FLIGHT = 2;
 
 		Renderer(const char *);
@@ -196,7 +218,7 @@ namespace eXngine::Renderers::Vulkan
 		void SetExtensions(std::vector<const char *>);
 		void SetFrameBufferSize(Size);
 		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
-		void LoadModel(const char *, std::vector<Utils::Mesh>, const char * = nullptr);
+		void LoadModel(const char *, std::vector<Utils::Mesh>, const char * = EXN_NULL_HANDLE);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -204,6 +226,32 @@ namespace eXngine::Renderers::Vulkan
 		VkCommandBuffer BeginSingleTimeCommands();
 		VkInstance GetVulkanInstance();
 		VkFormat FindDepthFormat();
+
+		// Base drawing functions
+		//void BeginFrame() override;
+		//void EndFrame() override;
+
+		//void DrawLine(const EXVEC3& start, const EXVEC3& end, const EXVEC3& color = EXVEC3(1.0f)) override;
+		//void DrawTriangle(const EXVEC3& v1, const EXVEC3& v2, const EXVEC3& v3, const EXVEC3& color = EXVEC3(1.0f)) override;
+		//void DrawQuad(const EXVEC3& position, const EXVEC2& size, const EXVEC3& color = EXVEC3(1.0f)) override;
+
+		//void BeginBatch(eXngine::PrimitiveTypes type) override;
+		//void AddVertex(const Utils::Vertex& vertex) override;
+		//void EndBatch() override;
+
+		//EXUINT32 CreateTexture(const void* data, EXUINT32 width, EXUINT32 height) override;
+		//void DeleteTexture(EXUINT32 textureId) override;
+		//void BindTexture(EXUINT32 textureId) override;
+
+		//void SetViewport(int x, int y, int width, int height) override;
+		//void EnableDepthTest(bool enable) override;
+		//void EnableBlending(bool enable) override;
+		//
+		//void PushMatrix() override;
+		//void PopMatrix() override;
+		//void Translate(const EXVEC3& offset) override;
+		//void Rotate(float angle, const EXVEC3& axis) override;
+		//void Scale(const EXVEC3& scale) override;
 	};
 }
 #endif

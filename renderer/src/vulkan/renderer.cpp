@@ -54,7 +54,7 @@ namespace eXngine::Renderers::Vulkan
         CreateSyncObjects();
     }
 
-    void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+    void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex)
     {
         vkResetCommandBuffer(commandBuffer, 0);
 
@@ -75,7 +75,7 @@ namespace eXngine::Renderers::Vulkan
         renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = m_swapChainExtent;
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.clearValueCount = static_cast<EXUINT32>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
         VkViewport viewport{};
@@ -116,10 +116,10 @@ namespace eXngine::Renderers::Vulkan
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1,
                         &m_pFrameObjects[m_currentFrame].descriptorSet, 0, nullptr);
-                    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_nIndicesCount), 1, currIndicesCount, currVertexCount, 0);
+                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, currIndicesCount, currVertexCount, 0);
 
-                    currIndicesCount += static_cast<uint32_t>(mesh.indices.size());
-                    currVertexCount += static_cast<uint32_t>(mesh.vertices.size());
+                    currIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
+                    currVertexCount += static_cast<EXUINT32>(mesh.vertices.size());
                 }
             }
 
@@ -130,12 +130,12 @@ namespace eXngine::Renderers::Vulkan
         assert(vkEndCommandBuffer(commandBuffer) == VK_SUCCESS);
     }
 
-    uint32_t Renderer::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    EXUINT32 Renderer::FindMemoryType(EXUINT32 typeFilter, VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(m_pPhysicalDevice, &memProperties);
 
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+        for (EXUINT32 i = 0; i < memProperties.memoryTypeCount; i++)
         {
             if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
             {
@@ -178,7 +178,7 @@ namespace eXngine::Renderers::Vulkan
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_pDescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = layouts.data();
 
         std::vector<VkDescriptorSet> descriptorSets;
@@ -231,7 +231,7 @@ namespace eXngine::Renderers::Vulkan
                     });
                 }
 
-                vkUpdateDescriptorSets(m_pDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+                vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
             }
         };
     }
@@ -276,7 +276,7 @@ namespace eXngine::Renderers::Vulkan
         this->UpdateFPS();
         vkWaitForFences(m_pDevice, 1, &m_pFrameObjects[m_currentFrame].inFlightFence, VK_TRUE, UINT64_MAX);
 
-        uint32_t imageIndex;
+        EXUINT32 imageIndex;
         auto result = vkAcquireNextImageKHR(m_pDevice, m_pSwapChain, UINT64_MAX, m_pFrameObjects[m_currentFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -399,10 +399,10 @@ namespace eXngine::Renderers::Vulkan
             VkInstanceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+            createInfo.enabledExtensionCount = static_cast<EXUINT32>(extensions.size());
             createInfo.ppEnabledExtensionNames = extensions.data();
 
-            uint32_t layerCount;
+            EXUINT32 layerCount;
             vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
             std::vector<VkLayerProperties> availableLayers(layerCount);
@@ -421,7 +421,7 @@ namespace eXngine::Renderers::Vulkan
 
             if (m_enableValidationLayers)
             {
-                createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
+                createInfo.enabledLayerCount = static_cast<EXUINT32>(m_validationLayers.size());
                 createInfo.ppEnabledLayerNames = m_validationLayers.data();
             }
             else
@@ -458,7 +458,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateSurface()
     {
-        uint32_t extensionCount = 0;
+        EXUINT32 extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
@@ -510,7 +510,7 @@ namespace eXngine::Renderers::Vulkan
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; // Optional
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<EXUINT32>(attributeDescriptions.size());
         vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -520,7 +520,7 @@ namespace eXngine::Renderers::Vulkan
 
         VkPipelineDynamicStateCreateInfo dynamicState{};
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicState.dynamicStateCount = static_cast<uint32_t>(m_dynamicStates.size());
+        dynamicState.dynamicStateCount = static_cast<EXUINT32>(m_dynamicStates.size());
         dynamicState.pDynamicStates = m_dynamicStates.data();
 
         VkPipelineViewportStateCreateInfo viewportState{};
@@ -601,7 +601,7 @@ namespace eXngine::Renderers::Vulkan
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = (uint32_t)shaderStages.size();
+        pipelineInfo.stageCount = (EXUINT32)shaderStages.size();
         pipelineInfo.pStages = shaderStages.data(); // new VkPipelineShaderStageCreateInfo[2]{ shaderStages[0], shaderStages[1] };//
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -659,7 +659,7 @@ namespace eXngine::Renderers::Vulkan
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = m_pRenderPass;
-            framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+            framebufferInfo.attachmentCount = static_cast<EXUINT32>(attachments.size());
             framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = m_swapChainExtent.width;
             framebufferInfo.height = m_swapChainExtent.height;
@@ -687,7 +687,7 @@ namespace eXngine::Renderers::Vulkan
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = m_pCommandPool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1; // (uint32_t)m_pFrameObjects.size();
+        allocInfo.commandBufferCount = 1; // (EXUINT32)m_pFrameObjects.size();
 
         m_pFrameObjects.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -749,7 +749,7 @@ namespace eXngine::Renderers::Vulkan
         const std::array<VkDescriptorSetLayoutBinding, 3> bindings = {uboLayoutBinding, samplerLayoutBinding, debugProfilerLayoutBinding};
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        layoutInfo.bindingCount = static_cast<EXUINT32>(bindings.size());
         layoutInfo.pBindings = bindings.data();
 
         assert(vkCreateDescriptorSetLayout(m_pDevice, &layoutInfo, nullptr, &m_pDescriptorSetLayout) == VK_SUCCESS);
@@ -834,15 +834,15 @@ namespace eXngine::Renderers::Vulkan
 
         // std::array<VkDescriptorPoolSize, 2> poolSizes{};
         // poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        // poolSizes[0].descriptorCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
         // poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) + 1 /* for ImGui runtime texture*/;
+        // poolSizes[1].descriptorCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT) + 1 /* for ImGui runtime texture*/;
 
         // VkDescriptorPoolCreateInfo poolInfo{};
         // poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        // poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        // poolInfo.poolSizeCount = static_cast<EXUINT32>(poolSizes.size());
         // poolInfo.pPoolSizes = poolSizes.data();
-        // poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        // poolInfo.maxSets = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
 
         // assert(vkCreateDescriptorPool(m_pDevice, &poolInfo, nullptr, &m_descriptorPool) == VK_SUCCESS);
 
@@ -865,7 +865,7 @@ namespace eXngine::Renderers::Vulkan
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         pool_info.maxSets = 1000 * EX_ARRAYSIZE(pool_sizes);
-        pool_info.poolSizeCount = static_cast<uint32_t>(EX_ARRAYSIZE(pool_sizes));
+        pool_info.poolSizeCount = static_cast<EXUINT32>(EX_ARRAYSIZE(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
         const VkResult err = vkCreateDescriptorPool(m_pDevice, &pool_info, nullptr, &m_pDescriptorPool);
         assert(err == VK_SUCCESS);
@@ -876,7 +876,7 @@ namespace eXngine::Renderers::Vulkan
         QueueFamilyIndices indices = FindQueueFamiliesWithSurfaces(m_pSurface, m_pPhysicalDevice);
         {
             std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-            std::vector<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+            std::vector<EXUINT32> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
             if (indices.graphicsFamily)
             {
@@ -884,7 +884,7 @@ namespace eXngine::Renderers::Vulkan
             }
 
             float queuePriority = 1.0f;
-            for (uint32_t queueFamily : uniqueQueueFamilies)
+            for (EXUINT32 queueFamily : uniqueQueueFamilies)
             {
                 VkDeviceQueueCreateInfo queueCreateInfo{};
                 queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -899,15 +899,15 @@ namespace eXngine::Renderers::Vulkan
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+            createInfo.queueCreateInfoCount = static_cast<EXUINT32>(queueCreateInfos.size());
             createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.pEnabledFeatures = &deviceFeatures;
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
+            createInfo.enabledExtensionCount = static_cast<EXUINT32>(m_deviceExtensions.size());
             createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
 
             if (m_enableValidationLayers)
             {
-                createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
+                createInfo.enabledLayerCount = static_cast<EXUINT32>(m_validationLayers.size());
                 createInfo.ppEnabledLayerNames = m_validationLayers.data();
             }
             else
@@ -930,7 +930,7 @@ namespace eXngine::Renderers::Vulkan
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        EXUINT32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
         if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
         {
@@ -1029,7 +1029,7 @@ namespace eXngine::Renderers::Vulkan
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        renderPassInfo.attachmentCount = static_cast<EXUINT32>(attachments.size());
         renderPassInfo.pAttachments = attachments.data();
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
@@ -1071,7 +1071,7 @@ namespace eXngine::Renderers::Vulkan
     {
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
-        uint32_t deviceCount = 0;
+        EXUINT32 deviceCount = 0;
         vkEnumeratePhysicalDevices(m_pInstance, &deviceCount, nullptr);
         assert(deviceCount > 0);
 
@@ -1109,7 +1109,7 @@ namespace eXngine::Renderers::Vulkan
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+        createInfo.pCode = reinterpret_cast<const EXUINT32 *>(code.data());
 
         VkShaderModule shaderModule;
         assert(vkCreateShaderModule(m_pDevice, &createInfo, nullptr, &shaderModule) == VK_SUCCESS);
@@ -1119,7 +1119,7 @@ namespace eXngine::Renderers::Vulkan
 
     bool Renderer::CheckDeviceExtensionSupport(VkPhysicalDevice device)
     {
-        uint32_t extensionCount;
+        EXUINT32 extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
@@ -1166,7 +1166,7 @@ namespace eXngine::Renderers::Vulkan
 
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_pSurface, &details.capabilities);
 
-        uint32_t formatCount;
+        EXUINT32 formatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_pSurface, &formatCount, nullptr);
 
         if (formatCount != 0)
@@ -1175,7 +1175,7 @@ namespace eXngine::Renderers::Vulkan
             vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_pSurface, &formatCount, details.formats.data());
         }
 
-        uint32_t presentModeCount;
+        EXUINT32 presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_pSurface, &presentModeCount, nullptr);
 
         if (presentModeCount != 0)
@@ -1192,7 +1192,7 @@ namespace eXngine::Renderers::Vulkan
     {
         QueueFamilyIndices indices;
 
-        uint32_t queueFamilyCount = 0;
+        EXUINT32 queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
@@ -1247,7 +1247,7 @@ namespace eXngine::Renderers::Vulkan
 
     VkExtent2D Renderer::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
     {
-        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+        if (capabilities.currentExtent.width != std::numeric_limits<EXUINT32>::max())
         {
             return capabilities.currentExtent;
         }
@@ -1255,8 +1255,8 @@ namespace eXngine::Renderers::Vulkan
         {
             VkExtent2D actualExtent =
                 {
-                    static_cast<uint32_t>(this->m_frameBufferSize.W),
-                    static_cast<uint32_t>(this->m_frameBufferSize.H)};
+                    static_cast<EXUINT32>(this->m_frameBufferSize.W),
+                    static_cast<EXUINT32>(this->m_frameBufferSize.H)};
 
             actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
             actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -1271,8 +1271,8 @@ namespace eXngine::Renderers::Vulkan
 
         for (const auto &mesh : meshes)
         {
-            m_nVerticesCount += static_cast<uint32_t>(mesh.vertices.size());
-            m_nIndicesCount += static_cast<uint32_t>(mesh.indices.size());
+            m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
+            m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
         }
     }
 

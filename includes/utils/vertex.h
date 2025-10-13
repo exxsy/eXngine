@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <eXngine.h>
 #include <array>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -10,8 +11,8 @@ namespace eXngine::Utils
 {
     struct Vertex
     {
-        glm::vec3 pos;
-        glm::vec2 texCoordinates;
+        EXVEC3 pos;
+        EXVEC2 texCoordinates;
 
         static VkVertexInputBindingDescription getBindingDescription();
         static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();

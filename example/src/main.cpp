@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 
+#include <eXngine.h>
 #include <glm/glm.hpp>
 #include <renderers/vulkan/renderer.h>
 #include <windows/glfw.h>
@@ -13,11 +14,13 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
+#ifndef IMGUI_DISABLE
 #include <imgui.h>
 #include <imconfig.h>
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+#endif
 
 #pragma comment(lib, "eXngine.window.lib")
 #pragma comment(lib, "eXngine.renderer.lib")
@@ -160,7 +163,6 @@ void ImGui_OnRender(BaseRenderer* renderer, VkCommandBuffer commandBuffer)
     ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", VulkanRenderer->GetFPS().m_fFPS, 1000.0f * VulkanRenderer->GetFPS().m_fAverageDeltaTime);
     ImGui::End();
 
-    ImGui::ShowDemoWindow();
     ImGui::Render();
 
     ImDrawData* draw_data = ImGui::GetDrawData();
@@ -208,11 +210,11 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
     float time = std::chrono::duration<float, std::chrono::minutes::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(28.f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
-	ubo.view = camera->GetViewMatrix();
-	ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(28.f, 0.0f, 60.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
+	//ubo.view = camera->GetViewMatrix();
+	//ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
 
     ubo.proj[1][1] *= -1;
 
@@ -225,9 +227,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
                     _In_ int nShowCmd)
 {
     const char* m_szName = "eXngine Demo";
-    const Size window_size = Size(1024, 768);
+    const eXngine::Size window_size = eXngine::Size(1024, 768);
     const std::vector<const char*> debug_extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
-    GLFWApplication* app = new GLFWApplication(m_szName, Point(0, 40), window_size, false);
+    GLFWApplication* app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
     Renderers::Vulkan::Renderer* renderer = new Renderers::Vulkan::Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
     app->SetKeyboardHandler(KeyboardHandler);
     app->SetScrollHandler(ScrollHandler);
