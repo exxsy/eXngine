@@ -3,16 +3,15 @@
 #include <eXngine.h>
 #include <atomic>
 #include <mutex>
-#include <utils/fbx-loader.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+
+//#include <utils/fbx-loader.h>
+#include <texture/image.h>
 
 namespace eXngine::Renderers
 {
 	class BaseRenderer;
 
-	typedef void (*OnRenderHandler)(BaseRenderer*, VkCommandBuffer);
 	typedef void (*OnCleanupHandler)();
 
 	struct FPSData
@@ -31,10 +30,8 @@ namespace eXngine::Renderers
 		char *m_szName = nullptr;
 		Size m_szFrameBufferSize;
 		FPSData m_sFpsData;
-		OnRenderHandler m_fOnRender;
 		OnCleanupHandler m_fOnCleanup;
 
-		std::unique_ptr<Utils::FbxLoader> m_pMeshLoader;
 		bool m_bFrameBufferResized = false;
 		//std::mutex m_resizeMutex;
 
@@ -43,10 +40,11 @@ namespace eXngine::Renderers
 		BaseRenderer(const char *, Size = Size(0, 0));
 		void SetFrameBufferResize(bool);
 		void SetFrameBufferSize(Size);
-		void SetOnRenderHandler(OnRenderHandler);
 		void SetOnCleanupHandler(OnCleanupHandler);
 		void UpdateFPS();
+
 		FPSData GetFPS() const;
+		Images::ImageManager* GetImageManager();
 
 		virtual void Initialize() = 0;
 		virtual void OnRender() = 0;

@@ -59,21 +59,25 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Output\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)includes;$(SolutionDir)3rdparty\glfw;$(SolutionDir)3rdparty\imgui;$(SolutionDir)3rdparty\glm;$(SolutionDir)3rdparty\vulkan;$(SolutionDir)3rdparty\fbx;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)3rdparty\lib\;$(SolutionDir)output\$(Platform)\$(Configuration)\;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\onecore\$(Platform);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)includes;$(SolutionDir)3rdparty\imgui;$(SolutionDir)3rdparty\glm;$(SolutionDir)3rdparty\vulkan;$(SolutionDir)3rdparty\fbx;$(SolutionDir)3rdparty\glfw;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)3rdparty\lib;$(SolutionDir)output\$(Platform)\$(Configuration);C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\onecore\$(Platform);$(LibraryPath)</LibraryPath>
     <AllProjectIncludesArePublic>true</AllProjectIncludesArePublic>
     <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
     <SourcePath>$(SolutionDir)3rdparty\imgui;$(VC_SourcePath);</SourcePath>
@@ -110,7 +114,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>STB_IMAGE_IMPLEMENTATION;_VULKAN;_IMGUI;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -119,6 +123,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
+      <AdditionalDependencies>eXngine.common.lib;eXngine.texture.lib;eXngine.renderer.lib;eXngine.window.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src/main.cpp" />
+    <ClCompile Include="src\fbx\fbx-loader.cpp" />
     <ClCompile Include="src\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="src\imgui\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
@@ -149,6 +155,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\file.h" />
+    <ClInclude Include="headers\main.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\PropertySheet.props" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

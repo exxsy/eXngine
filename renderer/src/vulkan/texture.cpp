@@ -1,14 +1,15 @@
-#ifdef _VULKAN
+#ifdef EXN_USE_VULKAN
 #include <cassert>
 #include <cstring>
-#include <renderers/vulkan/image.h>
+#include <utils/utils.h>
+#include <renderers/vulkan/texture.h>
 #include <renderers/vulkan/renderer.h>
-#include <3rdparty/stb_image/stb_image.h>
+
+extern EXINT32 hash(const std::string&);
 
 namespace eXngine::Renderers::Vulkan
 {
-    void Image::CreateBuffer(  VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-        VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+    void VkTexture::CreateBuffer(  VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
     {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -16,25 +17,25 @@ namespace eXngine::Renderers::Vulkan
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // only used by graphics queue
 
-        assert(vkCreateBuffer(m_pDevice, &bufferInfo, nullptr, &buffer) == VK_SUCCESS);
+        assert(vkCreateBuffer(m_pRenderer->m_pDevice, &bufferInfo, nullptr, &buffer) == VK_SUCCESS);
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_pDevice, buffer, &memRequirements);
+        vkGetBufferMemoryRequirements(m_pRenderer->m_pDevice, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        assert(vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &bufferMemory) == VK_SUCCESS);
+        assert(vkAllocateMemory(m_pRenderer->m_pDevice, &allocInfo, nullptr, &bufferMemory) == VK_SUCCESS);
 
-        vkBindBufferMemory(m_pDevice, buffer, bufferMemory, 0);
+        vkBindBufferMemory(m_pRenderer->m_pDevice, buffer, bufferMemory, 0);
     }
 
-    uint32_t Image::FindMemoryType(uint32_t typeFilter,  VkMemoryPropertyFlags properties)
+    uint32_t VkTexture::FindMemoryType(uint32_t typeFilter,  VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(m_pPhysicalDevice, &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(m_pRenderer->m_pPhysicalDevice, &memProperties);
 
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
         {
@@ -48,7 +49,7 @@ namespace eXngine::Renderers::Vulkan
         return 0;
     }
 
-    void Image::CreateDepthImage(VkExtent2D swapChainExtent, VkFormat depthFormat)
+    void VkTexture::CreateDepthImage(VkExtent2D swapChainExtent, VkFormat depthFormat)
     {
         CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_pImage, m_pDeviceMemory);
@@ -56,7 +57,7 @@ namespace eXngine::Renderers::Vulkan
         m_pView = CreateImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
     }
 
-    void Image::CreateFromImageData(const unsigned char* imageData, int width, int height)
+    void VkTexture::CreateFromImageData(const unsigned char* imageData, int width, int height)
     {
         const VkDeviceSize imageSize = width * height * 4;
 
@@ -67,9 +68,9 @@ namespace eXngine::Renderers::Vulkan
             stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(m_pDevice, stagingBufferMemory, 0, imageSize, 0, &data);
+        vkMapMemory(m_pRenderer->m_pDevice, stagingBufferMemory, 0, imageSize, 0, &data);
         memcpy(data, imageData, imageSize);
-        vkUnmapMemory(m_pDevice, stagingBufferMemory);
+        vkUnmapMemory(m_pRenderer->m_pDevice, stagingBufferMemory);
 
         // create a texture image in GPU memory
 
@@ -81,31 +82,29 @@ namespace eXngine::Renderers::Vulkan
         CopyBufferToImage(stagingBuffer, m_pImage, static_cast<uint32_t>(width), static_cast<uint32_t>(height));
         TransitionImageLayout(m_pImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        vkDestroyBuffer(m_pDevice, stagingBuffer, nullptr);
-        vkFreeMemory(m_pDevice, stagingBufferMemory, nullptr);
+        vkDestroyBuffer(m_pRenderer->m_pDevice, stagingBuffer, nullptr);
+        vkFreeMemory(m_pRenderer->m_pDevice, stagingBufferMemory, nullptr);
 
         m_pView = CreateImageView(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
-    void Image::CreateFromTextureFile(const char* texturePath)
+    void VkTexture::CreateFromTextureFile(const char * key, const char* texturePath)
     {
-        int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load(texturePath, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        assert(pixels);
-
-        CreateFromImageData(pixels, texWidth, texHeight);
-
-        stbi_image_free(pixels);
+        if (this->m_pRenderer->GetImageManager()->LoadImageFromFile(key, texturePath, Images::ImageColorFormat::RGBA))
+        {    
+			const auto image = this->m_pRenderer->GetImageManager()->GetImage(hash(key));
+		    CreateFromImageData(image->data, image->width, image->height);
+        }
     }
 
-    void Image::Release(VkDevice device)
+    void VkTexture::Release(VkDevice device)
     {
         vkDestroyImageView(device, m_pView, nullptr);
         vkDestroyImage(device, m_pImage, nullptr);
         vkFreeMemory(device, m_pDeviceMemory, nullptr);
     }
 
-    VkImageView Image::CreateImageView( VkFormat format, VkImageAspectFlags aspectFlags)
+    VkImageView VkTexture::CreateImageView( VkFormat format, VkImageAspectFlags aspectFlags)
     {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -119,12 +118,12 @@ namespace eXngine::Renderers::Vulkan
         viewInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView;
-        assert(vkCreateImageView(m_pDevice, &viewInfo, nullptr, &imageView) == VK_SUCCESS);
+        assert(vkCreateImageView(m_pRenderer->m_pDevice, &viewInfo, nullptr, &imageView) == VK_SUCCESS);
 
         return imageView;
     }
 
-    void Image::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+    void VkTexture::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -180,7 +179,7 @@ namespace eXngine::Renderers::Vulkan
         EndSingleTimeCommands(commandBuffer);
     }
 
-    void Image::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+    void VkTexture::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -213,16 +212,16 @@ namespace eXngine::Renderers::Vulkan
         EndSingleTimeCommands(commandBuffer);
     }
 
-    VkCommandBuffer Image::BeginSingleTimeCommands()
+    VkCommandBuffer VkTexture::BeginSingleTimeCommands()
     {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = m_pCommandPool;
+        allocInfo.commandPool = m_pRenderer->m_pCommandPool;
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        assert(vkAllocateCommandBuffers(m_pDevice, &allocInfo, &commandBuffer) == VK_SUCCESS);
+        assert(vkAllocateCommandBuffers(m_pRenderer->m_pDevice, &allocInfo, &commandBuffer) == VK_SUCCESS);
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -233,7 +232,7 @@ namespace eXngine::Renderers::Vulkan
         return commandBuffer;
     }
 
-    void Image::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
+    void VkTexture::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
     {
         vkEndCommandBuffer(commandBuffer);
 
@@ -242,13 +241,13 @@ namespace eXngine::Renderers::Vulkan
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_pGraphicsQueue);
+        vkQueueSubmit(m_pRenderer->m_pGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_pRenderer->m_pGraphicsQueue);
 
-        vkFreeCommandBuffers(m_pDevice, m_pCommandPool, 1, &commandBuffer);
+        vkFreeCommandBuffers(m_pRenderer->m_pDevice, m_pRenderer->m_pCommandPool, 1, &commandBuffer);
     }
 
-    void Image::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+    void VkTexture::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
         VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
     {
         VkImageCreateInfo imageInfo{};
@@ -266,31 +265,27 @@ namespace eXngine::Renderers::Vulkan
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
-        assert(vkCreateImage(m_pDevice, &imageInfo, nullptr, &image) == VK_SUCCESS);
+        assert(vkCreateImage(m_pRenderer->m_pDevice, &imageInfo, nullptr, &image) == VK_SUCCESS);
 
         VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_pDevice, image, &memRequirements);
+        vkGetImageMemoryRequirements(m_pRenderer->m_pDevice, image, &memRequirements);
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-        assert(vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &imageMemory) == VK_SUCCESS);
-        vkBindImageMemory(m_pDevice, image, imageMemory, 0);
+        assert(vkAllocateMemory(m_pRenderer->m_pDevice, &allocInfo, nullptr, &imageMemory) == VK_SUCCESS);
+        vkBindImageMemory(m_pRenderer->m_pDevice, image, imageMemory, 0);
     }
 
-	Image::Image(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue) : m_pDevice(device), 
-        m_pPhysicalDevice(physicalDevice), m_pCommandPool(commandPool), 
-        m_pGraphicsQueue(graphicsQueue)
-    {
-
+    VkTexture::VkTexture(Renderer renderer) 
+    { 
+        this->m_pRenderer = &renderer;
     }
 
-    Image::Image() { }
-
-    Image::~Image()
+    VkTexture::~VkTexture()
     {
-        //vkDestroyImageView(m_pDevice, m_pView, nullptr);
-        //vkDestroyImage(m_pDevice, m_pImage, nullptr);
+        //vkDestroyImageView(m_pRenderer->m_pDevice, m_pRenderer->m_pView, nullptr);
+        //vkDestroyImage(m_pRenderer->m_pDevice, m_pRenderer->m_pImage, nullptr);
     }
 }
 #endif

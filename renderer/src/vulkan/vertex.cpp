@@ -1,18 +1,18 @@
-#include <utils/vertex.h>
+#include <renderers/vulkan/vertex.h>
 
-namespace eXngine::Utils
+namespace eXngine::Renderers::Vulkan
 {
-    VkVertexInputBindingDescription Vertex::getBindingDescription()
+    VkVertexInputBindingDescription VkVertex::getBindingDescription()
     {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.stride = sizeof(VkVertex);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         return bindingDescription;
     }
 
-    std::array<VkVertexInputAttributeDescription, 2> Vertex::getAttributeDescriptions()
+    std::array<VkVertexInputAttributeDescription, 2> VkVertex::getAttributeDescriptions()
     {
         std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 
@@ -30,12 +30,12 @@ namespace eXngine::Utils
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+        attributeDescriptions[0].offset = offsetof(VkVertex, pos);
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, texCoordinates);
+        attributeDescriptions[1].offset = offsetof(VkVertex, texCoordinates);
 
         /*attributeDescriptions[2].binding = 0;
         attributeDescriptions[2].location = 1;

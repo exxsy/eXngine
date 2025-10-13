@@ -8,7 +8,7 @@ eXngine::Applications::Application::Application(const char * name, Point positio
 
 eXngine::Applications::Application::~Application()
 {
-	//delete this->m_name;
+	delete this->m_name;
 }
 
 const char* eXngine::Applications::Application::GetName()

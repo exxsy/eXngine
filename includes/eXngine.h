@@ -1,5 +1,8 @@
 #pragma once
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace eXngine
 {
 	struct Point
@@ -45,7 +48,7 @@ namespace eXngine
 #define EXINT32         __int32
 #define EXINT64         __int64
 #define EXINT           EXINT32
-#define EXUINT8         unsigned char
+#define EXUINT8         unsigned __int8
 #define EXUINT16        unsigned __int16
 #define EXUINT32        unsigned __int32
 #define EXUINT64        unsigned __int64			
@@ -71,3 +74,13 @@ namespace eXngine
 #define EXN_FALSE false
 #define EXN_NULL NULL
 #define EXN_NULL_HANDLE nullptr
+
+#define EXN_SINGLETON(type, name, ...) \
+	public: \
+		static type* GetInstance() { \
+			static type* s_##name = EXN_NULL_HANDLE;\
+			if (s_##name == EXN_NULL_HANDLE) { \
+				s_##name = new type(__VA_ARGS__); \
+			} \
+			return s_##name; \
+		};

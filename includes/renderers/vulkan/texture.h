@@ -1,30 +1,30 @@
 #pragma once
 
-#ifdef _VULKAN
+#ifdef EXN_USE_VULKAN
+#include <eXngine.h>
 #include <vulkan/vulkan_core.h>
 
 namespace eXngine::Renderers::Vulkan
 {
-    class Image
+    class Renderer;
+
+    class VkTexture
     {
     public:
+		Renderer * m_pRenderer = EXN_NULL_HANDLE;
+
         void CreateDepthImage(VkExtent2D, VkFormat);
         void CreateFromImageData(const unsigned char *, int, int);
-        void CreateFromTextureFile(const char *);
+        void CreateFromTextureFile(const char *, const char *);
         void Release(VkDevice);
 
-        Image();
-        Image(VkDevice, VkPhysicalDevice, VkCommandPool, VkQueue);
-        ~Image();
+        VkTexture() = default;
+        VkTexture(Renderer);
+        ~VkTexture();
 
-        VkImage m_pImage = VK_NULL_HANDLE;
-        VkDeviceMemory m_pDeviceMemory = VK_NULL_HANDLE;
-        VkImageView m_pView = VK_NULL_HANDLE;
-
-		VkQueue m_pGraphicsQueue = VK_NULL_HANDLE;
-		VkCommandPool m_pCommandPool = VK_NULL_HANDLE;
-		VkDevice m_pDevice = VK_NULL_HANDLE;
-		VkPhysicalDevice m_pPhysicalDevice = VK_NULL_HANDLE;
+        VkImage m_pImage = EXN_NULL_HANDLE;
+        VkDeviceMemory m_pDeviceMemory = EXN_NULL_HANDLE;
+        VkImageView m_pView = EXN_NULL_HANDLE;
     private:
         void CreateImage(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags, VkMemoryPropertyFlags, VkImage&, VkDeviceMemory&);
         void TransitionImageLayout(VkImage, VkFormat, VkImageLayout, VkImageLayout);

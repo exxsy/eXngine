@@ -22,6 +22,9 @@
     <Filter Include="Source Files\imgui\backends">
       <UniqueIdentifier>{318c844b-4f5f-4870-bb27-242c71b73b88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\fbx">
+      <UniqueIdentifier>{54cf6d4e-5795-47a7-8a7a-e353b7280fe5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src/main.cpp">
@@ -48,10 +51,19 @@
     <ClCompile Include="src\imgui\backends\imgui_impl_vulkan.cpp">
       <Filter>Source Files\imgui\backends</Filter>
     </ClCompile>
+    <ClCompile Include="src\fbx\fbx-loader.cpp">
+      <Filter>Source Files\fbx</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="headers\file.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
+    <ClInclude Include="headers\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\PropertySheet.props" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-#ifdef _VULKAN
+#ifdef EXN_USE_VULKAN
 #include <cassert>
 #include <iostream>
 #include <vector>
@@ -39,8 +39,8 @@ namespace eXngine::Renderers::Vulkan
 
             if (model.m_pTexture)
             {
-                model.m_pTexture->image = Image(m_pDevice, m_pPhysicalDevice, m_pCommandPool, m_pGraphicsQueue);
-                model.m_pTexture->image.CreateFromTextureFile(model.m_pTexture->path);
+                model.m_pTexture->texture = new VkTexture(*this);
+                model.m_pTexture->texture->CreateFromTextureFile(modelPair.first, model.m_pTexture->path);
             }
         }
 
@@ -217,7 +217,7 @@ namespace eXngine::Renderers::Vulkan
                 {
                     VkDescriptorImageInfo imageInfo{};
                     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    imageInfo.imageView = model.m_pTexture->image.m_pView; // m_Object
+                    imageInfo.imageView = model.m_pTexture->texture->m_pView; // m_Object
                     imageInfo.sampler = m_pTextureSampler;
 
                     descriptorWrites.push_back(VkWriteDescriptorSet {
@@ -346,7 +346,7 @@ namespace eXngine::Renderers::Vulkan
         vkDestroyRenderPass(m_pDevice, m_pRenderPass, nullptr);
         vkDestroySampler(m_pDevice, m_pTextureSampler, nullptr);
 
-        m_Depth.Release(m_pDevice);
+        m_Depth->Release(m_pDevice);
 
         for (auto shaderModule : m_shaderModules)
         {
@@ -503,8 +503,8 @@ namespace eXngine::Renderers::Vulkan
         scissor.offset = {0, 0};
         scissor.extent = m_swapChainExtent;
 
-        auto bindingDescription = eXngine::Utils::Vertex::getBindingDescription();
-        auto attributeDescriptions = eXngine::Utils::Vertex::getAttributeDescriptions();
+        auto bindingDescription = eXngine::Renderers::Vulkan::VkVertex::getBindingDescription();
+        auto attributeDescriptions = eXngine::Renderers::Vulkan::VkVertex::getAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -654,7 +654,7 @@ namespace eXngine::Renderers::Vulkan
 
         for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
         {
-            std::array<VkImageView, 2> attachments = { m_swapChainImageViews[i], m_Depth.m_pView };
+            std::array<VkImageView, 2> attachments = { m_swapChainImageViews[i], m_Depth->m_pView };
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -757,9 +757,9 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateDepthResources()
     {
-        m_Depth = Image(m_pDevice, m_pPhysicalDevice, m_pCommandPool, m_pGraphicsQueue);
-        m_Depth.Release(this->m_pDevice);
-        m_Depth.CreateDepthImage(this->m_swapChainExtent, this->FindDepthFormat());
+        m_Depth = new VkTexture(*this);
+        m_Depth->Release(this->m_pDevice);
+        m_Depth->CreateDepthImage(this->m_swapChainExtent, this->FindDepthFormat());
     }
 
     void Renderer::CreateVertexBuffer()
@@ -1329,17 +1329,22 @@ namespace eXngine::Renderers::Vulkan
         this->m_fOnUpdateUniformBuffers = fn;
     }
 
-    Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth(m_pDevice, m_pPhysicalDevice, m_pCommandPool, m_pGraphicsQueue)
+    void Renderer::SetOnRenderHandler(OnRenderHandler fn)
+    {
+        this->m_fOnRender = fn;
+    }
+
+    Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
     {
         CreateInstance(this->m_extensions);
     }
 
-    Renderer::Renderer(const char *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth(m_pDevice, m_pPhysicalDevice, m_pCommandPool, m_pGraphicsQueue)
+    Renderer::Renderer(const char *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
         CreateInstance(this->m_extensions);
     }
 
-    Renderer::Renderer(const char *name, Size sz, std::vector<const char *> extensions) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth(m_pDevice, m_pPhysicalDevice, m_pCommandPool, m_pGraphicsQueue)
+    Renderer::Renderer(const char *name, Size sz, std::vector<const char *> extensions) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
         m_extensions.insert(m_extensions.end(), extensions.begin(), extensions.end());
         CreateInstance(this->m_extensions);

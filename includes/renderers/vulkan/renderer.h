@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef _VULKAN
+#ifdef EXN_USE_VULKAN
 #include <Windows.h>
 #include <string>
 #include <vector>
@@ -14,7 +14,8 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_win32.h>
 #include <renderers/renderer.h>
-#include <renderers/vulkan/image.h>
+#include <renderers/vulkan/texture.h>
+#include <renderers/vulkan/vertex.h>
 #include <glm/glm.hpp>
 
 #undef EXN_NULL_HANDLE
@@ -23,6 +24,7 @@
 namespace eXngine::Renderers::Vulkan
 {
 	typedef void (*OnUpdateUniformBuffersHandler)(void *, EXUINT32);
+	typedef void (*OnRenderHandler)(BaseRenderer*, VkCommandBuffer);
 
 	struct QueueFamilyIndices
 	{
@@ -43,7 +45,7 @@ namespace eXngine::Renderers::Vulkan
 		alignas(16) EXMAT4 view;
 		alignas(16) EXMAT4 proj;
 	};
-
+	
 	struct VkFrameObject
 	{
 		VkCommandBuffer commandBuffer;
@@ -58,13 +60,13 @@ namespace eXngine::Renderers::Vulkan
 		void CleanUp(VkDevice device);
 	};
 
-	struct VkImageObject
+	struct VkTextureObject
 	{
 	public:
 		const char path[512];
-		Image image;
+		VkTexture * texture = EXN_NULL_HANDLE;
 
-		VkImageObject(const char *p) : path(""), image()
+		VkTextureObject(const char *p) : path(""), texture(nullptr)
 		{
 			// strncpy_s((char*)path, p, EX_ARRAYSIZE(path) - 1);
 			strncpy_s((char *)path, EX_ARRAYSIZE(path), p, EX_ARRAYSIZE(path) - 1);
@@ -74,19 +76,19 @@ namespace eXngine::Renderers::Vulkan
 	struct VkModelObject
 	{
 	public:
-		VkImageObject *m_pTexture = EXN_NULL_HANDLE;
+		VkTextureObject *m_pTexture = EXN_NULL_HANDLE;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
 
 		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, const char* texturePath = EXN_NULL_HANDLE) : m_pTexture(EXN_NULL_HANDLE), m_vMeshes(meshes)
 		{
-			if (texturePath != EXN_NULL_HANDLE) m_pTexture = new VkImageObject(texturePath);
+			if (texturePath != EXN_NULL_HANDLE) m_pTexture = new VkTextureObject(texturePath);
 		}
 
 		void CleanUp(VkDevice device)
 		{
 			if (m_pTexture)
 			{
-				m_pTexture->image.Release(device);
+				m_pTexture->texture->Release(device);
 				delete m_pTexture;
 				m_pTexture = EXN_NULL_HANDLE;
 			}
@@ -116,6 +118,7 @@ namespace eXngine::Renderers::Vulkan
 
 	class Renderer : public BaseRenderer
 	{
+		friend class VkTexture;
 	private:
 		Size m_frameBufferSize;
 		EXINT m_currentFrame = 0;
@@ -123,6 +126,7 @@ namespace eXngine::Renderers::Vulkan
 		EXUINT32 m_nIndicesCount = 0;
 		EXUINT32 m_queueRenderFamily = 0;
 		OnUpdateUniformBuffersHandler m_fOnUpdateUniformBuffers;
+		OnRenderHandler m_fOnRender;
 
 		std::vector<VkFrameObject> m_pFrameObjects;
 		std::vector<VkImage> m_swapChainImages;
@@ -131,8 +135,8 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkShaderModule> m_shaderModules;
 		std::map<const char *, VkModelObject> m_Models;
 
-		Image m_Depth;
 		VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
+		VkTexture * m_Depth = nullptr;
 		VkExtent2D m_swapChainExtent{};
 
 #ifdef NDEBUG
@@ -218,6 +222,8 @@ namespace eXngine::Renderers::Vulkan
 		void SetExtensions(std::vector<const char *>);
 		void SetFrameBufferSize(Size);
 		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
+		void SetOnRenderHandler(OnRenderHandler);
+
 		void LoadModel(const char *, std::vector<Utils::Mesh>, const char * = EXN_NULL_HANDLE);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
