@@ -107,7 +107,7 @@ namespace eXngine::Renderers::Vulkan
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-            auto currIndicesCount = 0;
+            //auto currIndicesCount = 0;
             auto currVertexCount = 0;
 
             for (const auto modelPair : m_Models)
@@ -119,16 +119,15 @@ namespace eXngine::Renderers::Vulkan
 
                 for (const auto mesh : model.m_vMeshes)
                 {
-                    VkBuffer vertexBuffers[] = {m_pVertexBuffer};
+                    VkBuffer vertexBuffers[] = { m_pVertexBuffer };
                     VkDeviceSize offsets[] = {0};
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1,
-                                            &model.descriptorSets[m_currentFrame], 0, nullptr);
-                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, currIndicesCount, currVertexCount, 0);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1, &model.descriptorSets[m_currentFrame], 0, nullptr);
+                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0 /*currIndicesCount*/, currVertexCount, 0);
 
-                    currIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
+                    //currIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
                     currVertexCount += static_cast<EXUINT32>(mesh.vertices.size());
                 }
             }
