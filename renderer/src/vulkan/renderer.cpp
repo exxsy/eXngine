@@ -40,11 +40,18 @@ namespace eXngine::Renderers::Vulkan
         {
             auto &model = modelPair.second;
 
-            if (model.m_pTexture && model.m_pTexture->path != nullptr)
+            if (model.m_pTextures.empty())
+                continue;
+
+            for (const auto & pair : model.m_pTextures) 
             {
-                model.m_pTexture->texture = new VkTexture(*this);
-                model.m_pTexture->texture->CreateFromTextureFile(modelPair.first, model.m_pTexture->path);
-            }
+                const auto texture = pair.second;
+                if (texture->path == nullptr)
+                    continue;
+
+                texture->texture = new VkTexture(*this);
+                texture->texture->CreateFromTextureFile(pair.first, texture->path);
+			}
         }
 
         CreateTextureSampler();
@@ -182,8 +189,11 @@ namespace eXngine::Renderers::Vulkan
         for (auto& modelPair : m_Models)
         {
             auto& model = modelPair.second;
+
             if (model.m_vMeshes.empty())
                 continue;
+
+            const EXUINT32 NUM_TEXTURES = static_cast<EXUINT32>(model.m_pTextures.size());
 
             VkDescriptorSetAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -218,36 +228,68 @@ namespace eXngine::Renderers::Vulkan
                     }
                 };
 
-                if (model.m_pTexture != nullptr)
+                if (!model.m_pTextures.empty())
                 {
-                    VkDescriptorImageInfo imageInfo{};
-                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    imageInfo.imageView = model.m_pTexture->texture->m_pView; // m_Object
-                    imageInfo.sampler = m_pTextureSampler;
+                    //std::vector<VkDescriptorImageInfo> imageInfos;
 
-                    descriptorWrites.push_back(VkWriteDescriptorSet{
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = descriptorSets[i],
-                        .dstBinding = 1,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        .pImageInfo = &imageInfo});
+                    uint32_t index = 0;
+                    for (const auto pair : model.m_pTextures) 
+                    {
+                        const auto data = pair.second;
+
+                        if (data->texture == EXN_NULL_HANDLE)
+                            continue;
+
+						/*imageInfos.push_back(
+                            VkDescriptorImageInfo 
+                            {
+							    .sampler = m_pTextureSampler,
+							    .imageView = data->texture->m_pView,
+                                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                            }
+                        );*/
+
+                        VkDescriptorImageInfo imageInfo
+                        {
+                            .sampler = m_pTextureSampler,
+                            .imageView = data->texture->m_pView,
+                            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        };
+
+                        descriptorWrites.push_back(
+                            VkWriteDescriptorSet
+                            {
+                                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                .dstSet = descriptorSets[i],
+                                .dstBinding = 1,
+                                .dstArrayElement = index++,
+                                .descriptorCount = 1,//NUM_TEXTURES,
+                                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .pImageInfo = &imageInfo
+                            }
+                        );
+					}
+
                 }
-                else {
+                else 
+                {
                     VkDescriptorImageInfo imageInfo{};
                     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     imageInfo.imageView = m_DefaultTexture->m_pView; // m_Object
                     imageInfo.sampler = m_pTextureSampler;
 
-                    descriptorWrites.push_back(VkWriteDescriptorSet{
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = descriptorSets[i],
-                        .dstBinding = 1,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        .pImageInfo = &imageInfo });
+                    descriptorWrites.push_back(
+                        VkWriteDescriptorSet
+                        {
+                            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                            .dstSet = descriptorSets[i],
+                            .dstBinding = 1,
+                            .dstArrayElement = 0,
+                            .descriptorCount = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .pImageInfo = &imageInfo 
+                        }
+                    );
                 }
 
                 vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -766,7 +808,14 @@ namespace eXngine::Renderers::Vulkan
         debugProfilerLayoutBinding.pImmutableSamplers = nullptr;
         debugProfilerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        const std::array<VkDescriptorSetLayoutBinding, 3> bindings = {uboLayoutBinding, samplerLayoutBinding, debugProfilerLayoutBinding};
+        //VkDescriptorSetLayoutBinding textureBinding{};
+        //textureBinding.binding = 1;
+        //textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        //textureBinding.descriptorCount = 1; // array size
+        //textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        //textureBinding.pImmutableSamplers = nullptr;
+
+        const std::vector<VkDescriptorSetLayoutBinding> bindings = { uboLayoutBinding, samplerLayoutBinding, debugProfilerLayoutBinding /*, textureBinding*/ };
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<EXUINT32>(bindings.size());
@@ -916,6 +965,7 @@ namespace eXngine::Renderers::Vulkan
 
             VkPhysicalDeviceFeatures deviceFeatures{};
             deviceFeatures.samplerAnisotropy = VK_TRUE;
+            deviceFeatures.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1285,11 +1335,22 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::LoadModel(const char *path, std::vector<Utils::Mesh> meshes, const char *texturePath)
+    void Renderer::LoadModel(const char *path, std::vector<Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths)
     {
-        m_Models.emplace(path, VkModelObject(meshes, texturePath));
+        m_Models.emplace(path, VkModelObject(meshes, texturePaths));
 
         for (const auto &mesh : meshes)
+        {
+            m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
+            m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
+        }
+    }
+
+    void Renderer::LoadModel(const char* path, std::vector<Utils::Mesh> meshes, const char * textureKey, const char* texturePath)
+    {
+        m_Models.emplace(path, VkModelObject(meshes, { {textureKey, texturePath} }));
+
+        for (const auto& mesh : meshes)
         {
             m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
             m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());

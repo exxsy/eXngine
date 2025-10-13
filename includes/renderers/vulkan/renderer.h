@@ -67,7 +67,6 @@ namespace eXngine::Renderers::Vulkan
 
 		VkTextureObject(const char *p) : path(""), texture(nullptr)
 		{
-			// strncpy_s((char*)path, p, EX_ARRAYSIZE(path) - 1);
 			strncpy_s((char *)path, EX_ARRAYSIZE(path), p, EX_ARRAYSIZE(path) - 1);
 		}
 	};
@@ -75,22 +74,34 @@ namespace eXngine::Renderers::Vulkan
 	struct VkModelObject
 	{
 	public:
-		VkTextureObject *m_pTexture = EXN_NULL_HANDLE;
+		std::map<const char *, VkTextureObject*> m_pTextures;
 		std::vector<VkDescriptorSet> descriptorSets;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
 
-		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, const char* texturePath = EXN_NULL_HANDLE) : m_pTexture(EXN_NULL_HANDLE), m_vMeshes(meshes)
+		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths) : m_vMeshes(meshes)
 		{
-			if (texturePath != EXN_NULL_HANDLE) m_pTexture = new VkTextureObject(texturePath);
+			for (auto texturePath : texturePaths)
+			{
+				if (texturePath.first != EXN_NULL_HANDLE && texturePath.second != EXN_NULL_HANDLE) m_pTextures.emplace(texturePath.first, new VkTextureObject(texturePath.second));
+			}
 		}
 
 		void CleanUp(VkDevice device)
 		{
-			if (m_pTexture)
+			if (!m_pTextures.empty())
 			{
-				m_pTexture->texture->Release(device);
-				delete m_pTexture;
-				m_pTexture = EXN_NULL_HANDLE;
+				for (auto& tex : m_pTextures)
+				{
+					auto& texObj = tex.second;
+
+					if (texObj->texture != EXN_NULL_HANDLE)
+					{
+						texObj->texture->Release(device);
+						delete texObj->texture;
+						texObj->texture = EXN_NULL_HANDLE;
+					}
+					delete texObj;
+				}
 			}
 		}
 	};
@@ -149,7 +160,7 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkDynamicState> m_dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		std::vector<const char *> m_extensions = {"VK_KHR_win32_surface"};
 		std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation"};
-		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
 		std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>> m_shaders = {};
 		/* VULKAN */
 	private:
@@ -225,7 +236,8 @@ namespace eXngine::Renderers::Vulkan
 		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
 		void SetOnRenderHandler(OnRenderHandler);
 
-		void LoadModel(const char *, std::vector<Utils::Mesh>, const char * = EXN_NULL_HANDLE);
+		void LoadModel(const char*, std::vector<Utils::Mesh>, const char*, const char*);
+		void LoadModel(const char *, std::vector<Utils::Mesh>, std::map<const char*, const char *>);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);

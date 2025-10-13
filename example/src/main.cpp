@@ -144,7 +144,7 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(28.f, 0.0f, 60.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(80.f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
 	//ubo.view = camera->GetViewMatrix();
 	//ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
@@ -154,10 +154,7 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
     memcpy(buffer, &ubo, sizeof(ubo));
 }
 
-int WINAPI wWinMain(_In_ HINSTANCE hInstance,
-                    _In_opt_ HINSTANCE hPrevInstance,
-                    _In_ LPWSTR lpCmdLine,
-                    _In_ int nShowCmd)
+int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
     const char* m_szName = "eXngine Demo";
     const eXngine::Size window_size = eXngine::Size(1024, 768);
@@ -178,8 +175,15 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
     const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
     const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
 
-    renderer->LoadModel("dragon", dragonModel.GetMeshes(), nullptr);// "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg");
-    renderer->LoadModel("ball", ballModel.GetMeshes(), "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
+    renderer->LoadModel(
+        "dragon", 
+        dragonModel.GetMeshes(),
+        { 
+            {"tex1", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"},
+            //{"tex2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg"}
+        }
+    );
+    renderer->LoadModel("ball", ballModel.GetMeshes(), "text2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
     renderer->SetOnRenderHandler(ImGui_OnRender);
     renderer->SetOnCleanupHandler(ImGui_OnExit);

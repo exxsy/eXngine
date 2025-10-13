@@ -11,5 +11,6 @@ namespace eXngine::Utils
     {
         EXVEC3 pos;
         EXVEC2 texCoordinates;
+		EXUINT32 textureIndex;
     };
 }
