@@ -98,7 +98,7 @@ namespace eXngine::Renderers::Vulkan
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
             auto currIndicesCount = 0;
-			auto currVertexCount = 0;
+            auto currVertexCount = 0;
 
             for (const auto modelPair : m_Models)
             {
@@ -109,13 +109,13 @@ namespace eXngine::Renderers::Vulkan
 
                 for (const auto mesh : model.m_vMeshes)
                 {
-                    VkBuffer vertexBuffers[] = { m_pVertexBuffer };
-                    VkDeviceSize offsets[] = { 0 };
+                    VkBuffer vertexBuffers[] = {m_pVertexBuffer};
+                    VkDeviceSize offsets[] = {0};
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1,
-                        &m_pFrameObjects[m_currentFrame].descriptorSet, 0, nullptr);
+                                            &model.descriptorSet, 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, currIndicesCount, currVertexCount, 0);
 
                     currIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
@@ -123,7 +123,8 @@ namespace eXngine::Renderers::Vulkan
                 }
             }
 
-            if (m_fOnRender) m_fOnRender(this, commandBuffer);
+            if (m_fOnRender)
+                m_fOnRender(this, commandBuffer);
         }
         vkCmdEndRenderPass(commandBuffer);
 
@@ -175,41 +176,42 @@ namespace eXngine::Renderers::Vulkan
     {
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_pDescriptorSetLayout);
 
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_pDescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
-
-        std::vector<VkDescriptorSet> descriptorSets;
-        descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
-
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        for (auto& modelPair : m_Models)
         {
-            auto &frame = m_pFrameObjects[i];
-            frame.descriptorSet = descriptorSets[i];
+            auto& model = modelPair.second;
+            if (model.m_vMeshes.empty())
+                continue;
 
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = frame.uniformBuffer;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = m_pDescriptorPool;
+            allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
+            allocInfo.pSetLayouts = layouts.data();
 
-            for (const auto modelPair : m_Models)
+            std::vector<VkDescriptorSet> descriptorSets;
+            descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+            assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
+
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
             {
-                auto model = modelPair.second;
-                if (model.m_vMeshes.empty())
-                    continue;
+                auto &frame = m_pFrameObjects[i];
+                model.descriptorSet = descriptorSets[i];
 
-                std::vector<VkWriteDescriptorSet> descriptorWrites{
+                VkDescriptorBufferInfo bufferInfo{};
+                bufferInfo.buffer = frame.uniformBuffer;
+                bufferInfo.offset = 0;
+                bufferInfo.range = sizeof(UniformBufferObject);
+
+                std::vector<VkWriteDescriptorSet> descriptorWrites
+                {
                     {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = descriptorSets[i],
-                        .dstBinding = 0, // Reminder from .vert: layout(binding = 0) uniform UniformBufferObject
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .pBufferInfo = &bufferInfo
+                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                         .dstSet = descriptorSets[i],
+                         .dstBinding = 0, // Reminder from .vert: layout(binding = 0) uniform UniformBufferObject
+                         .dstArrayElement = 0,
+                         .descriptorCount = 1,
+                         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                         .pBufferInfo = &bufferInfo
                     }
                 };
 
@@ -220,15 +222,14 @@ namespace eXngine::Renderers::Vulkan
                     imageInfo.imageView = model.m_pTexture->texture->m_pView; // m_Object
                     imageInfo.sampler = m_pTextureSampler;
 
-                    descriptorWrites.push_back(VkWriteDescriptorSet {
+                    descriptorWrites.push_back(VkWriteDescriptorSet{
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                         .dstSet = descriptorSets[i],
                         .dstBinding = 1,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
                         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        .pImageInfo = &imageInfo
-                    });
+                        .pImageInfo = &imageInfo});
                 }
 
                 vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -336,7 +337,8 @@ namespace eXngine::Renderers::Vulkan
     {
         vkDeviceWaitIdle(m_pDevice);
 
-		if (m_fOnCleanup) m_fOnCleanup();
+        if (m_fOnCleanup)
+            m_fOnCleanup();
 
         CleanupSwapChain();
 
@@ -654,7 +656,7 @@ namespace eXngine::Renderers::Vulkan
 
         for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
         {
-            std::array<VkImageView, 2> attachments = { m_swapChainImageViews[i], m_Depth->m_pView };
+            std::array<VkImageView, 2> attachments = {m_swapChainImageViews[i], m_Depth->m_pView};
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -798,9 +800,9 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::CreateIndexBuffer()
     {
         std::vector<uint16_t> indices = {};
-        for (const auto& model : m_Models)
+        for (const auto &model : m_Models)
         {
-            for (const auto& mesh : model.second.m_vMeshes)
+            for (const auto &mesh : model.second.m_vMeshes)
             {
                 indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
             }

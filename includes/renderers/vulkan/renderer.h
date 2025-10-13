@@ -54,7 +54,6 @@ namespace eXngine::Renderers::Vulkan
 		VkFence inFlightFence;
 		VkBuffer uniformBuffer;
 		VkDeviceMemory uniformBuffersMemory;
-		VkDescriptorSet descriptorSet;
 		void *uniformBuffersMapped;
 
 		void CleanUp(VkDevice device);
@@ -77,6 +76,7 @@ namespace eXngine::Renderers::Vulkan
 	{
 	public:
 		VkTextureObject *m_pTexture = EXN_NULL_HANDLE;
+		VkDescriptorSet descriptorSet;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
 
 		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, const char* texturePath = EXN_NULL_HANDLE) : m_pTexture(EXN_NULL_HANDLE), m_vMeshes(meshes)
