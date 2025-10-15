@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef EXN_USE_VULKAN
+#ifndef EXN_DISABLE_VULKAN
 #include <Windows.h>
 #include <string>
 #include <vector>

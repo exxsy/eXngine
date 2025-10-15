@@ -1,4 +1,4 @@
-#ifdef EXN_USE_VULKAN
+#ifndef EXN_DISABLE_VULKAN
 #include <cassert>
 #include <iostream>
 #include <vector>

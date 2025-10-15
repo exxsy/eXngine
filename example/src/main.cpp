@@ -163,7 +163,7 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(m_fZoomFactor, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), app->GetSize().W / (float)app->GetSize().H, 0.1f, 1000.0f);
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float)app->GetSize().W / (float)app->GetSize().H, 0.1f, 1000.0f);
 	//ubo.view = camera->GetViewMatrix();
 	//ubo.proj = camera->GetProjectionMatrix(window_size.W / window_size.H);
 

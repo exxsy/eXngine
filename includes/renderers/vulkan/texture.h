@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef EXN_USE_VULKAN
+#ifndef EXN_DISABLE_VULKAN
 #include <eXngine.h>
 #include <vulkan/vulkan_core.h>
 
