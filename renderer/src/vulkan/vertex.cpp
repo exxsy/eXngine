@@ -4,18 +4,15 @@ namespace eXngine::Renderers::Vulkan
 {
     VkVertexInputBindingDescription VkVertex::getBindingDescription()
     {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(VkVertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
+        return {
+            .binding = 0,
+            .stride = sizeof(VkVertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        };
     }
 
-    std::array<VkVertexInputAttributeDescription, 2> VkVertex::getAttributeDescriptions()
+    std::vector<VkVertexInputAttributeDescription> VkVertex::getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
-
         /*
             float: VK_FORMAT_R32_SFLOAT
             vec2: VK_FORMAT_R32G32_SFLOAT
@@ -27,21 +24,19 @@ namespace eXngine::Renderers::Vulkan
             double: VK_FORMAT_R64_SFLOAT, a double-precision (64-bit) float
          */
 
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(VkVertex, position);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(VkVertex, texture_coordinates);
-
-        /*attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 1;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, normal);*/
-
-        return attributeDescriptions;
+        return {
+            {
+                .location = 0,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32B32_SFLOAT,
+                .offset = offsetof(VkVertex, position),
+            },
+            {
+                .location = 1,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32_SFLOAT,
+                .offset = offsetof(VkVertex, texture_coordinates),
+            }
+        };
     }
 }

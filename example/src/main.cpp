@@ -206,7 +206,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         "dragon", 
         dragonModel.GetMeshes(),
         { 
-            { "tex1", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg" },
+            { "skin",   "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"      },
+            { "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
         }
     );
     //renderer->LoadModel("ball", ballModel.GetMeshes(), "text2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");

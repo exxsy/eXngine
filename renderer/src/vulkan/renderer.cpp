@@ -123,6 +123,18 @@ namespace eXngine::Renderers::Vulkan
 
                 if (model.m_vMeshes.empty())
                     continue;
+
+                VkModelPushConstants pushConstants {
+                    .textureIndex = model.m_vMeshes.front().textureIndex,
+                    .numTextures = model.m_vMeshes.front().numTextureCount
+                };
+
+                vkCmdPushConstants(commandBuffer, m_pPipelineLayout, 
+                    VK_SHADER_STAGE_FRAGMENT_BIT, 
+                    //sizeof(float) * 4 * 1,
+                    0,
+                    sizeof(VkModelPushConstants), 
+                    &pushConstants);
                 
                 for (const auto descriptorSet : model.descriptorSets)
                 {
@@ -133,13 +145,6 @@ namespace eXngine::Renderers::Vulkan
                     //currIndicesCount += static_cast<EXUINT32>(model.m_vMeshes.front().indices.size());
                     currVertexCount += static_cast<EXUINT32>(model.m_vMeshes.front().vertices.size());
 				}
-                //auto textureIndex = 0;
-                //auto NUM_TEXTURES = static_cast<EXUINT32>(model.m_pTextures.size());
-
-                //vkCmdPushConstants(commandBuffer, m_pPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int), &textureIndex);
-
-
-                //if (NUM_TEXTURES > 1) textureIndex = (textureIndex + 1) % NUM_TEXTURES;
             }
 
             if (m_fOnRender) m_fOnRender(this, commandBuffer);
@@ -194,10 +199,21 @@ namespace eXngine::Renderers::Vulkan
     {
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_pDescriptorSetLayout);
 
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = m_DefaultTexture->m_pView; // m_Object
-        imageInfo.sampler = m_pTextureSampler;
+        VkDescriptorImageInfo defaultImageInfo {
+            .sampler = m_pTextureSampler,
+            .imageView = m_DefaultTexture->m_pView,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
+        };
+
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = m_pDescriptorPool;
+        allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+        allocInfo.pSetLayouts = layouts.data();
+
+        std::vector<VkDescriptorSet> descriptorSets;
+        descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+        assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
 
         //VkDescriptorSetAllocateInfo allocInfo{};
         //allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -247,7 +263,6 @@ namespace eXngine::Renderers::Vulkan
         //    vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         //}
 
-        EXUINT32 index = 0;
         for (auto& modelPair : m_Models)
         {
             auto& model = modelPair.second;
@@ -255,184 +270,101 @@ namespace eXngine::Renderers::Vulkan
             if (model.m_vMeshes.empty())
                 continue;
 
-            const EXUINT32 NUM_TEXTURES = static_cast<EXUINT32>(model.m_pTextures.size());
-
-            VkDescriptorSetAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = m_pDescriptorPool;
-            allocInfo.descriptorSetCount = NUM_TEXTURES;
-            allocInfo.pSetLayouts = layouts.data();
-
-            std::vector<VkDescriptorSet> descriptorSets;
-            descriptorSets.resize(NUM_TEXTURES);
-            assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
-
-            auto& frame = m_pFrameObjects[0];
-            model.descriptorSets = descriptorSets;
-
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = frame.uniformBuffer;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            std::vector<VkWriteDescriptorSet> descriptorWrites
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
             {
+                auto& frame = m_pFrameObjects[i];
+                model.descriptorSets = descriptorSets;
+
+                VkDescriptorBufferInfo bufferInfo{};
+                bufferInfo.buffer = frame.uniformBuffer;
+                bufferInfo.offset = 0;
+                bufferInfo.range = sizeof(UniformBufferObject);
+
+                std::vector<VkWriteDescriptorSet> descriptorWrites
                 {
-                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                     .dstSet = descriptorSets[index],
-                     .dstBinding = 0,
-                     .dstArrayElement = 0,
-                     .descriptorCount = 1,
-                     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                     .pBufferInfo = &bufferInfo
-                }
-            };
-
-            if (!model.m_pTextures.empty())
-            {
-                //std::vector<VkDescriptorImageInfo> imageInfos;
-
-                for (const auto pair : model.m_pTextures)
-                {
-                    const auto data = pair.second;
-
-                    if (data->texture == EXN_NULL_HANDLE)
-                        continue;
-
-                    //imageInfos.push_back(
-                    //    VkDescriptorImageInfo
-                    //    {
-                    //        .sampler = m_pTextureSampler,
-                    //        .imageView = data->texture->m_pView,
-                    //        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    //    }
-                    //);
-
-                    VkDescriptorImageInfo textureInfo
                     {
-                        .sampler = m_pTextureSampler,
-                        .imageView = data->texture->m_pView,
-                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    };
+                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                         .dstSet = model.descriptorSets[i],
+                         .dstBinding = 0,
+                         .dstArrayElement = 0,
+                         .descriptorCount = 1,
+                         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                         .pBufferInfo = &bufferInfo
+                    }
+                };
+
+                if (!model.m_pTextures.empty())
+                {
+                    model.imageInfos.clear();
+
+                    for (const auto pair : model.m_pTextures)
+                    {
+                        const auto data = pair.second;
+
+                        if (data->texture == EXN_NULL_HANDLE)
+                            continue;
+
+                        model.imageInfos.push_back(
+                            VkDescriptorImageInfo
+                            {
+                                .sampler = m_pTextureSampler,
+                                .imageView = data->texture->m_pView,
+                                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                            }
+                        );
+                    }
+
+                    // If no valid textures, use default
+                    if (model.imageInfos.empty())
+                        model.imageInfos.push_back(defaultImageInfo);
+
+                    // Fill remaining slots with default texture to satisfy Vulkan validation
+                    // All descriptor array elements must be updated
+                    while (model.imageInfos.size() < MAX_TEXTURE_COUNT)
+                    {
+                        model.imageInfos.push_back(defaultImageInfo);
+                    }
 
                     descriptorWrites.push_back(
                         VkWriteDescriptorSet
                         {
                             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                            .dstSet = descriptorSets[index],
+                            .dstSet = model.descriptorSets[i],
                             .dstBinding = 1,
                             .dstArrayElement = 0,
-                            .descriptorCount = 1,//NUM_TEXTURES,
+                            .descriptorCount = MAX_TEXTURE_COUNT,
                             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .pImageInfo = &textureInfo,//imageInfos.data()//
+                            .pImageInfo = model.imageInfos.data()
+                        }
+                    );
+                }
+                else
+                {
+                    // No textures in model, fill all slots with default texture
+                    model.imageInfos.clear();
+                    for (int j = 0; j < MAX_TEXTURE_COUNT; ++j)
+                    {
+                        model.imageInfos.push_back(defaultImageInfo);
+                    }
+
+                    descriptorWrites.push_back(
+                        VkWriteDescriptorSet
+                        {
+                            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                            .dstSet = descriptorSets[i],
+                            .dstBinding = 1,
+                            .dstArrayElement = 0,
+                            .descriptorCount = MAX_TEXTURE_COUNT,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            .pImageInfo = model.imageInfos.data()
                         }
                     );
                 }
 
+                vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
             }
-            else
-            {
-                descriptorWrites.push_back(
-                    VkWriteDescriptorSet
-                    {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = descriptorSets[index],
-                        .dstBinding = 1,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        .pImageInfo = &imageInfo
-                    }
-                );
-            }
-
-            vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
-     //       for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-     //       {
-     //           auto &frame = m_pFrameObjects[0];
-     //           model.descriptorSets.resize(model.m_pTextures.size() + 1);
-
-     //           VkDescriptorBufferInfo bufferInfo{};
-     //           bufferInfo.buffer = frame.uniformBuffer;
-     //           bufferInfo.offset = 0;
-     //           bufferInfo.range = sizeof(UniformBufferObject);
-
-     //           std::vector<VkWriteDescriptorSet> descriptorWrites
-     //           {
-     //               {
-     //                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-     //                    .dstSet = model.descriptorSets[i],
-     //                    .dstBinding = 0,
-     //                    .dstArrayElement = 0,
-     //                    .descriptorCount = 1,
-     //                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-     //                    .pBufferInfo = &bufferInfo
-     //               }
-     //           };
-
-     //           if (!model.m_pTextures.empty())
-     //           {
-     //               //std::vector<VkDescriptorImageInfo> imageInfos;
-
-     //               for (const auto pair : model.m_pTextures) 
-     //               {
-     //                   const auto data = pair.second;
-
-     //                   if (data->texture == EXN_NULL_HANDLE)
-     //                       continue;
-
-					//	/*imageInfos.push_back(
-     //                       VkDescriptorImageInfo 
-     //                       {
-					//		    .sampler = m_pTextureSampler,
-					//		    .imageView = data->texture->m_pView,
-     //                           .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-     //                       }
-     //                   );*/
-
-     //                   VkDescriptorImageInfo textureInfo
-     //                   {
-     //                       .sampler = m_pTextureSampler,
-     //                       .imageView = data->texture->m_pView,
-     //                       .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-     //                   };
-
-     //                   descriptorWrites.push_back(
-     //                       VkWriteDescriptorSet
-     //                       {
-     //                           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-     //                           .dstSet = model.descriptorSets[i],
-     //                           .dstBinding = 1,
-     //                           .dstArrayElement = 0,
-     //                           .descriptorCount = 1,//NUM_TEXTURES,
-     //                           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-     //                           .pImageInfo = &textureInfo
-     //                       }
-     //                   );
-					//}
-
-     //           }
-     //           else 
-     //           {
-     //               descriptorWrites.push_back(
-     //                   VkWriteDescriptorSet
-     //                   {
-     //                       .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-     //                       .dstSet = descriptorSets[i],
-     //                       .dstBinding = 1,
-     //                       .dstArrayElement = 0,
-     //                       .descriptorCount = 1,
-     //                       .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-     //                       .pImageInfo = &imageInfo 
-     //                   }
-     //               );
-     //           }
-
-     //           vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-     //       }
-        };
-        
+ 
+        };   
     }
 
     VkCommandBuffer Renderer::BeginSingleTimeCommands()
@@ -775,16 +707,29 @@ namespace eXngine::Renderers::Vulkan
         colorBlending.blendConstants[3] = 0.0f; // Optional
 
         VkPushConstantRange debugViewPushConstants{};
-        debugViewPushConstants.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        debugViewPushConstants.offset = sizeof(float) * 0;
-        debugViewPushConstants.size = sizeof(float) * 4;
+        debugViewPushConstants.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        debugViewPushConstants.offset = sizeof(VkModelPushConstants) * 0;
+        debugViewPushConstants.size = sizeof(VkModelPushConstants);
+
+        //std::vector<VkPushConstantRange> pushConstants {
+        //    //{
+        //    //    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        //    //    .offset = sizeof(float) * 0,
+        //    //    .size = sizeof(float) * 4,
+        //    //},
+        //    {
+        //        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        //        .offset = sizeof(VkModelPushConstants) * 1,
+        //        .size = sizeof(VkModelPushConstants) * 1,
+        //    }
+        //};
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;                            // Optional
         pipelineLayoutInfo.pSetLayouts = &m_pDescriptorSetLayout;         // Optional
-        pipelineLayoutInfo.pushConstantRangeCount = 1;                    // Optional
-        pipelineLayoutInfo.pPushConstantRanges = &debugViewPushConstants; // Optional
+        pipelineLayoutInfo.pushConstantRangeCount = 1;// static_cast<EXUINT32>(pushConstants.size());                    // Optional
+        pipelineLayoutInfo.pPushConstantRanges = &debugViewPushConstants;// pushConstants.data(); // Optional
 
         assert(vkCreatePipelineLayout(m_pDevice, &pipelineLayoutInfo, nullptr, &m_pPipelineLayout) == VK_SUCCESS);
 
@@ -924,7 +869,7 @@ namespace eXngine::Renderers::Vulkan
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
-        samplerLayoutBinding.descriptorCount = 1;
+        samplerLayoutBinding.descriptorCount = MAX_TEXTURE_COUNT;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // to be used in fragment shaders
@@ -955,7 +900,7 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::CreateDepthResources()
     {
         m_Depth = new VkTexture(*this);
-        m_Depth->Release(this->m_pDevice);
+        //m_Depth->Release(this->m_pDevice);
         m_Depth->CreateDepthImage(this->m_szSwapChainExtent, this->FindDepthFormat());
     }
 
@@ -1027,37 +972,21 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateDescriptorPool()
     {
-        // For uniform buffer and a texture sampler
-
-        // std::array<VkDescriptorPoolSize, 2> poolSizes{};
-        // poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // poolSizes[0].descriptorCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
-        // poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // poolSizes[1].descriptorCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT) + 1 /* for ImGui runtime texture*/;
-
-        // VkDescriptorPoolCreateInfo poolInfo{};
-        // poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        // poolInfo.poolSizeCount = static_cast<EXUINT32>(poolSizes.size());
-        // poolInfo.pPoolSizes = poolSizes.data();
-        // poolInfo.maxSets = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
-
-        // assert(vkCreateDescriptorPool(m_pDevice, &poolInfo, nullptr, &m_descriptorPool) == VK_SUCCESS);
-
         constexpr int maxCount = 10;
 
-        VkDescriptorPoolSize pool_sizes[] =
-            {
-                {VK_DESCRIPTOR_TYPE_SAMPLER, maxCount},
-                {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxCount},
-                {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, maxCount},
-                {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxCount},
-                {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, maxCount},
-                {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, maxCount},
-                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxCount},
-                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxCount},
-                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, maxCount},
-                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, maxCount},
-                {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, maxCount}};
+        VkDescriptorPoolSize pool_sizes[] = {
+            {VK_DESCRIPTOR_TYPE_SAMPLER, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
+            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
+            {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
+            {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
+            {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, maxCount},
+            {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, maxCount},
+            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxCount},
+            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxCount},
+            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, maxCount},
+            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, maxCount},
+            {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, maxCount}
+        };
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -1578,6 +1507,23 @@ namespace eXngine::Renderers::Vulkan
     {
         m_extensions.insert(m_extensions.end(), extensions.begin(), extensions.end());
         CreateInstance(this->m_extensions);
+    }
+
+    VkPipelineShaderStageCreateInfo VkShaderModuleObject::getCreateInfo(VkShaderModule module, const char* name, VkShaderStageFlagBits stage)
+    {
+        return {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = stage, // VK_SHADER_STAGE_VERTEX_BIT;
+            .module = module,
+            .pName = name, //?
+        };
+    }
+
+    VkShaderModuleObject::VkShaderModuleObject(Renderer* renderer, VkShaderModule s) : m_pShader(s), m_pRenderer(renderer) {}
+    VkShaderModuleObject::VkShaderModuleObject(Renderer* renderer, std::vector<char> data) : m_pShader(renderer->CreateShaderModule(data)), m_pRenderer(renderer) {}
+    VkShaderModuleObject::~VkShaderModuleObject()
+    {
+        vkDestroyShaderModule(m_pRenderer->m_pDevice, m_pShader, nullptr);
     }
 }
 #endif

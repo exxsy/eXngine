@@ -20,6 +20,7 @@
 
 #undef EXN_NULL_HANDLE
 #define EXN_NULL_HANDLE VK_NULL_HANDLE
+#define MAX_TEXTURE_COUNT 16
 
 namespace eXngine::Renderers::Vulkan
 {
@@ -85,6 +86,7 @@ namespace eXngine::Renderers::Vulkan
 		std::map<const char *, VkTextureObject*> m_pTextures;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
 		std::vector<VkDescriptorSet> descriptorSets;
+		std::vector<VkDescriptorImageInfo> imageInfos;
 
 		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths) : m_vMeshes(meshes)
 		{
@@ -92,6 +94,12 @@ namespace eXngine::Renderers::Vulkan
 			{
 				if (texturePath.first != EXN_NULL_HANDLE && texturePath.second != EXN_NULL_HANDLE) 
 					m_pTextures.emplace(texturePath.first, new VkTextureObject(texturePath.second));
+			}
+
+			for (auto& mesh : m_vMeshes)
+			{
+				mesh.numTextureCount = m_pTextures.size();
+				mesh.textureIndex = 0;
 			}
 		}
 
@@ -117,6 +125,27 @@ namespace eXngine::Renderers::Vulkan
 
 			m_vMeshes.clear();
 		}
+	};
+
+	struct VkShaderModuleObject 
+	{
+	private:
+		VkShaderModule m_pShader = EXN_NULL_HANDLE;
+		Renderer* m_pRenderer = EXN_NULL_HANDLE;
+
+	public:
+		static VkPipelineShaderStageCreateInfo getCreateInfo(VkShaderModule module, const char* name, VkShaderStageFlagBits stage);
+
+		VkShaderModuleObject(Renderer* renderer, VkShaderModule s);
+		VkShaderModuleObject(Renderer* renderer, std::vector<char> data);
+		~VkShaderModuleObject();
+	};
+
+	struct VkModelPushConstants 
+	{
+	public:
+		alignas(4) EXUINT32 textureIndex = 0;
+		alignas(4) EXUINT32 numTextures = 1;
 	};
 
 	enum PrimitiveTypes : std::underlying_type<eXngine::PrimitiveTypes>::type
@@ -210,7 +239,6 @@ namespace eXngine::Renderers::Vulkan
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		VkFormat FindSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-		VkShaderModule CreateShaderModule(const std::vector<char> &code);
 
 	public:
 		VkExtent2D m_szSwapChainExtent;
@@ -256,6 +284,7 @@ namespace eXngine::Renderers::Vulkan
 		VkCommandBuffer BeginSingleTimeCommands();
 		VkInstance GetVulkanInstance();
 		VkFormat FindDepthFormat();
+		VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
 		// Base drawing functions
 		//void BeginFrame() override;

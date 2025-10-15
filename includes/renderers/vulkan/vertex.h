@@ -8,6 +8,6 @@ namespace eXngine::Renderers::Vulkan
     struct VkVertex : eXngine::Utils::Vertex
     {
         static VkVertexInputBindingDescription getBindingDescription();
-        static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
     };
 }

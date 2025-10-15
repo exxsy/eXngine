@@ -102,6 +102,7 @@ namespace eXngine::Renderers::Vulkan
         vkDestroyImageView(device, m_pView, nullptr);
         vkDestroyImage(device, m_pImage, nullptr);
         vkFreeMemory(device, m_pDeviceMemory, nullptr);
+		m_pRenderer = EXN_NULL_HANDLE;
     }
 
     VkImageView VkTexture::CreateImageView( VkFormat format, VkImageAspectFlags aspectFlags)

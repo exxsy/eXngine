@@ -1,8 +1,8 @@
 
 #pragma once
 
+#include <vector>
 #include <eXngine.h>
-#include <array>
 #include <vulkan/vulkan_core.h>
 
 namespace eXngine::Utils
