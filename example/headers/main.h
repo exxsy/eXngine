@@ -19,6 +19,8 @@
 
 #include "file.h"
 
+//#define IMGUI_DISABLE
+
 #ifndef IMGUI_DISABLE
 #include <imgui.h>
 #include <imconfig.h>
@@ -67,4 +69,4 @@ struct Camera {
 };
 
 Camera* camera = new Camera(glm::vec3(28.0f, 2.0f, 3.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f);
-float m_fZoomFactor = 0.0f;
+float m_fZoomFactor = 20.0f;

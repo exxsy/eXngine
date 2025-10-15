@@ -30,13 +30,13 @@ namespace eXngine::Applications
 		assert(m_pWindow != nullptr);
 
 		glfwSetWindowUserPointer(m_pWindow, m_pRenderer.value());
-		glfwSetFramebufferSizeCallback(m_pWindow, [](GLFWwindow *window, int width, int height)
-									   {
-		if (BaseRenderer* renderer = reinterpret_cast<BaseRenderer*>(glfwGetWindowUserPointer(window)))
-		{
-			//renderer->SetFrameBufferSize(Size(width, height));
-			renderer->SetFrameBufferResize(true);
-		} });
+		glfwSetFramebufferSizeCallback(m_pWindow, [](GLFWwindow *window, int width, int height) {
+			if (BaseRenderer* renderer = reinterpret_cast<BaseRenderer*>(glfwGetWindowUserPointer(window)))
+			{
+				renderer->SetFrameBufferSize(Size(width, height));
+				renderer->SetFrameBufferResized(true);
+			} 
+		});
 
 		return true;
 	}

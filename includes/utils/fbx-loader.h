@@ -21,9 +21,9 @@ namespace eXngine::Utils
         /* Tab character ("\t") counter */
         int m_numTabs = 0;
 
-        void PrintNode( FbxNode* pNode );
+        void PrintNode(FbxNode* pNode );
         void PrintTabs();
-        void PrintAttribute( FbxNodeAttribute* pAttribute );
+        void PrintAttribute(FbxNodeAttribute* pAttribute );
         FbxString GetAttributeTypeName( FbxNodeAttribute::EType type );
     };
 }

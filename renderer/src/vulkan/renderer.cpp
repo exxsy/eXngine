@@ -34,7 +34,7 @@ namespace eXngine::Renderers::Vulkan
         CreateFramebuffers();
 
 		m_DefaultTexture = new VkTexture(*this);
-		m_DefaultTexture->CreateFromImageData((const unsigned char*)"\xff\x00\x00", 1, 1);
+		m_DefaultTexture->CreateFromImageData(EXN_DUMMY_TEXTURE, 1, 1);
 
         for (const auto &modelPair : m_Models)
         {
@@ -84,21 +84,21 @@ namespace eXngine::Renderers::Vulkan
         renderPassInfo.renderPass = m_pRenderPass;
         renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
         renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = m_swapChainExtent;
+        renderPassInfo.renderArea.extent = m_szSwapChainExtent;
         renderPassInfo.clearValueCount = static_cast<EXUINT32>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = static_cast<float>(m_swapChainExtent.width);
-        viewport.height = static_cast<float>(m_swapChainExtent.height);
+        viewport.width = static_cast<float>(m_szSwapChainExtent.width);
+        viewport.height = static_cast<float>(m_szSwapChainExtent.height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent = m_swapChainExtent;
+        scissor.extent = m_szSwapChainExtent;
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         {
@@ -107,33 +107,42 @@ namespace eXngine::Renderers::Vulkan
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+            VkBuffer vertexBuffers[] = { m_pVertexBuffer };
+            VkDeviceSize offsets[] = { 0 };
+
+            //vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            //vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+            //vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1, &m_pFrameObjects[m_currentFrame].descriptorSet, 0, nullptr);
+            //vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, 0, 0);
+
             //auto currIndicesCount = 0;
             auto currVertexCount = 0;
-
             for (const auto modelPair : m_Models)
             {
                 auto model = modelPair.second;
 
                 if (model.m_vMeshes.empty())
                     continue;
-
-                for (const auto mesh : model.m_vMeshes)
+                
+                for (const auto descriptorSet : model.descriptorSets)
                 {
-                    VkBuffer vertexBuffers[] = { m_pVertexBuffer };
-                    VkDeviceSize offsets[] = {0};
-
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1, &model.descriptorSets[m_currentFrame], 0, nullptr);
-                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0 /*currIndicesCount*/, currVertexCount, 0);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0/*currIndicesCount*/, currVertexCount, 0);
+                    //currIndicesCount += static_cast<EXUINT32>(model.m_vMeshes.front().indices.size());
+                    currVertexCount += static_cast<EXUINT32>(model.m_vMeshes.front().vertices.size());
+				}
+                //auto textureIndex = 0;
+                //auto NUM_TEXTURES = static_cast<EXUINT32>(model.m_pTextures.size());
 
-                    //currIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
-                    currVertexCount += static_cast<EXUINT32>(mesh.vertices.size());
-                }
+                //vkCmdPushConstants(commandBuffer, m_pPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int), &textureIndex);
+
+
+                //if (NUM_TEXTURES > 1) textureIndex = (textureIndex + 1) % NUM_TEXTURES;
             }
 
-            if (m_fOnRender)
-                m_fOnRender(this, commandBuffer);
+            if (m_fOnRender) m_fOnRender(this, commandBuffer);
         }
         vkCmdEndRenderPass(commandBuffer);
 
@@ -185,6 +194,60 @@ namespace eXngine::Renderers::Vulkan
     {
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_pDescriptorSetLayout);
 
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_DefaultTexture->m_pView; // m_Object
+        imageInfo.sampler = m_pTextureSampler;
+
+        //VkDescriptorSetAllocateInfo allocInfo{};
+        //allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        //allocInfo.descriptorPool = m_pDescriptorPool;
+        //allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
+        //allocInfo.pSetLayouts = layouts.data();
+
+        //std::vector<VkDescriptorSet> descriptorSets;
+        //descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+        //assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
+
+        //VkDescriptorBufferInfo bufferInfo{};
+        //bufferInfo.buffer = m_pFrameObjects[0].uniformBuffer;
+        //bufferInfo.offset = 0;
+        //bufferInfo.range = sizeof(UniformBufferObject);
+
+        //for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        //{
+        //    auto& frame = m_pFrameObjects[i];
+        //    frame.descriptorSet = descriptorSets[i];
+
+        //    std::vector<VkWriteDescriptorSet> descriptorWrites
+        //    {
+        //        {
+        //             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        //             .dstSet = descriptorSets[i],
+        //             .dstBinding = 0,
+        //             .dstArrayElement = 0,
+        //             .descriptorCount = 1,
+        //             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        //             .pBufferInfo = &bufferInfo
+        //        }
+        //    };
+
+        //    descriptorWrites.push_back(
+        //        {
+        //            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        //            .dstSet = descriptorSets[i],
+        //            .dstBinding = 1,
+        //            .dstArrayElement = 0,
+        //            .descriptorCount = 1,
+        //            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        //            .pImageInfo = &imageInfo
+        //        }
+        //    );
+
+        //    vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        //}
+
+        EXUINT32 index = 0;
         for (auto& modelPair : m_Models)
         {
             auto& model = modelPair.second;
@@ -197,103 +260,179 @@ namespace eXngine::Renderers::Vulkan
             VkDescriptorSetAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             allocInfo.descriptorPool = m_pDescriptorPool;
-            allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
+            allocInfo.descriptorSetCount = NUM_TEXTURES;
             allocInfo.pSetLayouts = layouts.data();
 
             std::vector<VkDescriptorSet> descriptorSets;
-            descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+            descriptorSets.resize(NUM_TEXTURES);
             assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
 
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+            auto& frame = m_pFrameObjects[0];
+            model.descriptorSets = descriptorSets;
+
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = frame.uniformBuffer;
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            std::vector<VkWriteDescriptorSet> descriptorWrites
             {
-                auto &frame = m_pFrameObjects[i];
-                model.descriptorSets = descriptorSets;
-
-                VkDescriptorBufferInfo bufferInfo{};
-                bufferInfo.buffer = frame.uniformBuffer;
-                bufferInfo.offset = 0;
-                bufferInfo.range = sizeof(UniformBufferObject);
-
-                std::vector<VkWriteDescriptorSet> descriptorWrites
                 {
-                    {
-                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                         .dstSet = descriptorSets[i],
-                         .dstBinding = 0, // Reminder from .vert: layout(binding = 0) uniform UniformBufferObject
-                         .dstArrayElement = 0,
-                         .descriptorCount = 1,
-                         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                         .pBufferInfo = &bufferInfo
-                    }
-                };
-
-                if (!model.m_pTextures.empty())
-                {
-                    //std::vector<VkDescriptorImageInfo> imageInfos;
-
-                    uint32_t index = 0;
-                    for (const auto pair : model.m_pTextures) 
-                    {
-                        const auto data = pair.second;
-
-                        if (data->texture == EXN_NULL_HANDLE)
-                            continue;
-
-						/*imageInfos.push_back(
-                            VkDescriptorImageInfo 
-                            {
-							    .sampler = m_pTextureSampler,
-							    .imageView = data->texture->m_pView,
-                                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                            }
-                        );*/
-
-                        VkDescriptorImageInfo imageInfo
-                        {
-                            .sampler = m_pTextureSampler,
-                            .imageView = data->texture->m_pView,
-                            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                        };
-
-                        descriptorWrites.push_back(
-                            VkWriteDescriptorSet
-                            {
-                                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                .dstSet = descriptorSets[i],
-                                .dstBinding = 1,
-                                .dstArrayElement = index++,
-                                .descriptorCount = 1,//NUM_TEXTURES,
-                                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                .pImageInfo = &imageInfo
-                            }
-                        );
-					}
-
+                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                     .dstSet = descriptorSets[index],
+                     .dstBinding = 0,
+                     .dstArrayElement = 0,
+                     .descriptorCount = 1,
+                     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                     .pBufferInfo = &bufferInfo
                 }
-                else 
+            };
+
+            if (!model.m_pTextures.empty())
+            {
+                //std::vector<VkDescriptorImageInfo> imageInfos;
+
+                for (const auto pair : model.m_pTextures)
                 {
-                    VkDescriptorImageInfo imageInfo{};
-                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    imageInfo.imageView = m_DefaultTexture->m_pView; // m_Object
-                    imageInfo.sampler = m_pTextureSampler;
+                    const auto data = pair.second;
+
+                    if (data->texture == EXN_NULL_HANDLE)
+                        continue;
+
+                    //imageInfos.push_back(
+                    //    VkDescriptorImageInfo
+                    //    {
+                    //        .sampler = m_pTextureSampler,
+                    //        .imageView = data->texture->m_pView,
+                    //        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    //    }
+                    //);
+
+                    VkDescriptorImageInfo textureInfo
+                    {
+                        .sampler = m_pTextureSampler,
+                        .imageView = data->texture->m_pView,
+                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    };
 
                     descriptorWrites.push_back(
                         VkWriteDescriptorSet
                         {
                             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                            .dstSet = descriptorSets[i],
+                            .dstSet = descriptorSets[index],
                             .dstBinding = 1,
                             .dstArrayElement = 0,
-                            .descriptorCount = 1,
+                            .descriptorCount = 1,//NUM_TEXTURES,
                             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .pImageInfo = &imageInfo 
+                            .pImageInfo = &textureInfo,//imageInfos.data()//
                         }
                     );
                 }
 
-                vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
             }
+            else
+            {
+                descriptorWrites.push_back(
+                    VkWriteDescriptorSet
+                    {
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                        .dstSet = descriptorSets[index],
+                        .dstBinding = 1,
+                        .dstArrayElement = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                        .pImageInfo = &imageInfo
+                    }
+                );
+            }
+
+            vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+     //       for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+     //       {
+     //           auto &frame = m_pFrameObjects[0];
+     //           model.descriptorSets.resize(model.m_pTextures.size() + 1);
+
+     //           VkDescriptorBufferInfo bufferInfo{};
+     //           bufferInfo.buffer = frame.uniformBuffer;
+     //           bufferInfo.offset = 0;
+     //           bufferInfo.range = sizeof(UniformBufferObject);
+
+     //           std::vector<VkWriteDescriptorSet> descriptorWrites
+     //           {
+     //               {
+     //                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+     //                    .dstSet = model.descriptorSets[i],
+     //                    .dstBinding = 0,
+     //                    .dstArrayElement = 0,
+     //                    .descriptorCount = 1,
+     //                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+     //                    .pBufferInfo = &bufferInfo
+     //               }
+     //           };
+
+     //           if (!model.m_pTextures.empty())
+     //           {
+     //               //std::vector<VkDescriptorImageInfo> imageInfos;
+
+     //               for (const auto pair : model.m_pTextures) 
+     //               {
+     //                   const auto data = pair.second;
+
+     //                   if (data->texture == EXN_NULL_HANDLE)
+     //                       continue;
+
+					//	/*imageInfos.push_back(
+     //                       VkDescriptorImageInfo 
+     //                       {
+					//		    .sampler = m_pTextureSampler,
+					//		    .imageView = data->texture->m_pView,
+     //                           .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+     //                       }
+     //                   );*/
+
+     //                   VkDescriptorImageInfo textureInfo
+     //                   {
+     //                       .sampler = m_pTextureSampler,
+     //                       .imageView = data->texture->m_pView,
+     //                       .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+     //                   };
+
+     //                   descriptorWrites.push_back(
+     //                       VkWriteDescriptorSet
+     //                       {
+     //                           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+     //                           .dstSet = model.descriptorSets[i],
+     //                           .dstBinding = 1,
+     //                           .dstArrayElement = 0,
+     //                           .descriptorCount = 1,//NUM_TEXTURES,
+     //                           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+     //                           .pImageInfo = &textureInfo
+     //                       }
+     //                   );
+					//}
+
+     //           }
+     //           else 
+     //           {
+     //               descriptorWrites.push_back(
+     //                   VkWriteDescriptorSet
+     //                   {
+     //                       .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+     //                       .dstSet = descriptorSets[i],
+     //                       .dstBinding = 1,
+     //                       .dstArrayElement = 0,
+     //                       .descriptorCount = 1,
+     //                       .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+     //                       .pImageInfo = &imageInfo 
+     //                   }
+     //               );
+     //           }
+
+     //           vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+     //       }
         };
+        
     }
 
     VkCommandBuffer Renderer::BeginSingleTimeCommands()
@@ -333,40 +472,41 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::OnRender()
     {
-        this->UpdateFPS();
-        vkWaitForFences(m_pDevice, 1, &m_pFrameObjects[m_currentFrame].inFlightFence, VK_TRUE, UINT64_MAX);
+        auto & frameObject = m_pFrameObjects[m_currentFrame];
+
+        UpdateFPS();
+        vkWaitForFences(m_pDevice, 1, &frameObject.inFlightFence, VK_TRUE, UINT64_MAX);
 
         EXUINT32 imageIndex;
-        auto result = vkAcquireNextImageKHR(m_pDevice, m_pSwapChain, UINT64_MAX, m_pFrameObjects[m_currentFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        auto result = vkAcquireNextImageKHR(m_pDevice, m_pSwapChain, UINT64_MAX, frameObject.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            m_bFrameBufferResized = false;
-            this->ResetSwapChain();
+            ResetSwapChain();
             return;
         }
 
         assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
 
-        vkResetFences(m_pDevice, 1, &m_pFrameObjects[m_currentFrame].inFlightFence);
-        m_fOnUpdateUniformBuffers(m_pFrameObjects[m_currentFrame].uniformBuffersMapped, m_currentFrame);
-        RecordCommandBuffer(m_pFrameObjects[m_currentFrame].commandBuffer, imageIndex);
+        vkResetFences(m_pDevice, 1, &frameObject.inFlightFence);
+        m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
+        RecordCommandBuffer(frameObject.commandBuffer, imageIndex);
 
-        VkSemaphore waitSemaphores[] = {m_pFrameObjects[m_currentFrame].imageAvailableSemaphore};
-        VkSemaphore signalSemaphores[] = {m_pFrameObjects[m_currentFrame].renderFinishedSemaphore};
+        VkSemaphore waitSemaphores[] = {frameObject.imageAvailableSemaphore};
+        VkSemaphore signalSemaphores[] = {frameObject.renderFinishedSemaphore};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.waitSemaphoreCount = EX_ARRAYSIZE(waitSemaphores);
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_pFrameObjects[m_currentFrame].commandBuffer;
-        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pCommandBuffers = &frameObject.commandBuffer;
+        submitInfo.signalSemaphoreCount = EX_ARRAYSIZE(signalSemaphores);
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        assert(vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, m_pFrameObjects[m_currentFrame].inFlightFence) == VK_SUCCESS);
+        assert(vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence) == VK_SUCCESS);
 
         VkPresentInfoKHR presentInfo{};
         VkSwapchainKHR swapChains[] = {m_pSwapChain};
@@ -381,9 +521,10 @@ namespace eXngine::Renderers::Vulkan
 
         result = vkQueuePresentKHR(m_pPresentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_bFrameBufferResized)
         {
-            this->ResetSwapChain();
+            m_bFrameBufferResized = false;
+            ResetSwapChain();
             return;
         }
 
@@ -408,17 +549,16 @@ namespace eXngine::Renderers::Vulkan
         vkDestroySampler(m_pDevice, m_pTextureSampler, nullptr);
 
         m_Depth->Release(m_pDevice);
+		m_DefaultTexture->Release(m_pDevice);
 
         for (auto shaderModule : m_shaderModules)
         {
             vkDestroyShaderModule(m_pDevice, shaderModule, nullptr);
         }
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        for (auto& frame : m_pFrameObjects)
         {
-            vkDestroySemaphore(m_pDevice, m_pFrameObjects[i].renderFinishedSemaphore, nullptr);
-            vkDestroySemaphore(m_pDevice, m_pFrameObjects[i].imageAvailableSemaphore, nullptr);
-            vkDestroyFence(m_pDevice, m_pFrameObjects[i].inFlightFence, nullptr);
+            frame.CleanUp(this->m_pDevice);
         }
 
         vkDestroyCommandPool(m_pDevice, m_pCommandPool, nullptr);
@@ -528,7 +668,7 @@ namespace eXngine::Renderers::Vulkan
 
         for (const auto &extension : extensions)
         {
-            std::cout << '\t\t' << extension.extensionName << '\n';
+            std::cout << "\t" << extension.extensionName << '\n';
         }
     }
 
@@ -555,14 +695,14 @@ namespace eXngine::Renderers::Vulkan
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float)m_swapChainExtent.width;
-        viewport.height = (float)m_swapChainExtent.height;
+        viewport.width = (float)m_szSwapChainExtent.width;
+        viewport.height = (float)m_szSwapChainExtent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent = m_swapChainExtent;
+        scissor.extent = m_szSwapChainExtent;
 
         auto bindingDescription = eXngine::Renderers::Vulkan::VkVertex::getBindingDescription();
         auto attributeDescriptions = eXngine::Renderers::Vulkan::VkVertex::getAttributeDescriptions();
@@ -683,17 +823,6 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateSyncObjects()
     {
-        // VkSemaphoreCreateInfo semaphoreInfo{};
-        // semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        // VkFenceCreateInfo fenceInfo{};
-        // fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        // fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        // m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        // m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        // m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -722,8 +851,8 @@ namespace eXngine::Renderers::Vulkan
             framebufferInfo.renderPass = m_pRenderPass;
             framebufferInfo.attachmentCount = static_cast<EXUINT32>(attachments.size());
             framebufferInfo.pAttachments = attachments.data();
-            framebufferInfo.width = m_swapChainExtent.width;
-            framebufferInfo.height = m_swapChainExtent.height;
+            framebufferInfo.width = m_szSwapChainExtent.width;
+            framebufferInfo.height = m_szSwapChainExtent.height;
             framebufferInfo.layers = 1;
 
             assert(vkCreateFramebuffer(m_pDevice, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) == VK_SUCCESS);
@@ -827,7 +956,7 @@ namespace eXngine::Renderers::Vulkan
     {
         m_Depth = new VkTexture(*this);
         m_Depth->Release(this->m_pDevice);
-        m_Depth->CreateDepthImage(this->m_swapChainExtent, this->FindDepthFormat());
+        m_Depth->CreateDepthImage(this->m_szSwapChainExtent, this->FindDepthFormat());
     }
 
     void Renderer::CreateVertexBuffer()
@@ -865,7 +994,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateIndexBuffer()
     {
-        std::vector<uint16_t> indices = {};
+        std::vector<EXUINT16> indices = {};
         for (const auto &model : m_Models)
         {
             for (const auto &mesh : model.second.m_vMeshes)
@@ -962,17 +1091,40 @@ namespace eXngine::Renderers::Vulkan
                 queueCreateInfos.push_back(queueCreateInfo);
             }
 
+            {
+                VkPhysicalDeviceDescriptorIndexingFeatures supported{};
+                supported.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+                VkPhysicalDeviceFeatures2 features2{};
+                features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+                features2.pNext = &supported;
+
+                vkGetPhysicalDeviceFeatures2(m_pPhysicalDevice, &features2);
+
+                if (!supported.runtimeDescriptorArray || !supported.shaderSampledImageArrayNonUniformIndexing)
+                    throw std::runtime_error("Descriptor indexing not supported on this GPU");
+            }
+
+            VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+            indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+            indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+            indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+            indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+            indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+
             VkPhysicalDeviceFeatures deviceFeatures{};
             deviceFeatures.samplerAnisotropy = VK_TRUE;
-            deviceFeatures.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
+            deviceFeatures.shaderSampledImageArrayDynamicIndexing = indexingFeatures.shaderSampledImageArrayNonUniformIndexing;
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
             createInfo.queueCreateInfoCount = static_cast<EXUINT32>(queueCreateInfos.size());
             createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.pEnabledFeatures = &deviceFeatures;
+            createInfo.pNext = &indexingFeatures;
             createInfo.enabledExtensionCount = static_cast<EXUINT32>(m_deviceExtensions.size());
             createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
+            
 
             if (m_enableValidationLayers)
             {
@@ -1027,7 +1179,7 @@ namespace eXngine::Renderers::Vulkan
         vkGetSwapchainImagesKHR(m_pDevice, m_pSwapChain, &imageCount, m_swapChainImages.data());
 
         m_swapChainImageFormat = surfaceFormat.format;
-        m_swapChainExtent = extent;
+        m_szSwapChainExtent = extent;
     }
 
     void Renderer::CreateImageViews()
@@ -1128,11 +1280,9 @@ namespace eXngine::Renderers::Vulkan
     {
         vkDeviceWaitIdle(m_pDevice);
         CleanupSwapChain();
-
         CreateSwapChain();
         CreateImageViews();
-        CreateRenderPass();
-        CreateGraphicsPipeline();
+        CreateDepthResources();
         CreateFramebuffers();
     }
 

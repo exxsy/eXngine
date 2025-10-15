@@ -7,5 +7,8 @@ layout(location = 2) in flat uint textureIndex;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(textures[textureIndex], vec2(fragTexCoord.x, 1.0 - fragTexCoord.y));
+    outColor = texture(
+        textures[textureIndex], 
+        vec2(fragTexCoord.x, 1.0 - fragTexCoord.y)
+    );
 }

@@ -38,7 +38,7 @@ namespace eXngine::Renderers
 		void* m_pDevice = nullptr;
 	public:
 		BaseRenderer(const char *, Size = Size(0, 0));
-		void SetFrameBufferResize(bool);
+		void SetFrameBufferResized(bool);
 		void SetFrameBufferSize(Size);
 		void SetOnCleanupHandler(OnCleanupHandler);
 		void UpdateFPS();

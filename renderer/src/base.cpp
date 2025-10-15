@@ -7,7 +7,7 @@ namespace eXngine::Renderers
 {
 	BaseRenderer::BaseRenderer(const char* name, Size sz) : m_szName(const_cast<char*>(name)), m_szFrameBufferSize(sz) { }
 
-	void BaseRenderer::SetFrameBufferResize(bool state)
+	void BaseRenderer::SetFrameBufferResized(bool state)
 	{
 		this->m_bFrameBufferResized = state;
 	}
@@ -24,8 +24,7 @@ namespace eXngine::Renderers
 
     void BaseRenderer::UpdateFPS()
     {
-        auto now = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
         m_sFpsData.m_fDeltaTime = currentTime - m_sFpsData.m_fLastTime;
         m_sFpsData.m_fLastTime = static_cast<float>(currentTime);

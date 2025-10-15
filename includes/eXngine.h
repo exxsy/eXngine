@@ -74,6 +74,7 @@ namespace eXngine
 #define EXN_FALSE false
 #define EXN_NULL NULL
 #define EXN_NULL_HANDLE nullptr
+#define EXN_DUMMY_TEXTURE (const unsigned char*)"\xff\x00\x00"
 
 #define EXN_SINGLETON(type, name, ...) \
 	public: \

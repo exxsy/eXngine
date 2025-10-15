@@ -3,7 +3,13 @@
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "libfbxsdk.lib")
 
+const char* m_szName = "eXngine Demo";
+const eXngine::Size window_size = eXngine::Size(1024, 768);
+float m_fRotationScale = 5.0f;
+
 #ifdef _DEBUG
+const std::vector<const char*> debug_extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
+
 VkDebugUtilsMessengerEXT debugMessenger;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -12,9 +18,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData) {
 
-    std::cout << "================" << std::endl;
-	std::cout << pCallbackData->pMessage << std::endl;
-    std::cout << "================" << std::endl;
+    std::cout << "================" << "\n";
+    std::cout << pCallbackData->pMessage << "\n";
+    std::cout << "================" << "\n";
     return VK_FALSE;
 }
 
@@ -31,9 +37,19 @@ void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& create
         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
 }
+#else
+const std::vector<const char*> debug_extensions = { };
 #endif
 
+GLFWApplication* app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
+Renderers::Vulkan::Renderer* renderer = new Renderers::Vulkan::Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
+
 #ifndef IMGUI_DISABLE
+void ImGui_CheckVkResult(VkResult result)
+{
+    std::cout << result << "\n";
+}
+
 void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
 {
     // Setup Dear ImGui context
@@ -69,7 +85,7 @@ void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
     init_info.ImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = nullptr;
-    init_info.CheckVkResultFn = nullptr;
+    //init_info.CheckVkResultFn = ImGui_CheckVkResult;
     ImGui_ImplVulkan_Init(&init_info, renderer->m_pRenderPass);
 
     {
@@ -89,11 +105,13 @@ void ImGui_OnRender(BaseRenderer* renderer, VkCommandBuffer commandBuffer)
 
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    ImGui::NewFrame(); 
 
 	ImGui::Begin("eXngine Demo");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", VulkanRenderer->GetFPS().m_fFPS, 1000.0f * VulkanRenderer->GetFPS().m_fAverageDeltaTime);
+    //ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", 1000.0f / VulkanRenderer->GetFPS().m_fFPS, VulkanRenderer->GetFPS().m_fFPS);
+    ImGui::Text("Swapchain Extent: %dw %dh", VulkanRenderer->m_szSwapChainExtent.width, VulkanRenderer->m_szSwapChainExtent.height);
+    ImGui::SliderFloat("Rotation Speed", &m_fRotationScale, 0.0f, 50.0f);
     ImGui::End();
 
     ImGui::Render();
@@ -140,14 +158,14 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::minutes::period>(currentTime - startTime).count();
+    float time = std::chrono::duration<float, std::chrono::minutes::period>(currentTime - startTime).count() * m_fRotationScale;
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(80.f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), 1024.f / 768.f, 0.1f, 100.0f);
+    ubo.view = glm::lookAt(glm::vec3(m_fZoomFactor, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), app->GetSize().W / (float)app->GetSize().H, 0.1f, 1000.0f);
 	//ubo.view = camera->GetViewMatrix();
-	//ubo.proj = camera->GetProjectionMatrix(1024.f / 768.f);
+	//ubo.proj = camera->GetProjectionMatrix(window_size.W / window_size.H);
 
     ubo.proj[1][1] *= -1;
 
@@ -156,11 +174,20 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
-    const char* m_szName = "eXngine Demo";
-    const eXngine::Size window_size = eXngine::Size(1024, 768);
-    const std::vector<const char*> debug_extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
-    GLFWApplication* app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
-    Renderers::Vulkan::Renderer* renderer = new Renderers::Vulkan::Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
+
+#ifdef _DEBUG
+    FILE* stream;
+    AllocConsole();
+    freopen_s(&stream, "CONOUT$", "w", stdout);
+
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+    populateDebugMessengerCreateInfo(debugCreateInfo);
+    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(renderer->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
+    func(renderer->GetVulkanInstance(), &debugCreateInfo, nullptr, &debugMessenger);
+#endif
+
     app->SetKeyboardHandler(KeyboardHandler);
     app->SetScrollHandler(ScrollHandler);
     app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
@@ -179,31 +206,18 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
         "dragon", 
         dragonModel.GetMeshes(),
         { 
-            {"tex1", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"},
-            //{"tex2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg"}
+            { "tex1", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg" },
         }
     );
-    renderer->LoadModel("ball", ballModel.GetMeshes(), "text2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
+    //renderer->LoadModel("ball", ballModel.GetMeshes(), "text2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
-    renderer->SetOnRenderHandler(ImGui_OnRender);
-    renderer->SetOnCleanupHandler(ImGui_OnExit);
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
 	renderer->Initialize();
 
-#ifdef _DEBUG
-    FILE* stream;
-    AllocConsole();
-    freopen_s(&stream, "CONOUT$", "w", stdout);
-
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-    populateDebugMessengerCreateInfo(debugCreateInfo);
-    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(renderer->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
-    func(renderer->GetVulkanInstance(), &debugCreateInfo, nullptr, &debugMessenger);
-#endif
-
 #ifndef IMGUI_DISABLE
+    renderer->SetOnRenderHandler(ImGui_OnRender);
+    renderer->SetOnCleanupHandler(ImGui_OnExit);
+
     ImGui_OnInit(app, renderer, window_size);
 #endif
 

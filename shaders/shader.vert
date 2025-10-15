@@ -19,4 +19,5 @@ layout(location = 0) out vec2 fragTexCoord;
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
     fragTexCoord = inTexCoord; // values will be smoothly interpolated
+    textureIndex = 0; // Placeholder for texture index, can be set per-vertex if needed
 }

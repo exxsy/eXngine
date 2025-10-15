@@ -135,7 +135,7 @@ namespace eXngine::Utils
                     vertex.y = static_cast<float>(buffer[1]);
                     vertex.z = static_cast<float>(buffer[2]);
 
-                    mesh.vertices[vertexIndex].pos = vertex;
+                    mesh.vertices[vertexIndex].position = vertex;
                 }
             }
 
@@ -168,11 +168,11 @@ namespace eXngine::Utils
                 bool unmapped;
                 FbxVector2 uv;
                 bool result = fbxMesh->GetPolygonVertexUV(polygonIndex, 0, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex0].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex0].texture_coordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 1, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex1].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex1].texture_coordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 2, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex2].texCoordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex2].texture_coordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
 
                 /*FbxVector4 normal;
                 result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 0, normal );

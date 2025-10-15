@@ -54,9 +54,17 @@ namespace eXngine::Renderers::Vulkan
 		VkFence inFlightFence;
 		VkBuffer uniformBuffer;
 		VkDeviceMemory uniformBuffersMemory;
+		VkDescriptorSet descriptorSet;
 		void *uniformBuffersMapped;
 
-		void CleanUp(VkDevice device);
+		void CleanUp(VkDevice device) 
+		{
+			vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+			vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+			vkDestroyFence(device, inFlightFence, nullptr);
+			vkDestroyBuffer(device, uniformBuffer, nullptr);
+			vkFreeMemory(device, uniformBuffersMemory, nullptr);
+		}
 	};
 
 	struct VkTextureObject
@@ -75,14 +83,15 @@ namespace eXngine::Renderers::Vulkan
 	{
 	public:
 		std::map<const char *, VkTextureObject*> m_pTextures;
-		std::vector<VkDescriptorSet> descriptorSets;
 		std::vector<eXngine::Utils::Mesh> m_vMeshes;
+		std::vector<VkDescriptorSet> descriptorSets;
 
 		VkModelObject(std::vector<eXngine::Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths) : m_vMeshes(meshes)
 		{
 			for (auto texturePath : texturePaths)
 			{
-				if (texturePath.first != EXN_NULL_HANDLE && texturePath.second != EXN_NULL_HANDLE) m_pTextures.emplace(texturePath.first, new VkTextureObject(texturePath.second));
+				if (texturePath.first != EXN_NULL_HANDLE && texturePath.second != EXN_NULL_HANDLE) 
+					m_pTextures.emplace(texturePath.first, new VkTextureObject(texturePath.second));
 			}
 		}
 
@@ -102,7 +111,11 @@ namespace eXngine::Renderers::Vulkan
 					}
 					delete texObj;
 				}
+
+				m_pTextures.clear();
 			}
+
+			m_vMeshes.clear();
 		}
 	};
 
@@ -149,7 +162,6 @@ namespace eXngine::Renderers::Vulkan
 		VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
 		VkTexture * m_Depth = nullptr;
 		VkTexture * m_DefaultTexture = nullptr;
-		VkExtent2D m_swapChainExtent{};
 
 #ifdef NDEBUG
 		const bool m_enableValidationLayers = false;
@@ -159,7 +171,7 @@ namespace eXngine::Renderers::Vulkan
 
 		std::vector<VkDynamicState> m_dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		std::vector<const char *> m_extensions = {"VK_KHR_win32_surface"};
-		std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation"};
+		std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
 		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
 		std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>> m_shaders = {};
 		/* VULKAN */
@@ -187,8 +199,6 @@ namespace eXngine::Renderers::Vulkan
 		void CleanupSwapChain();
 		void ResetSwapChain();
 
-		void UpdateUniformBuffer(EXUINT32 currentImage);
-
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 		bool IsDeviceSuitable(VkPhysicalDevice device);
@@ -203,6 +213,7 @@ namespace eXngine::Renderers::Vulkan
 		VkShaderModule CreateShaderModule(const std::vector<char> &code);
 
 	public:
+		VkExtent2D m_szSwapChainExtent;
 		VkDevice m_pDevice = EXN_NULL_HANDLE;
 		VkPhysicalDevice m_pPhysicalDevice = EXN_NULL_HANDLE;
 		VkInstance m_pInstance = EXN_NULL_HANDLE;

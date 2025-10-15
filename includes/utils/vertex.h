@@ -9,8 +9,7 @@ namespace eXngine::Utils
 {
     struct Vertex
     {
-        EXVEC3 pos;
-        EXVEC2 texCoordinates;
-		EXUINT32 textureIndex;
+        EXVEC3 position;
+        EXVEC2 texture_coordinates;
     };
 }

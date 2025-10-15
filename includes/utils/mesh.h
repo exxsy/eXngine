@@ -9,6 +9,6 @@ namespace eXngine::Utils
     struct Mesh
     {
         std::vector<eXngine::Utils::Vertex> vertices;
-        std::vector<uint16_t> indices;
+        std::vector<EXUINT16> indices;
     };
 }
