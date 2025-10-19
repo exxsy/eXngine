@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base.cpp" />
+    <ClCompile Include="src\vulkan\graphics-pipeline.cpp" />
+    <ClCompile Include="src\vulkan\shader.cpp" />
     <ClCompile Include="src\vulkan\texture.cpp" />
     <ClCompile Include="src\vulkan\renderer.cpp" />
     <ClCompile Include="src\vulkan\vertex.cpp" />

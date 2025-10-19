@@ -36,5 +36,11 @@
     <ClCompile Include="src\vulkan\vertex.cpp">
       <Filter>Source Files\renderers\vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="src\vulkan\shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vulkan\graphics-pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <eXngine.h>
-#include <renderers/renderer.h>
+#include <renderers/base.h>
 
 using namespace eXngine::Renderers;
 

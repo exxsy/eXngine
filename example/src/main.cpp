@@ -7,6 +7,35 @@ const char* m_szName = "eXngine Demo";
 const eXngine::Size window_size = eXngine::Size(1024, 768);
 float m_fRotationScale = 5.0f;
 
+struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
+{
+    EXVEC3 pos;
+    EXVEC3 color;
+
+    static VkVertexInputBindingDescription GetBindingDescription()
+    {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(VkTestVertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        return bindingDescription;
+	}
+
+    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions()
+    {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions(2);
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(VkTestVertex, pos);
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(VkTestVertex, color);
+        return attributeDescriptions;
+    }
+};
+
 #ifdef _DEBUG
 const std::vector<const char*> debug_extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
 
@@ -79,7 +108,7 @@ void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
 
     init_info.Queue = renderer->m_pGraphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
-    init_info.DescriptorPool = renderer->m_pDescriptorPool;
+    init_info.DescriptorPool = renderer->m_pDefaultGraphicsPipeline->m_pDescriptorPool;
     init_info.Subpass = 0;
     init_info.MinImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
     init_info.ImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
@@ -99,10 +128,8 @@ void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
     }
 }
 
-void ImGui_OnRender(BaseRenderer* renderer, VkCommandBuffer commandBuffer)
+void ImGui_OnRender(Renderer* renderer, VkCommandBuffer commandBuffer)
 {
-	const auto VulkanRenderer = dynamic_cast<Renderers::Vulkan::Renderer*>(renderer);
-
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame(); 
@@ -110,7 +137,7 @@ void ImGui_OnRender(BaseRenderer* renderer, VkCommandBuffer commandBuffer)
 	ImGui::Begin("eXngine Demo");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     //ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", 1000.0f / VulkanRenderer->GetFPS().m_fFPS, VulkanRenderer->GetFPS().m_fFPS);
-    ImGui::Text("Swapchain Extent: %dw %dh", VulkanRenderer->m_szSwapChainExtent.width, VulkanRenderer->m_szSwapChainExtent.height);
+    ImGui::Text("Swapchain Extent: %dw %dh", renderer->m_szSwapChainExtent.width, renderer->m_szSwapChainExtent.height);
     ImGui::SliderFloat("Rotation Speed", &m_fRotationScale, 0.0f, 50.0f);
     ImGui::End();
 
@@ -174,7 +201,6 @@ void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
-
 #ifdef _DEBUG
     FILE* stream;
     AllocConsole();
@@ -192,28 +218,41 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     app->SetScrollHandler(ScrollHandler);
     app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
 
-    renderer->SetShaders(
-        {
-            {"main", VK_SHADER_STAGE_VERTEX_BIT, eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv")},
-            {"main", VK_SHADER_STAGE_FRAGMENT_BIT, eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv")}
-        }
-    );
+    renderer->AllocatePipeline("test_custom_pipeline");
+
+    auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
+    auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
+
+    auto custom_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\custom.vert.spv");
+    auto custom_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\custom.frag.spv");
+
+    renderer->LoadShader("vertex", vert, eXngine::Vertex);
+    renderer->LoadShader("fragment", frag, eXngine::Fragment);
+    renderer->LoadShader("test_custom_pipeline.vertex", custom_vert, eXngine::Vertex);
+    renderer->LoadShader("test_custom_pipeline.fragment", custom_frag, eXngine::Fragment);
 
     const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
     const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
 
     renderer->LoadModel(
-        "dragon", 
-        dragonModel.GetMeshes(),
+        "dragon", dragonModel.GetMeshes(),
         { 
             { "skin",   "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"      },
-            { "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
+            //{ "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
         }
     );
-    //renderer->LoadModel("ball", ballModel.GetMeshes(), "text2", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg");
+    renderer->LoadModel(
+        "ball", ballModel.GetMeshes(), 
+        {
+            { "texture", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg" }
+        },
+        "test_custom_pipeline"
+    );
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
 	renderer->Initialize();
+
+    renderer->CreatePipeline<VkTestVertex>("test_custom_pipeline");
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);

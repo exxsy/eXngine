@@ -7,6 +7,10 @@
 #include <fstream>
 #include <chrono>
 #include <array>
+#include <string_view>
+#include <vector>
+#include <ranges>
+
 #include <eXngine.h>
 #include <glm/glm.hpp>
 #include <glm/vec4.hpp>
@@ -27,8 +31,8 @@ namespace eXngine::Renderers::Vulkan
         CreateSwapChain();
         CreateImageViews();
         CreateRenderPass();
-        CreateDescriptorSetLayout();
-        CreateGraphicsPipeline();
+        CreateShaders();
+        CreateDefaultGraphicsPipeline();
         CreateCommandPool();
         CreateDepthResources();
         CreateFramebuffers();
@@ -36,9 +40,18 @@ namespace eXngine::Renderers::Vulkan
 		m_DefaultTexture = new VkTexture(*this);
 		m_DefaultTexture->CreateFromImageData(EXN_DUMMY_TEXTURE, 1, 1);
 
-        for (const auto &modelPair : m_Models)
+        for (const auto & pipeline_pair : m_pGraphicPipelines)
         {
-            auto &model = modelPair.second;
+			const auto & pipeline = pipeline_pair.second;
+
+            pipeline->m_pDevice = m_pDevice;
+            pipeline->CreateDescriptorSetLayout();
+            pipeline->CreateDescriptorPool();
+        }
+
+        for (const auto & model_pair : m_Models)
+        {
+            auto &model = model_pair.second;
 
             if (model.m_pTextures.empty())
                 continue;
@@ -58,14 +71,18 @@ namespace eXngine::Renderers::Vulkan
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffers();
-        CreateDescriptorPool();
         CreateDescriptorSets();
         CreateCommandBuffers();
         CreateSyncObjects();
     }
 
-    void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex)
+    void Renderer::RecordCommandBuffer(EXUINT32 imageIndex)
     {
+        const VkCommandBuffer commandBuffer = m_pCurrentCommandBuffer;
+
+        if (commandBuffer == EXN_NULL_HANDLE)
+			return;
+
         vkResetCommandBuffer(commandBuffer, 0);
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -88,59 +105,40 @@ namespace eXngine::Renderers::Vulkan
         renderPassInfo.clearValueCount = static_cast<EXUINT32>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(m_szSwapChainExtent.width);
-        viewport.height = static_cast<float>(m_szSwapChainExtent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = m_szSwapChainExtent;
-
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         {
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pGraphicsPipeline);
-
-            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
             VkBuffer vertexBuffers[] = { m_pVertexBuffer };
             VkDeviceSize offsets[] = { 0 };
 
-            //vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-            //vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-            //vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1, &m_pFrameObjects[m_currentFrame].descriptorSet, 0, nullptr);
-            //vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, 0, 0);
-
             //auto currIndicesCount = 0;
             auto currVertexCount = 0;
-            for (const auto modelPair : m_Models)
+            for (const auto model_pair : m_Models)
             {
-                auto model = modelPair.second;
+                auto model = model_pair.second;
 
                 if (model.m_vMeshes.empty())
                     continue;
+
+				const auto pipeline = model.shader.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.shader.c_str()];
+                vkCmdBindPipeline(m_pCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pPipeline);
+
+                vkCmdSetViewport(commandBuffer, 0, static_cast<EXUINT32>(pipeline->m_Viewports.size()), pipeline->m_Viewports.data());
+                vkCmdSetScissor(commandBuffer, 0, static_cast<EXUINT32>(pipeline->m_Scissors.size()), pipeline->m_Scissors.data());
 
                 VkModelPushConstants pushConstants {
                     .textureIndex = model.m_vMeshes.front().textureIndex,
                     .numTextures = model.m_vMeshes.front().numTextureCount
                 };
 
-                vkCmdPushConstants(commandBuffer, m_pPipelineLayout, 
-                    VK_SHADER_STAGE_FRAGMENT_BIT, 
-                    //sizeof(float) * 4 * 1,
-                    0,
-                    sizeof(VkModelPushConstants), 
+                vkCmdPushConstants(commandBuffer, pipeline->m_pLayout,
+                    VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkModelPushConstants), 
                     &pushConstants);
                 
                 for (const auto descriptorSet : model.descriptorSets)
                 {
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &descriptorSet, 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0/*currIndicesCount*/, currVertexCount, 0);
                     //currIndicesCount += static_cast<EXUINT32>(model.m_vMeshes.front().indices.size());
                     currVertexCount += static_cast<EXUINT32>(model.m_vMeshes.front().vertices.size());
@@ -197,71 +195,53 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_pDescriptorSetLayout);
-
-        VkDescriptorImageInfo defaultImageInfo {
-            .sampler = m_pTextureSampler,
-            .imageView = m_DefaultTexture->m_pView,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-        };
-
-        VkDescriptorSetAllocateInfo allocInfo{};
+        /*VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_pDescriptorPool;
-        allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+        allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
         allocInfo.pSetLayouts = layouts.data();
 
         std::vector<VkDescriptorSet> descriptorSets;
         descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
         assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
 
-        //VkDescriptorSetAllocateInfo allocInfo{};
-        //allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        //allocInfo.descriptorPool = m_pDescriptorPool;
-        //allocInfo.descriptorSetCount = static_cast<EXUINT32>(MAX_FRAMES_IN_FLIGHT);
-        //allocInfo.pSetLayouts = layouts.data();
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_pFrameObjects[0].uniformBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBufferObject);
 
-        //std::vector<VkDescriptorSet> descriptorSets;
-        //descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        //assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        {
+            auto& frame = m_pFrameObjects[i];
+            frame.descriptorSet = descriptorSets[i];
 
-        //VkDescriptorBufferInfo bufferInfo{};
-        //bufferInfo.buffer = m_pFrameObjects[0].uniformBuffer;
-        //bufferInfo.offset = 0;
-        //bufferInfo.range = sizeof(UniformBufferObject);
+            std::vector<VkWriteDescriptorSet> descriptorWrites
+            {
+                {
+                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                     .dstSet = descriptorSets[i],
+                     .dstBinding = 0,
+                     .dstArrayElement = 0,
+                     .descriptorCount = 1,
+                     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                     .pBufferInfo = &bufferInfo
+                }
+            };
 
-        //for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-        //{
-        //    auto& frame = m_pFrameObjects[i];
-        //    frame.descriptorSet = descriptorSets[i];
+            descriptorWrites.push_back(
+                {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = descriptorSets[i],
+                    .dstBinding = 1,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .pImageInfo = &imageInfo
+                }
+            );
 
-        //    std::vector<VkWriteDescriptorSet> descriptorWrites
-        //    {
-        //        {
-        //             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        //             .dstSet = descriptorSets[i],
-        //             .dstBinding = 0,
-        //             .dstArrayElement = 0,
-        //             .descriptorCount = 1,
-        //             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        //             .pBufferInfo = &bufferInfo
-        //        }
-        //    };
-
-        //    descriptorWrites.push_back(
-        //        {
-        //            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        //            .dstSet = descriptorSets[i],
-        //            .dstBinding = 1,
-        //            .dstArrayElement = 0,
-        //            .descriptorCount = 1,
-        //            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        //            .pImageInfo = &imageInfo
-        //        }
-        //    );
-
-        //    vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-        //}
+            vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        }*/
 
         for (auto& modelPair : m_Models)
         {
@@ -270,7 +250,27 @@ namespace eXngine::Renderers::Vulkan
             if (model.m_vMeshes.empty())
                 continue;
 
-            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+			const auto pipeline = model.shader.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.shader.c_str()];
+
+            std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, pipeline->m_pDescriptorSetLayout);
+
+            VkDescriptorImageInfo defaultImageInfo{
+                .sampler = m_pTextureSampler,
+                .imageView = m_DefaultTexture->m_pView,
+                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            };
+
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = pipeline->m_pDescriptorPool;
+            allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+            allocInfo.pSetLayouts = layouts.data();
+
+            std::vector<VkDescriptorSet> descriptorSets;
+            descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+            assert(vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data()) == VK_SUCCESS);
+
+            for (EXUINT32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
             {
                 auto& frame = m_pFrameObjects[i];
                 model.descriptorSets = descriptorSets;
@@ -342,7 +342,7 @@ namespace eXngine::Renderers::Vulkan
                 {
                     // No textures in model, fill all slots with default texture
                     model.imageInfos.clear();
-                    for (int j = 0; j < MAX_TEXTURE_COUNT; ++j)
+                    for (EXUINT32 j = 0; j < MAX_TEXTURE_COUNT; ++j)
                     {
                         model.imageInfos.push_back(defaultImageInfo);
                     }
@@ -420,9 +420,10 @@ namespace eXngine::Renderers::Vulkan
 
         assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
 
+		m_pCurrentCommandBuffer = frameObject.commandBuffer;
         vkResetFences(m_pDevice, 1, &frameObject.inFlightFence);
         m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
-        RecordCommandBuffer(frameObject.commandBuffer, imageIndex);
+        RecordCommandBuffer(imageIndex);
 
         VkSemaphore waitSemaphores[] = {frameObject.imageAvailableSemaphore};
         VkSemaphore signalSemaphores[] = {frameObject.renderFinishedSemaphore};
@@ -463,6 +464,7 @@ namespace eXngine::Renderers::Vulkan
         assert(result == VK_SUCCESS);
 
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        m_pCurrentCommandBuffer = EXN_NULL_HANDLE;
     }
 
     void Renderer::OnExit()
@@ -475,18 +477,18 @@ namespace eXngine::Renderers::Vulkan
         CleanupSwapChain();
 
         vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
-        vkDestroyPipeline(m_pDevice, m_pGraphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(m_pDevice, m_pPipelineLayout, nullptr);
+        vkDestroyPipeline(m_pDevice, m_pDefaultGraphicsPipeline->m_pPipeline, nullptr);
+        vkDestroyPipelineLayout(m_pDevice, m_pDefaultGraphicsPipeline->m_pLayout, nullptr);
         vkDestroyRenderPass(m_pDevice, m_pRenderPass, nullptr);
         vkDestroySampler(m_pDevice, m_pTextureSampler, nullptr);
 
         m_Depth->Release(m_pDevice);
 		m_DefaultTexture->Release(m_pDevice);
 
-        for (auto shaderModule : m_shaderModules)
-        {
-            vkDestroyShaderModule(m_pDevice, shaderModule, nullptr);
-        }
+        //for (auto shaderModule : m_shaderModules)
+        //{
+        //    vkDestroyShaderModule(m_pDevice, shaderModule, nullptr);
+        //}
 
         for (auto& frame : m_pFrameObjects)
         {
@@ -498,14 +500,93 @@ namespace eXngine::Renderers::Vulkan
         vkDestroyInstance(m_pInstance, nullptr);
     }
 
+    void Renderer::PushRenderCommand(RenderCommand<VkBuffer, EXUINT32>)
+    {
+    }
+
+    void Renderer::PopRenderCommand()
+    {
+    }
+
+    bool Renderer::LoadShader(const char* name, const std::vector<char>& data, const eXshader type)
+    {
+        if (data.empty())
+            return false;
+
+        std::string pipeline;
+		std::string entrypoint = name;
+
+        if (strstr(name, ".") != nullptr) {
+            auto parts = std::views::split(std::string(name), '.');
+
+            EXUINT32 index = 0;
+            for (auto&& part : parts)
+            {
+                if (index == 0)
+                    pipeline = std::string(part.begin(), part.end());
+                else if (index == 1)
+                    entrypoint = std::string(part.begin(), part.end());
+
+                index++;
+            }
+        }
+
+        auto shaderObject = new VkShaderModuleObject(this->m_pDevice, nullptr);
+        shaderObject->type = type;
+		shaderObject->code = data;
+
+        if (!pipeline.empty()) 
+        {
+            const auto it = this->m_pGraphicPipelines.find(pipeline);
+
+            if (it != this->m_pGraphicPipelines.end())
+            {
+                shaderObject->m_pPipeline = it->second;
+            }
+        }
+        else {
+			shaderObject->m_pPipeline = m_pDefaultGraphicsPipeline;
+        }
+
+        this->m_Shaders.emplace(name, shaderObject);
+
+        return true;
+    }
+
+    void Renderer::DestroyShader(const char* name)
+    {
+        const auto shader_module = this->m_Shaders.find(name);
+
+        if (this->m_Shaders.find(name) == this->m_Shaders.end())
+            return;
+
+        const auto shader = reinterpret_cast<VkShaderModuleObject*>(shader_module->second);
+
+		vkDestroyShaderModule(this->m_pDevice, shader->m_pShader, nullptr);
+
+		if (shader->m_pPipeline != EXN_NULL_HANDLE)
+		    vkDestroyPipeline(this->m_pDevice, shader->m_pPipeline->m_pPipeline, nullptr);
+    }
+
+    void Renderer::UseShader(const char* name)
+    {
+        if (m_pCurrentCommandBuffer == EXN_NULL_HANDLE)
+            return;
+
+		const auto shader_module = this->m_Shaders.find(name);
+
+        if (this->m_Shaders.find(name) == this->m_Shaders.end())
+			return;
+
+		const auto shader = reinterpret_cast<VkShaderModuleObject*>(shader_module->second);
+		const auto pipeline = shader->m_pPipeline->m_pPipeline ? shader->m_pPipeline->m_pPipeline : this->m_pDefaultGraphicsPipeline->m_pPipeline;
+
+        vkCmdBindPipeline(m_pCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    }
+
     VkInstance Renderer::GetVulkanInstance()
     {
         return this->m_pInstance;
-    }
-
-    void Renderer::SetShaders(const std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>> shaders)
-    {
-        this->m_shaders = shaders;
     }
 
     void Renderer::SetSurface(VkSurfaceKHR surface)
@@ -604,26 +685,16 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
+    void Renderer::CreateDefaultGraphicsPipeline()
+    {
+        m_pDefaultGraphicsPipeline->CreateDescriptorPool();
+		m_pDefaultGraphicsPipeline->CreateDescriptorSetLayout();
+        m_pDefaultGraphicsPipeline->CreatePipeline<VkVertex>(m_pRenderPass);
+    }
+
+    /*
     void Renderer::CreateGraphicsPipeline()
     {
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-
-        for (const auto &m : m_shaders)
-        {
-            std::apply([&](const char *name, VkShaderStageFlagBits stage, std::vector<char> code)
-                       {
-                auto shaderModule = this->CreateShaderModule(code);
-                this->m_shaderModules.push_back(shaderModule);
-
-                VkPipelineShaderStageCreateInfo shaderStageInfo{};
-                shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStageInfo.stage = stage; // VK_SHADER_STAGE_VERTEX_BIT;
-                shaderStageInfo.module = shaderModule;
-                shaderStageInfo.pName = name; //?
-
-                shaderStages.push_back(shaderStageInfo); }, m);
-        }
-
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
@@ -636,8 +707,8 @@ namespace eXngine::Renderers::Vulkan
         scissor.offset = {0, 0};
         scissor.extent = m_szSwapChainExtent;
 
-        auto bindingDescription = eXngine::Renderers::Vulkan::VkVertex::getBindingDescription();
-        auto attributeDescriptions = eXngine::Renderers::Vulkan::VkVertex::getAttributeDescriptions();
+        auto bindingDescription = eXngine::Renderers::Vulkan::VkVertex::GetBindingDescription();
+        auto attributeDescriptions = eXngine::Renderers::Vulkan::VkVertex::GetAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -707,7 +778,7 @@ namespace eXngine::Renderers::Vulkan
         colorBlending.blendConstants[3] = 0.0f; // Optional
 
         VkPushConstantRange debugViewPushConstants{};
-        debugViewPushConstants.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        debugViewPushConstants.Flags = VK_SHADER_STAGE_FRAGMENT_BIT;
         debugViewPushConstants.offset = sizeof(VkModelPushConstants) * 0;
         debugViewPushConstants.size = sizeof(VkModelPushConstants);
 
@@ -727,11 +798,11 @@ namespace eXngine::Renderers::Vulkan
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;                            // Optional
-        pipelineLayoutInfo.pSetLayouts = &m_pDescriptorSetLayout;         // Optional
+        pipelineLayoutInfo.pSetLayouts = &m_pDefaultGraphicsPipeline->m_pDescriptorSetLayout;         // Optional
         pipelineLayoutInfo.pushConstantRangeCount = 1;// static_cast<EXUINT32>(pushConstants.size());                    // Optional
         pipelineLayoutInfo.pPushConstantRanges = &debugViewPushConstants;// pushConstants.data(); // Optional
 
-        assert(vkCreatePipelineLayout(m_pDevice, &pipelineLayoutInfo, nullptr, &m_pPipelineLayout) == VK_SUCCESS);
+        assert(vkCreatePipelineLayout(m_pDevice, &pipelineLayoutInfo, nullptr, &m_pDefaultGraphicsPipeline->m_pLayout) == VK_SUCCESS);
 
         VkPipelineDepthStencilStateCreateInfo depthStencil{};
         depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -747,8 +818,8 @@ namespace eXngine::Renderers::Vulkan
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = (EXUINT32)shaderStages.size();
-        pipelineInfo.pStages = shaderStages.data(); // new VkPipelineShaderStageCreateInfo[2]{ shaderStages[0], shaderStages[1] };//
+        pipelineInfo.stageCount = (EXUINT32)m_pDefaultGraphicsPipeline->m_ShaderStages.size();
+        pipelineInfo.pStages = m_pDefaultGraphicsPipeline->m_ShaderStages.data();
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
@@ -757,14 +828,21 @@ namespace eXngine::Renderers::Vulkan
         pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = m_pPipelineLayout;
+        pipelineInfo.layout = m_pDefaultGraphicsPipeline->m_pLayout;
         pipelineInfo.renderPass = m_pRenderPass;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        assert(vkCreateGraphicsPipelines(m_pDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pGraphicsPipeline) == VK_SUCCESS);
+        assert(vkCreateGraphicsPipelines(m_pDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pDefaultGraphicsPipeline->m_pPipeline) == VK_SUCCESS);
+
+        //for (auto & pipeline : m_pGraphicPipelines)
+        //{
+		//	pipeline.second->SetExtent(m_szSwapChainExtent);
+		//	pipeline.second->CreatePipeline(m_pDevice, m_pRenderPass, m_szSwapChainExtent);
+		//}
     }
+    */
 
     void Renderer::CreateSyncObjects()
     {
@@ -826,7 +904,7 @@ namespace eXngine::Renderers::Vulkan
 
         m_pFrameObjects.resize(MAX_FRAMES_IN_FLIGHT);
 
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        for (EXUINT32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
             assert(vkAllocateCommandBuffers(m_pDevice, &allocInfo, &m_pFrameObjects[i].commandBuffer) == VK_SUCCESS);
         }
@@ -858,6 +936,7 @@ namespace eXngine::Renderers::Vulkan
         assert(vkCreateSampler(m_pDevice, &samplerInfo, nullptr, &m_pTextureSampler) == VK_SUCCESS);
     }
 
+    /*
     void Renderer::CreateDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
@@ -881,21 +960,15 @@ namespace eXngine::Renderers::Vulkan
         debugProfilerLayoutBinding.pImmutableSamplers = nullptr;
         debugProfilerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        //VkDescriptorSetLayoutBinding textureBinding{};
-        //textureBinding.binding = 1;
-        //textureBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        //textureBinding.descriptorCount = 1; // array size
-        //textureBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        //textureBinding.pImmutableSamplers = nullptr;
-
-        const std::vector<VkDescriptorSetLayoutBinding> bindings = { uboLayoutBinding, samplerLayoutBinding, debugProfilerLayoutBinding /*, textureBinding*/ };
+        const std::vector<VkDescriptorSetLayoutBinding> bindings = { uboLayoutBinding, samplerLayoutBinding, debugProfilerLayoutBinding };
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<EXUINT32>(bindings.size());
         layoutInfo.pBindings = bindings.data();
 
-        assert(vkCreateDescriptorSetLayout(m_pDevice, &layoutInfo, nullptr, &m_pDescriptorSetLayout) == VK_SUCCESS);
+        assert(vkCreateDescriptorSetLayout(m_pDevice, &layoutInfo, nullptr, &m_pDefaultGraphicsPipeline->m_pDescriptorSetLayout) == VK_SUCCESS);
     }
+    */
 
     void Renderer::CreateDepthResources()
     {
@@ -970,6 +1043,7 @@ namespace eXngine::Renderers::Vulkan
         vkFreeMemory(m_pDevice, stagingBufferMemory, nullptr);
     }
 
+    /*
     void Renderer::CreateDescriptorPool()
     {
         constexpr int maxCount = 10;
@@ -987,15 +1061,17 @@ namespace eXngine::Renderers::Vulkan
             {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, maxCount},
             {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, maxCount}
         };
+
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         pool_info.maxSets = 1000 * EX_ARRAYSIZE(pool_sizes);
         pool_info.poolSizeCount = static_cast<EXUINT32>(EX_ARRAYSIZE(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
-        const VkResult err = vkCreateDescriptorPool(m_pDevice, &pool_info, nullptr, &m_pDescriptorPool);
-        assert(err == VK_SUCCESS);
+
+        assert(vkCreateDescriptorPool(m_pDevice, &pool_info, nullptr, &m_pDefaultGraphicsPipeline->m_pDescriptorPool) == VK_SUCCESS);
     }
+        */
 
     void Renderer::CreateLogicalDevice()
     {
@@ -1054,7 +1130,6 @@ namespace eXngine::Renderers::Vulkan
             createInfo.enabledExtensionCount = static_cast<EXUINT32>(m_deviceExtensions.size());
             createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
             
-
             if (m_enableValidationLayers)
             {
                 createInfo.enabledLayerCount = static_cast<EXUINT32>(m_validationLayers.size());
@@ -1069,6 +1144,7 @@ namespace eXngine::Renderers::Vulkan
 
             vkGetDeviceQueue(m_pDevice, indices.graphicsFamily.value(), 0, &m_pGraphicsQueue);
             vkGetDeviceQueue(m_pDevice, indices.presentFamily.value(), 0, &m_pPresentQueue);
+
         }
     }
 
@@ -1109,6 +1185,16 @@ namespace eXngine::Renderers::Vulkan
 
         m_swapChainImageFormat = surfaceFormat.format;
         m_szSwapChainExtent = extent;
+
+		if (m_pDefaultGraphicsPipeline == EXN_NULL_HANDLE)
+            m_pDefaultGraphicsPipeline = new VkGraphicsPipeline(m_pDevice, m_szSwapChainExtent);
+        else {
+            m_pDefaultGraphicsPipeline->m_Scissors.clear();
+			m_pDefaultGraphicsPipeline->m_Viewports.clear();
+			m_pDefaultGraphicsPipeline->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
+			m_pDefaultGraphicsPipeline->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
+			m_pDefaultGraphicsPipeline->SetExtent(m_szSwapChainExtent);
+        }
     }
 
     void Renderer::CreateImageViews()
@@ -1190,6 +1276,39 @@ namespace eXngine::Renderers::Vulkan
         assert(result == VK_SUCCESS);
     }
 
+    void Renderer::CreateShaders()
+    {
+        for (const auto &shader : m_Shaders)
+        {
+            const auto& [name, data] = shader;
+			const auto shaderModuleObject = reinterpret_cast<VkShaderModuleObject*>(data);
+
+            VkShaderModule shaderModule = EXN_NULL_HANDLE;
+
+            VkShaderModuleCreateInfo createInfo{
+                .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                .codeSize = data->code.size(),
+                .pCode = reinterpret_cast<const EXUINT32*>(data->code.data()),
+            };
+
+            if (vkCreateShaderModule(m_pDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+                std::cout << "[ERROR] Failed to create shader module for shader: " << name << "\n";
+                continue;
+            }
+
+			shaderModuleObject->m_pShader = shaderModule;
+			shaderModuleObject->m_pDevice = m_pDevice;
+
+			const auto stageInfo = shaderModuleObject
+                ->GetStageCreateInfo(shaderModule, name.c_str(), shaderModuleObject->GetStageFlagBits());
+            
+            if (shaderModuleObject->m_pPipeline != EXN_NULL_HANDLE)
+			    shaderModuleObject->m_pPipeline->m_ShaderStages.push_back(stageInfo);
+            else
+				m_pDefaultGraphicsPipeline->m_ShaderStages.push_back(stageInfo);
+		}
+    }
+
     void Renderer::CleanupSwapChain()
     {
         for (auto framebuffer : m_swapChainFramebuffers)
@@ -1213,6 +1332,16 @@ namespace eXngine::Renderers::Vulkan
         CreateImageViews();
         CreateDepthResources();
         CreateFramebuffers();
+    }
+
+    void Renderer::AllocatePipeline(std::string name)
+    {
+        if (m_pGraphicPipelines.find(name) != m_pGraphicPipelines.end()) {
+            std::cout << "[WARNING] Pipeline with name '" << name << "' already exists. Skipping creation." << "\n";
+            return;
+        }
+
+		m_pGraphicPipelines[name] = new VkGraphicsPipeline(m_pDevice, m_szSwapChainExtent);
     }
 
     void Renderer::SelectPhysicalDevice()
@@ -1250,19 +1379,6 @@ namespace eXngine::Renderers::Vulkan
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
         EndSingleTimeCommands(commandBuffer);
-    }
-
-    VkShaderModule Renderer::CreateShaderModule(const std::vector<char> &code)
-    {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const EXUINT32 *>(code.data());
-
-        VkShaderModule shaderModule;
-        assert(vkCreateShaderModule(m_pDevice, &createInfo, nullptr, &shaderModule) == VK_SUCCESS);
-
-        return shaderModule;
     }
 
     bool Renderer::CheckDeviceExtensionSupport(VkPhysicalDevice device)
@@ -1413,9 +1529,9 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::LoadModel(const char *path, std::vector<Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths)
+    void Renderer::LoadModel(const char *path, std::vector<Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths, const char * pipeline)
     {
-        m_Models.emplace(path, VkModelObject(meshes, texturePaths));
+        m_Models.emplace(path, VkModelObject(meshes, texturePaths, pipeline));
 
         for (const auto &mesh : meshes)
         {
@@ -1424,16 +1540,15 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::LoadModel(const char* path, std::vector<Utils::Mesh> meshes, const char * textureKey, const char* texturePath)
-    {
-        m_Models.emplace(path, VkModelObject(meshes, { {textureKey, texturePath} }));
-
-        for (const auto& mesh : meshes)
-        {
-            m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
-            m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
-        }
-    }
+    //void Renderer::LoadModel(const char* path, std::vector<Utils::Mesh> meshes, const char * textureKey, const char* texturePath, const char* pipeline = nullptr)
+    //{
+    //    m_Models.emplace(path, VkModelObject(meshes, { {textureKey, texturePath} }, pipeline));
+    //    for (const auto& mesh : meshes)
+    //    {
+    //        m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
+    //        m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
+    //    }
+    //}
 
     VkImageView Renderer::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
     {
@@ -1507,23 +1622,6 @@ namespace eXngine::Renderers::Vulkan
     {
         m_extensions.insert(m_extensions.end(), extensions.begin(), extensions.end());
         CreateInstance(this->m_extensions);
-    }
-
-    VkPipelineShaderStageCreateInfo VkShaderModuleObject::getCreateInfo(VkShaderModule module, const char* name, VkShaderStageFlagBits stage)
-    {
-        return {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = stage, // VK_SHADER_STAGE_VERTEX_BIT;
-            .module = module,
-            .pName = name, //?
-        };
-    }
-
-    VkShaderModuleObject::VkShaderModuleObject(Renderer* renderer, VkShaderModule s) : m_pShader(s), m_pRenderer(renderer) {}
-    VkShaderModuleObject::VkShaderModuleObject(Renderer* renderer, std::vector<char> data) : m_pShader(renderer->CreateShaderModule(data)), m_pRenderer(renderer) {}
-    VkShaderModuleObject::~VkShaderModuleObject()
-    {
-        vkDestroyShaderModule(m_pRenderer->m_pDevice, m_pShader, nullptr);
     }
 }
 #endif

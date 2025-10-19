@@ -2,7 +2,7 @@
 
 namespace eXngine::Renderers::Vulkan
 {
-    VkVertexInputBindingDescription VkVertex::getBindingDescription()
+    VkVertexInputBindingDescription VkVertex::GetBindingDescription()
     {
         return {
             .binding = 0,
@@ -11,7 +11,7 @@ namespace eXngine::Renderers::Vulkan
         };
     }
 
-    std::vector<VkVertexInputAttributeDescription> VkVertex::getAttributeDescriptions()
+    std::vector<VkVertexInputAttributeDescription> VkVertex::GetAttributeDescriptions()
     {
         /*
             float: VK_FORMAT_R32_SFLOAT

@@ -7,7 +7,7 @@ namespace eXngine::Renderers::Vulkan
 {
     struct VkVertex : eXngine::Utils::Vertex
     {
-        static VkVertexInputBindingDescription getBindingDescription();
-        static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+        static VkVertexInputBindingDescription GetBindingDescription();
+        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
 }
