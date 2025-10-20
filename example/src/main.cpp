@@ -9,31 +9,7 @@ float m_fRotationScale = 5.0f;
 
 struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
 {
-    EXVEC3 pos;
-    EXVEC3 color;
 
-    static VkVertexInputBindingDescription GetBindingDescription()
-    {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(VkTestVertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        return bindingDescription;
-	}
-
-    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions()
-    {
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions(2);
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(VkTestVertex, pos);
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(VkTestVertex, color);
-        return attributeDescriptions;
-    }
 };
 
 #ifdef _DEBUG
@@ -218,13 +194,13 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     app->SetScrollHandler(ScrollHandler);
     app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
 
-    renderer->AllocatePipeline("test_custom_pipeline");
-
     auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
     auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 
     auto custom_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\custom.vert.spv");
     auto custom_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\custom.frag.spv");
+
+    renderer->AllocatePipeline<VkGraphicsPipeline>("test_custom_pipeline");
 
     renderer->LoadShader("vertex", vert, eXngine::Vertex);
     renderer->LoadShader("fragment", frag, eXngine::Fragment);
@@ -234,20 +210,21 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
     const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
 
-    renderer->LoadModel(
-        "dragon", dragonModel.GetMeshes(),
-        { 
-            { "skin",   "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"      },
-            //{ "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
-        }
-    );
-    renderer->LoadModel(
-        "ball", ballModel.GetMeshes(), 
-        {
-            { "texture", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg" }
-        },
-        "test_custom_pipeline"
-    );
+    //renderer->LoadModel(
+    //    "dragon", dragonModel.GetMeshes(),
+    //    { 
+    //        { "skin",   "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"      },
+    //        //{ "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
+    //    }
+    //);
+    //renderer->LoadModel(
+    //    "ball", ballModel.GetMeshes(), {}, "test_custom_pipeline"
+    //    /*{
+    //        { "texture", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg" }
+    //    }*/
+    //    //"test_custom_pipeline"
+    //);
+
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
 	renderer->Initialize();

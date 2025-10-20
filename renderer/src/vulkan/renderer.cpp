@@ -36,36 +36,22 @@ namespace eXngine::Renderers::Vulkan
         CreateCommandPool();
         CreateDepthResources();
         CreateFramebuffers();
+        CreateGraphicPipelines();
 
-		m_DefaultTexture = new VkTexture(*this);
-		m_DefaultTexture->CreateFromImageData(EXN_DUMMY_TEXTURE, 1, 1);
-
-        for (const auto & pipeline_pair : m_pGraphicPipelines)
-        {
-			const auto & pipeline = pipeline_pair.second;
-
-            pipeline->m_pDevice = m_pDevice;
-            pipeline->CreateDescriptorSetLayout();
-            pipeline->CreateDescriptorPool();
-        }
-
-        for (const auto & model_pair : m_Models)
-        {
-            auto &model = model_pair.second;
-
-            if (model.m_pTextures.empty())
-                continue;
-
-            for (const auto & pair : model.m_pTextures) 
-            {
-                const auto texture = pair.second;
-                if (texture->path == nullptr)
-                    continue;
-
-                texture->texture = new VkTexture(*this);
-                texture->texture->CreateFromTextureFile(pair.first, texture->path);
-			}
-        }
+       //     for (const auto & model_pair : m_Models)
+       //     {
+       //         auto &model = model_pair.second;
+       //         if (model.m_pTextures.empty())
+       //             continue;
+       //         for (const auto & pair : model.m_pTextures) 
+       //         {
+       //             const auto texture = pair.second;
+       //             if (texture->path == nullptr)
+       //                 continue;
+       //             texture->texture = new VkTexture(*this);
+       //             texture->texture->CreateFromTextureFile(pair.first, texture->path);
+	   //         }
+       //     }
 
         CreateTextureSampler();
         CreateVertexBuffer();
@@ -87,8 +73,8 @@ namespace eXngine::Renderers::Vulkan
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0;                  // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
+        beginInfo.flags = 0;
+        beginInfo.pInheritanceInfo = nullptr;
 
         assert(vkBeginCommandBuffer(commandBuffer, &beginInfo) == VK_SUCCESS);
 
@@ -110,7 +96,7 @@ namespace eXngine::Renderers::Vulkan
             VkBuffer vertexBuffers[] = { m_pVertexBuffer };
             VkDeviceSize offsets[] = { 0 };
 
-            //auto currIndicesCount = 0;
+            /*auto currIndicesCount = 0;
             auto currVertexCount = 0;
             for (const auto model_pair : m_Models)
             {
@@ -119,8 +105,8 @@ namespace eXngine::Renderers::Vulkan
                 if (model.m_vMeshes.empty())
                     continue;
 
-				const auto pipeline = model.shader.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.shader.c_str()];
-                vkCmdBindPipeline(m_pCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pPipeline);
+				const auto pipeline = model.pipeline.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.pipeline.c_str()];
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pPipeline);
 
                 vkCmdSetViewport(commandBuffer, 0, static_cast<EXUINT32>(pipeline->m_Viewports.size()), pipeline->m_Viewports.data());
                 vkCmdSetScissor(commandBuffer, 0, static_cast<EXUINT32>(pipeline->m_Scissors.size()), pipeline->m_Scissors.data());
@@ -139,11 +125,11 @@ namespace eXngine::Renderers::Vulkan
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                     vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &descriptorSet, 0, nullptr);
-                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0/*currIndicesCount*/, currVertexCount, 0);
+                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, currVertexCount, 0);
                     //currIndicesCount += static_cast<EXUINT32>(model.m_vMeshes.front().indices.size());
                     currVertexCount += static_cast<EXUINT32>(model.m_vMeshes.front().vertices.size());
 				}
-            }
+            }*/
 
             if (m_fOnRender) m_fOnRender(this, commandBuffer);
         }
@@ -191,6 +177,18 @@ namespace eXngine::Renderers::Vulkan
         assert(vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &bufferMemory) == VK_SUCCESS);
 
         vkBindBufferMemory(m_pDevice, buffer, bufferMemory, 0);
+    }
+
+    void Renderer::CreateGraphicPipelines()
+    {
+        for (const auto& pipeline_pair : m_pGraphicPipelines)
+        {
+            const auto& pipeline = pipeline_pair.second;
+
+            pipeline->m_pDevice = m_pDevice;
+            pipeline->CreateDescriptorSetLayout();
+            pipeline->CreateDescriptorPool();
+        }
     }
 
     void Renderer::CreateDescriptorSets()
@@ -243,14 +241,14 @@ namespace eXngine::Renderers::Vulkan
             vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }*/
 
-        for (auto& modelPair : m_Models)
+        /*for (auto& modelPair : m_Models)
         {
             auto& model = modelPair.second;
 
             if (model.m_vMeshes.empty())
                 continue;
 
-			const auto pipeline = model.shader.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.shader.c_str()];
+			const auto pipeline = model.pipeline.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.pipeline.c_str()];
 
             std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, pipeline->m_pDescriptorSetLayout);
 
@@ -364,7 +362,7 @@ namespace eXngine::Renderers::Vulkan
                 vkUpdateDescriptorSets(m_pDevice, static_cast<EXUINT32>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
             }
  
-        };   
+        }; */
     }
 
     VkCommandBuffer Renderer::BeginSingleTimeCommands()
@@ -476,6 +474,11 @@ namespace eXngine::Renderers::Vulkan
 
         CleanupSwapChain();
 
+        for (auto& pipeline : m_pGraphicPipelines)
+        {
+            delete pipeline.second;
+        }
+
         vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
         vkDestroyPipeline(m_pDevice, m_pDefaultGraphicsPipeline->m_pPipeline, nullptr);
         vkDestroyPipelineLayout(m_pDevice, m_pDefaultGraphicsPipeline->m_pLayout, nullptr);
@@ -485,14 +488,14 @@ namespace eXngine::Renderers::Vulkan
         m_Depth->Release(m_pDevice);
 		m_DefaultTexture->Release(m_pDevice);
 
-        //for (auto shaderModule : m_shaderModules)
-        //{
-        //    vkDestroyShaderModule(m_pDevice, shaderModule, nullptr);
-        //}
+        for (auto& shader : m_Shaders)
+        {
+            delete shader.second;
+        }
 
         for (auto& frame : m_pFrameObjects)
         {
-            frame.CleanUp(this->m_pDevice);
+            frame.Release(this->m_pDevice);
         }
 
         vkDestroyCommandPool(m_pDevice, m_pCommandPool, nullptr);
@@ -973,20 +976,27 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::CreateDepthResources()
     {
         m_Depth = new VkTexture(*this);
-        //m_Depth->Release(this->m_pDevice);
         m_Depth->CreateDepthImage(this->m_szSwapChainExtent, this->FindDepthFormat());
+
+        m_DefaultTexture = new VkTexture(*this);
+        m_DefaultTexture->CreateFromImageData(EXN_DUMMY_TEXTURE, 1, 1);
     }
 
     void Renderer::CreateVertexBuffer()
     {
-        std::vector<Utils::Vertex> vertices;
-        for (const auto model : m_Models)
-        {
-            for (const auto mesh : model.second.m_vMeshes)
+        std::vector<Utils::Vertex> vertices = { 
             {
-                vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-            }
-        }
+			    .position = {0.0f, -0.5f, 0.0f},
+			    .texture_coordinates = {1.0f, 0.0f},
+            } 
+        };
+        // for (const auto model : m_Models)
+        // {
+        //     for (const auto mesh : model.second.m_vMeshes)
+        //     {
+        //         vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
+        //     }
+        // }
 
         const auto verticesCount = vertices.size();
         const VkDeviceSize bufferSize = sizeof(vertices[0]) * verticesCount;
@@ -1012,17 +1022,17 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateIndexBuffer()
     {
-        std::vector<EXUINT16> indices = {};
-        for (const auto &model : m_Models)
-        {
-            for (const auto &mesh : model.second.m_vMeshes)
-            {
-                indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
-            }
-        }
+        std::vector<EXUINT16> indices = { 0 };
+        // for (const auto &model : m_Models)
+        // {
+        //     for (const auto &mesh : model.second.m_vMeshes)
+        //     {
+        //         indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
+        //     }
+        // }
 
         const auto indicesCount = indices.size();
-        const VkDeviceSize bufferSize = sizeof(indices[0]) * indicesCount;
+        const VkDeviceSize bufferSize = sizeof(EXUINT16) * indicesCount;
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1195,19 +1205,19 @@ namespace eXngine::Renderers::Vulkan
 			m_pDefaultGraphicsPipeline->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
 			m_pDefaultGraphicsPipeline->SetExtent(m_szSwapChainExtent);
         }
+
+        for (auto& pipeline : m_pGraphicPipelines)
+        {
+            pipeline.second->m_Scissors.clear();
+            pipeline.second->m_Viewports.clear();
+            pipeline.second->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
+            pipeline.second->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
+            pipeline.second->SetExtent(m_szSwapChainExtent);
+        }
     }
 
     void Renderer::CreateImageViews()
     {
-        // if (m_swapChainImageViews.empty() == false)
-        //{
-        //     for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
-        //     {
-        //         vkDestroyImageView(m_pDevice, m_swapChainImageViews[i], nullptr);
-        //     }
-        //     m_swapChainImageViews.clear();
-        // }
-
         m_swapChainImageViews.clear();
         m_swapChainImageViews.resize(m_swapChainImages.size());
 
@@ -1332,16 +1342,6 @@ namespace eXngine::Renderers::Vulkan
         CreateImageViews();
         CreateDepthResources();
         CreateFramebuffers();
-    }
-
-    void Renderer::AllocatePipeline(std::string name)
-    {
-        if (m_pGraphicPipelines.find(name) != m_pGraphicPipelines.end()) {
-            std::cout << "[WARNING] Pipeline with name '" << name << "' already exists. Skipping creation." << "\n";
-            return;
-        }
-
-		m_pGraphicPipelines[name] = new VkGraphicsPipeline(m_pDevice, m_szSwapChainExtent);
     }
 
     void Renderer::SelectPhysicalDevice()
@@ -1529,16 +1529,15 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::LoadModel(const char *path, std::vector<Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths, const char * pipeline)
-    {
-        m_Models.emplace(path, VkModelObject(meshes, texturePaths, pipeline));
-
-        for (const auto &mesh : meshes)
-        {
-            m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
-            m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
-        }
-    }
+    //void Renderer::LoadModel(const char *path, std::vector<Utils::Mesh> meshes, std::map<const char *, const char *> texturePaths, const char * pipeline)
+    //{
+    //    m_Models.emplace(path, VkModelObject(meshes, texturePaths, pipeline));
+    //    for (const auto &mesh : meshes)
+    //    {
+    //        m_nVerticesCount += static_cast<EXUINT32>(mesh.vertices.size());
+    //        m_nIndicesCount += static_cast<EXUINT32>(mesh.indices.size());
+    //    }
+    //}
 
     //void Renderer::LoadModel(const char* path, std::vector<Utils::Mesh> meshes, const char * textureKey, const char* texturePath, const char* pipeline = nullptr)
     //{
