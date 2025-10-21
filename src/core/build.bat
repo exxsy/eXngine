@@ -27,17 +27,17 @@ IF /I NOT "%ARCH%"=="x64" IF /I NOT "%ARCH%"=="x32" (
 )
 
 SET "cFilenames="
-FOR /R %%f IN (src\window\src\*.c) DO (
+FOR /R %%f IN (src\core\src\*.c) DO (
     SET "cFilenames=!cFilenames! %%f"
 )
-FOR /R %%f IN (src\window\src\*.cpp) DO (
+FOR /R %%f IN (src\core\src\*.cpp) DO (
     SET "cFilenames=!cFilenames! %%f"
 )
 
 powershell -Command "Write-Host 'Files: %cFilenames%' -ForegroundColor Cyan"
 
 SET "namespace=eXngine"
-SET "assembly=window"
+SET "assembly=core"
 SET "compilerFlags=-std=c++20 -shared -Wvarargs -Wall -Werror"
 
 IF /I "%ARCH%"=="x64" (
@@ -58,8 +58,8 @@ IF /I "%CONFIG%"=="Debug" (
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib\%ARCH%\%CONFIG%"
-SET "includeFlags=-Isrc -Iincludes -I3rdparty\glfw\include -II3rdparty\glfw\src"
-SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -lglfw3 -lshell32 -lgdi32 -luser32"
+SET "includeFlags=-Isrc -Iincludes"
+SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -lshell32 -lgdi32 -luser32"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
 IF NOT EXIST "%OUT_DIR%" (
     MKDIR "%OUT_DIR%" >NUL 2>&1
@@ -76,7 +76,7 @@ IF NOT "%ERR%"=="0" (
     EXIT /B %ERR%
 )
 
-powershell -Command "Write-Host 'Build succeeded: %OUT_DIR%\eXngine.%assembly%.dll' -ForegroundColor Green"
+powershell -Command "Write-Host 'Build succeeded: %OUT_DIR%\%namespace%.%assembly%.dll' -ForegroundColor Green"
 EXIT /B 0
 
 :usage

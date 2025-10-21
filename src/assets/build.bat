@@ -27,17 +27,17 @@ IF /I NOT "%ARCH%"=="x64" IF /I NOT "%ARCH%"=="x32" (
 )
 
 SET "cFilenames="
-FOR /R %%f IN (src\window\src\*.c) DO (
+FOR /R %%f IN (src\assets\src\*.c) DO (
     SET "cFilenames=!cFilenames! %%f"
 )
-FOR /R %%f IN (src\window\src\*.cpp) DO (
+FOR /R %%f IN (src\assets\src\*.cpp) DO (
     SET "cFilenames=!cFilenames! %%f"
 )
 
 powershell -Command "Write-Host 'Files: %cFilenames%' -ForegroundColor Cyan"
 
 SET "namespace=eXngine"
-SET "assembly=window"
+SET "assembly=assets"
 SET "compilerFlags=-std=c++20 -shared -Wvarargs -Wall -Werror"
 
 IF /I "%ARCH%"=="x64" (
@@ -48,18 +48,18 @@ IF /I "%ARCH%"=="x64" (
 
 IF /I "%CONFIG%"=="Debug" (
     SET "compilerFlags=%compilerFlags% -g -O0"
-    SET "defines=-D_DEBUG -DEXNEXPORT"
+    SET "defines=-D_DEBUG -DEXNEXPORT -DEXN_TEXTURE_STRATEGY_STBI"
     SET "linkerFlags=%linkerFlags% -lmsvcrtd -Xlinker /NODEFAULTLIB:libcmt"
 ) ELSE (
     SET "CONFIG=Release"
     SET "compilerFlags=%compilerFlags% -O2"
-    SET "defines=-DNDEBUG -DEXNEXPORT"
+    SET "defines=-DNDEBUG -DEXNEXPORT -DEXN_TEXTURE_STRATEGY_STBI"
     SET "linkerFlags=%linkerFlags% -lmsvcrt -Xlinker /NODEFAULTLIB:libcmt"
 )
 
-SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib\%ARCH%\%CONFIG%"
-SET "includeFlags=-Isrc -Iincludes -I3rdparty\glfw\include -II3rdparty\glfw\src"
-SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -lglfw3 -lshell32 -lgdi32 -luser32"
+SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib"
+SET "includeFlags=-Isrc -Iincludes -I3rdparty"
+SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR%\%ARCH%\%CONFIG% -L%CD%\output\%ARCH%\%CONFIG% -leXngine.core -lshell32 -lgdi32 -luser32"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
 IF NOT EXIST "%OUT_DIR%" (
     MKDIR "%OUT_DIR%" >NUL 2>&1
@@ -76,7 +76,7 @@ IF NOT "%ERR%"=="0" (
     EXIT /B %ERR%
 )
 
-powershell -Command "Write-Host 'Build succeeded: %OUT_DIR%\eXngine.%assembly%.dll' -ForegroundColor Green"
+powershell -Command "Write-Host 'Build succeeded: %OUT_DIR%\%namespace%.%assembly%.dll' -ForegroundColor Green"
 EXIT /B 0
 
 :usage

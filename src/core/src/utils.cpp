@@ -5,7 +5,7 @@
 #include <eXngine.h>
 #include <utils/utils.h>
 
-EXINT32 hash(const std::string & str)
+EXNEXPORT EXINT32 hash(const std::string & str)
 {
 	const std::hash<std::string> hasher;
 

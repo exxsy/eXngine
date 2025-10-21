@@ -2,11 +2,15 @@
 
 #include <map>
 #include <eXngine.h>
+#include <functional>
+#include <cassert>
+#include <string>
+#include <utils/utils.h>
 
 // TODO: Add your own texture loading strategy, because why not!?
 #ifdef EXN_TEXTURE_STRATEGY_STBI
-#include <stb_image/stb_image.h>
 #define STB_IMAGE_IMPLEMENTATION
+#include <stb_image/stb_image.h>
 #define EXN_LOAD_TEXTURE(...) stbi_load(__VA_ARGS__)
 #define EXN_FREE_TEXTURE(...) stbi_image_free(__VA_ARGS__)
 #else
@@ -30,12 +34,12 @@ namespace eXngine::Images
     public:
         EXUINT16 width, height;
         EXUINT8* data;
-        size_t size;
+        EXSIZE size;
 
         ~Image();
     };
 
-    class ImageManager
+    class EXNEXPORT ImageManager
     {
         EXN_SINGLETON(ImageManager, textureManager)
     protected:

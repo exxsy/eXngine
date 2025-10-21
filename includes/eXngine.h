@@ -19,6 +19,8 @@
 #define EXFLOAT         float
 #define EXDOUBLE        double
 #define EXLONGDOUBLE    long double
+#define EXLONGLONG      long long
+#define EXSIZE          EXLONGLONG
 #define EXCHAR          char
 #define EXBOOL          bool
 #define EXUINTPTR       EXUINT32*
@@ -31,6 +33,12 @@
 #define EXN_FALSE false
 #define EXN_NULL NULL
 #define EXN_NULL_HANDLE nullptr
+
+#ifdef EXNEXPORT
+#undef EXNEXPORT
+#endif
+
+#define EXNEXPORT __declspec(dllexport)
 
 #define EXN_SINGLETON(type, name, ...) \
 	public: \

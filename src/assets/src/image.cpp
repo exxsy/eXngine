@@ -1,8 +1,5 @@
-#include <functional>
-#include <cassert>
-#include <string>
+
 #include <texture/image.h>
-#include <utils/utils.h>
 
 extern EXINT32 hash(const std::string&);
 
