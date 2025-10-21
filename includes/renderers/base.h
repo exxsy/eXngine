@@ -54,7 +54,7 @@ namespace eXngine::Renderers
 		virtual void PopRenderCommand() = 0;
 	};
 
-	class BaseRenderer : virtual public AbstractRenderer
+	class EXNEXPORT BaseRenderer : virtual public AbstractRenderer
 	{
 	protected:
 		char *m_szName = nullptr;

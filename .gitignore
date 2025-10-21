@@ -1,13 +1,11 @@
 /.vs/**/*
 /**/.vs/**/*
-/**/x64/**/*
-/x64/**/*
-/.vscode
 /output
 /CMakeFiles
 CMakeCache.txt
-example/imgui.ini
+imgui.ini
 glfw.dir/**/*
-*.vcxproj.user
+*.vcxproj
+*.vcxproj.*
 /3rdparty/lib/**/*
 /build/**/*

@@ -27,11 +27,11 @@ IF /I NOT "%ARCH%"=="x64" IF /I NOT "%ARCH%"=="x32" (
 )
 
 SET "cFilenames="
-FOR /R %%f IN (src\assets\src\*.c) DO (
+FOR /R "src\assets\src" %%f IN (*.c) DO (
     SET "cFilenames=!cFilenames! %%f"
 )
-FOR /R %%f IN (src\assets\src\*.cpp) DO (
-    SET "cFilenames=!cFilenames! %%f"
+FOR /R "src\assets\src" %%f IN (*.cpp) DO (
+    SET "cFilenames=!cFilenames! %%f"   
 )
 
 powershell -Command "Write-Host 'Files: %cFilenames%' -ForegroundColor Cyan"

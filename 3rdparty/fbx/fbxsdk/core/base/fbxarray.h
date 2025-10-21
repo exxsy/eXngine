@@ -567,7 +567,7 @@ private:
 #if defined(FBXSDK_COMPILER_MSC)
     //Previously class FbxArray is for pointers. Somehow, it's used to store other types. Here's a compile-time checking for known incompatible classes.
     //If it happens you find new incompatible ones, declare them with macro FBXSDK_INCOMPATIBLE_WITH_ARRAY. Also see file fbxstring.h.
-    FBX_ASSERT_STATIC(FBXSDK_IS_SIMPLE_TYPE(T) || __is_enum(T) || (__has_trivial_constructor(T)&&__has_trivial_destructor(T)) || !FBXSDK_IS_INCOMPATIBLE_WITH_ARRAY(T));
+    FBX_ASSERT_STATIC(FBXSDK_IS_SIMPLE_TYPE(T) || __is_enum(T) || (__is_trivially_destructible(T)&&__is_trivially_destructible(T)) || !FBXSDK_IS_INCOMPATIBLE_WITH_ARRAY(T));
 #endif
 
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/

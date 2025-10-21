@@ -1,13 +1,13 @@
+#undef GLFW_INCLUDE_VULKAN
+
 #include <windows/glfw.h>
-#include <windows/window.h>
-#include <cassert>
 
 namespace eXngine::Applications
 {
 	GLFWApplication::GLFWApplication(const char *name, Point position, Size size, bool maximized) : 
 		Application(name, position, size, maximized), m_pWindow(nullptr)
 	{
-		assert(Initialize());
+		
 	}
 
 	bool GLFWApplication::Initialize()

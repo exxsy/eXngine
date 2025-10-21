@@ -2,7 +2,7 @@
 
 namespace eXngine::Renderers
 {
-	class AbstractRenderer
+	class EXNEXPORT AbstractRenderer
 	{
 	public:
 		virtual void Initialize() = 0;

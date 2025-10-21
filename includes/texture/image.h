@@ -7,16 +7,6 @@
 #include <string>
 #include <utils/utils.h>
 
-// TODO: Add your own texture loading strategy, because why not!?
-#ifdef EXN_TEXTURE_STRATEGY_STBI
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
-#define EXN_LOAD_TEXTURE(...) stbi_load(__VA_ARGS__)
-#define EXN_FREE_TEXTURE(...) stbi_image_free(__VA_ARGS__)
-#else
-#error "No texture loading strategy defined. Please define EXN_TEXTURE_STRATEGY_STBI to use stb_image."
-#endif
-
 namespace eXngine::Images
 {
     enum ImageColorFormat : int
@@ -29,7 +19,7 @@ namespace eXngine::Images
         COUNT
     };
 
-    struct Image
+    struct EXNEXPORT Image
     {
     public:
         EXUINT16 width, height;

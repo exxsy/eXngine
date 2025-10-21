@@ -8,7 +8,7 @@ namespace eXngine::Renderers::Vulkan
 {
     class Renderer;
 
-    class VkTexture
+    class EXNEXPORT VkTexture
     {
     public:
 		Renderer * m_pRenderer = EXN_NULL_HANDLE;

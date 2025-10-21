@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <eXngine.h>
+#include <renderers/defines.h>
 #include <vulkan/vulkan_core.h>
 
 namespace eXngine::Utils

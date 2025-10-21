@@ -50,7 +50,7 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	struct UniformBufferObject
+	struct EXNEXPORT UniformBufferObject
 	{
 		alignas(16) EXMAT4 model;
 		alignas(16) EXMAT4 view;
@@ -64,7 +64,7 @@ namespace eXngine::Renderers::Vulkan
 		alignas(4) EXUINT32 numTextures = 1;
 	};
 
-	struct VkFrameObject
+	struct EXNEXPORT VkFrameObject
 	{
 		VkCommandBuffer commandBuffer;
 		VkSemaphore imageAvailableSemaphore;
@@ -85,7 +85,7 @@ namespace eXngine::Renderers::Vulkan
 		}
 	};
 
-	struct VkTextureObject
+	struct EXNEXPORT VkTextureObject
 	{
 	public:
 		const char path[512];
@@ -97,7 +97,7 @@ namespace eXngine::Renderers::Vulkan
 		}
 	};
 
-	struct VkModelObject
+	struct EXNEXPORT VkModelObject
 	{
 	public:
 		std::map<const char *, VkTextureObject*> m_pTextures;
@@ -147,7 +147,7 @@ namespace eXngine::Renderers::Vulkan
 		}
 	};
 
-	struct VkShaderModuleObject : public eXngine::Renderers::ShaderModule
+	struct EXNEXPORT VkShaderModuleObject : public eXngine::Renderers::ShaderModule
 	{
 	public:
 		VkDevice m_pDevice = EXN_NULL_HANDLE;
@@ -205,7 +205,7 @@ namespace eXngine::Renderers::Vulkan
 		MaxEnum = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM,
 	};*/
 
-	class Renderer : public BaseRenderer, public IRenderCommands<VkBuffer, EXUINT32>
+	class EXNEXPORT Renderer : public BaseRenderer, public IRenderCommands<VkBuffer, EXUINT32>
 	{
 		friend class VkTexture;
 	private:

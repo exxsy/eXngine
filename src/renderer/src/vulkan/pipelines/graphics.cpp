@@ -12,12 +12,7 @@ namespace eXngine::Renderers::Vulkan
 		m_ShaderStages = std::vector<VkPipelineShaderStageCreateInfo>();
 	};
 
-    VkGraphicsPipeline::~VkGraphicsPipeline()
-    {
-        vkDestroyPipelineLayout(*m_pDevice, m_pLayout, nullptr);
-		vkDestroyPipeline(*m_pDevice, m_pPipeline, nullptr);
-		vkDestroyDescriptorSetLayout(*m_pDevice, m_pDescriptorSetLayout, nullptr);
-    }
+
 
     void VkGraphicsPipeline::SetExtent(VkExtent2D extent)
     {

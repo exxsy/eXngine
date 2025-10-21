@@ -484,6 +484,8 @@ namespace eXngine::Renderers::Vulkan
             delete pipeline.second;
         }
 
+        m_pGraphicPipelines.clear();
+
         vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
         //vkDestroyPipeline(m_pDevice, m_pDefaultGraphicsPipeline->m_pPipeline, nullptr);
         //vkDestroyPipelineLayout(m_pDevice, m_pDefaultGraphicsPipeline->m_pLayout, nullptr);

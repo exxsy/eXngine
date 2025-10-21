@@ -1,6 +1,8 @@
 @echo off
 setlocal ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
 
+SET "EXN_EXTRA=-DEXN_TEXTURE_STRATEGY_STBI -DGLFW_INCLUDE_VULKAN"
+
 rem Move to repository root (folder of this script)
 pushd "%~dp0"
 
@@ -16,6 +18,9 @@ if /I "%CMD%"=="help" goto :usage
 if /I "%CMD%"=="shaders" goto :do_shaders
 if /I "%CMD%"=="window" goto :do_window
 if /I "%CMD%"=="assets" goto :do_assets
+if /I "%CMD%"=="example" goto :do_example
+if /I "%CMD%"=="renderer" goto :do_renderer
+if /I "%CMD%"=="core" goto :do_core
 if /I "%CMD%"=="clean" goto :do_clean
 if /I "%CMD%"=="all" goto :do_all
 
@@ -41,6 +46,14 @@ goto :success
 call :assets_build || goto :fail
 goto :success
 
+:do_example
+call :example_build || goto :fail
+goto :success
+
+:do_renderer
+call :renderer_build || goto :fail
+goto :success
+
 :do_clean
 call :clean_output || goto :fail
 goto :success
@@ -48,8 +61,10 @@ goto :success
 :do_all
 call :build_shaders || goto :fail
 call :core_build || goto :fail
-call :assets_build || goto :fail
 call :window_build || goto :fail
+call :assets_build || goto :fail
+call :renderer_build || goto :fail
+call :example_build || goto :fail
 goto :success
 
 rem ------------------------- Subroutines --------------------------
@@ -86,7 +101,6 @@ exit /b 0
 powershell -Command "Write-Host '[assets] Checking for assets\build.bat' -ForegroundColor Cyan"
 if exist "%CD%\src\assets\build.bat" (
 	powershell -Command "Write-Host '[assets] Running assets\build.bat' -ForegroundColor Cyan"
-	SET "EXN_EXTRA=-DEXN_TEXTURE_STRATEGY_STBI"
 	call "%CD%\src\assets\build.bat"
 	if errorlevel 1 (
 		echo [assets] Sub-build failed.
@@ -108,6 +122,34 @@ if exist "%CD%\src\core\build.bat" (
 	)
 ) else (
 	echo [core] No core\build.bat found. Skipping.
+)
+exit /b 0
+
+:example_build
+powershell -Command "Write-Host '[example] Checking for example\build.bat' -ForegroundColor Cyan"
+if exist "%CD%\src\example\build.bat" (
+	powershell -Command "Write-Host '[example] Running example\build.bat' -ForegroundColor Cyan"
+	call "%CD%\src\example\build.bat"
+	if errorlevel 1 (
+		echo [example] Sub-build failed.
+		exit /b 1
+	)
+) else (
+	echo [example] No example\build.bat found. Skipping.
+)
+exit /b 0
+
+:renderer_build
+powershell -Command "Write-Host '[renderer] Checking for renderer\build.bat' -ForegroundColor Cyan"
+if exist "%CD%\src\renderer\build.bat" (
+	powershell -Command "Write-Host '[renderer] Running renderer\build.bat' -ForegroundColor Cyan"
+	call "%CD%\src\renderer\build.bat"
+	if errorlevel 1 (
+		echo [renderer] Sub-build failed.
+		exit /b 1
+	)
+) else (
+	echo [renderer] No renderer\build.bat found. Skipping.
 )
 exit /b 0
 

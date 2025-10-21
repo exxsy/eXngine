@@ -27,18 +27,18 @@ IF /I NOT "%ARCH%"=="x64" IF /I NOT "%ARCH%"=="x32" (
 )
 
 SET "cFilenames="
-FOR /R "src\window\src" %%f IN (*.c) DO (
+FOR /R "src\example\src" %%f IN (*.c) DO (
     SET "cFilenames=!cFilenames! %%f"
 )
-FOR /R "src\window\src" %%f IN (*.cpp) DO (
+FOR /R "src\example\src" %%f IN (*.cpp) DO (
     SET "cFilenames=!cFilenames! %%f"   
 )
 
 powershell -Command "Write-Host 'Files: %cFilenames%' -ForegroundColor Cyan"
 
 SET "namespace=eXngine"
-SET "assembly=window"
-SET "compilerFlags=-std=c++20 -shared -Wvarargs -Wall -Werror"
+SET "assembly=example"
+SET "compilerFlags=-std=c++20 -Werror -Wno-error=deprecated-builtins -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=nontrivial-memcall -Wno-error=reorder-ctor"
 
 IF /I "%ARCH%"=="x64" (
     SET "compilerFlags=%compilerFlags% -m64"
@@ -48,26 +48,33 @@ IF /I "%ARCH%"=="x64" (
 
 IF /I "%CONFIG%"=="Debug" (
     SET "compilerFlags=%compilerFlags% -g -O0"
-    SET "defines=-D_DEBUG -DEXNEXPORT"
-    SET "linkerFlags=%linkerFlags% -lmsvcrtd -Xlinker /NODEFAULTLIB:libcmt"
+    SET "defines=-D_DEBUG"
+    SET "linkerFlags=%linkerFlags% -lmsvcrtd -lvulkan-1"
 ) ELSE (
     SET "CONFIG=Release"
     SET "compilerFlags=%compilerFlags% -O2"
-    SET "defines=-DNDEBUG -DEXNEXPORT"
-    SET "linkerFlags=%linkerFlags% -lmsvcrt -Xlinker /NODEFAULTLIB:libcmt"
+    SET "defines=-DNDEBUG"
+    SET "linkerFlags=%linkerFlags% -lmsvcrt -lvulkan-1"
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib"
-SET "includeFlags=-Isrc -Iincludes -I3rdparty\glfw\include -II3rdparty\glfw\src"
-SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -lglfw3 -lshell32 -lgdi32 -luser32"
+SET "includeFlags=-Isrc -Iincludes -I3rdparty -I3rdparty\imgui -I3rdparty\glm -I3rdparty\glfw\include -II3rdparty\glfw\src -I3rdparty\fbx"
+SET "includeFlags=%includeFlags% -I%VULKAN_SDK%\Include"
+SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -L%THIRDPARTY_LIB_DIR%\%ARCH%\%CONFIG% -L%CD%\output\%ARCH%\%CONFIG%"
+SET "linkerFlags=%linkerFlags% -L%VULKAN_SDK%\Lib -lvulkan-1 -llibfbxsdk -lglfw3"
+SET "linkerFlags=%linkerFlags% -leXngine.renderer -leXngine.core -leXngine.window -leXngine.assets -lshell32 -lgdi32 -luser32"
+
+REM Append Windows subsystem and entry point without clobbering previous flags
+SET "linkerFlags=%linkerFlags% -Xlinker /SUBSYSTEM:WINDOWS -Xlinker /ENTRY:WinMainCRTStartup -Xlinker /NODEFAULTLIB:libcmt"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
+
 IF NOT EXIST "%OUT_DIR%" (
     MKDIR "%OUT_DIR%" >NUL 2>&1
 )
 
 powershell -Command "Write-Host 'Building %assembly% for %ARCH% %CONFIG%...' -ForegroundColor Cyan"
 
-clang %cFilenames% %compilerFlags% %defines% %includeFlags% %EXTRA_OPTS% %linkerFlags% -o "%OUT_DIR%\%namespace%.%assembly%.dll"
+clang++ %cFilenames% %compilerFlags% %defines% %EXTRA_OPTS% %includeFlags% %linkerFlags% -o "%OUT_DIR%\%namespace%.%assembly%.exe"
 
 SET "ERR=%ERRORLEVEL%"
 
@@ -76,7 +83,7 @@ IF NOT "%ERR%"=="0" (
     EXIT /B %ERR%
 )
 
-powershell -Command "Write-Host 'Build succeeded: %OUT_DIR%\eXngine.%assembly%.dll' -ForegroundColor Green"
+powershell -Command "Write-Host 'Build succeeded: %OUT_DIR%\%namespace%.%assembly%.exe' -ForegroundColor Green"
 EXIT /B 0
 
 :usage

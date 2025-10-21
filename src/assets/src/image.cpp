@@ -1,6 +1,20 @@
 
 #include <texture/image.h>
 
+// TODO: Add your own texture loading strategy, because why not!?
+#ifdef EXN_TEXTURE_STRATEGY_STBI
+#ifndef EXN_TEXTURE_STRATEGY_STBI_H
+#define EXN_TEXTURE_STRATEGY_STBI_H
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image/stb_image.h>
+#define EXN_LOAD_TEXTURE(...) stbi_load(__VA_ARGS__)
+#define EXN_FREE_TEXTURE(...) stbi_image_free(__VA_ARGS__)
+#endif
+#else
+#error "No texture loading strategy defined. Please define EXN_TEXTURE_STRATEGY_STBI to use stb_image."
+#endif
+
+
 extern EXINT32 hash(const std::string&);
 
 namespace eXngine::Images

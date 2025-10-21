@@ -2,6 +2,7 @@
 
 #include <fbxsdk.h>
 #include <vector>
+#include <renderers/defines.h>
 #include <utils/vertex.h>
 #include <utils/mesh.h>
 

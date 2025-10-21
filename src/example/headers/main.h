@@ -12,8 +12,6 @@
 #include <utils/fbx-loader.h>
 #include <renderers/vulkan/renderer.h>
 
-#include <3rdparty/stb_image/stb_image.h>
-
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 

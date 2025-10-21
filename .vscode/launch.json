@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch eXngine Example",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/output/x64/Debug/eXngine.example.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/src/example",
+      "environment": [],
+      "externalConsole": false,
+      "symbolOptions": {
+        "searchPaths": [
+          "${workspaceFolder}/3rdparty/lib/**/*",
+        ],
+        "searchMicrosoftSymbolServer": false
+      },
+      "preLaunchTask": "Build Example",
+    },
+  ]
+}

@@ -1,8 +1,5 @@
 #include "../headers/main.h"
 
-#pragma comment(lib, "glfw3.lib")
-#pragma comment(lib, "libfbxsdk.lib")
-
 const char *m_szName = "eXngine Demo";
 const eXngine::Size window_size = eXngine::Size(1024, 768);
 float m_fRotationScale = 5.0f;
@@ -142,11 +139,10 @@ void ImGui_OnExit()
 }
 #endif
 
-GLFWApplication *app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
-Renderer *renderer = new Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
-
 VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwindow *window)
 {
+    assert(glfwVulkanSupported() == GLFW_TRUE);
+
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), window, nullptr, &surface);
     assert(result == VK_SUCCESS);
@@ -170,7 +166,7 @@ void ScrollHandler(GLFWwindow *window, double xoffset, double yoffset)
 
 void ResizeHandler(GLFWwindow *window, int width, int height)
 {
-    if (Renderer *renderer = reinterpret_cast<Renderer *>(glfwGetWindowUserPointer(window)))
+    if (BaseRenderer *renderer = reinterpret_cast<BaseRenderer *>(glfwGetWindowUserPointer(window)))
     {
         renderer->SetFrameBufferSize(Size(width, height));
         renderer->SetFrameBufferResized(true);
@@ -186,7 +182,7 @@ void UpdateUniformBuffer(void *buffer, uint32_t currentImage)
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(m_fZoomFactor, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), (float)app->GetSize().W / (float)app->GetSize().H, 0.1f, 1000.0f);
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float)window_size.W / (float)window_size.H, 0.1f, 1000.0f);
     // ubo.view = camera->GetViewMatrix();
     // ubo.proj = camera->GetProjectionMatrix(window_size.W / window_size.H);
 
@@ -195,8 +191,11 @@ void UpdateUniformBuffer(void *buffer, uint32_t currentImage)
     memcpy(buffer, &ubo, sizeof(ubo));
 }
 
-int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
+EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
+    GLFWApplication *app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
+    Renderer *renderer = new Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
+
 #ifdef _DEBUG
     FILE *stream;
     AllocConsole();
@@ -210,10 +209,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     func(renderer->GetVulkanInstance(), &debugCreateInfo, nullptr, &debugMessenger);
 #endif
 
+    app->Initialize();
     app->SetKeyboardHandler(KeyboardHandler);
     app->SetScrollHandler(ScrollHandler);
     app->SetFramebufferSizeHandler(ResizeHandler);
-    app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer *>(renderer));
+    app->SetRenderer(static_cast<Renderers::AbstractRenderer *>(renderer));
 
     auto tri_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.vert.spv");
     auto tri_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.frag.spv");
@@ -266,4 +266,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 #endif
 
     return app->Run();
+}
+
+EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance,
+                         _In_opt_ HINSTANCE hPrevInstance,
+                         _In_ LPSTR /*lpCmdLine*/,
+                         _In_ int nShowCmd)
+{
+    return wWinMain(hInstance, hPrevInstance, GetCommandLineW(), nShowCmd);
 }

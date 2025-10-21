@@ -8,7 +8,7 @@ using namespace eXngine::Renderers;
 
 namespace eXngine::Applications
 {
-	class Application
+	class EXNEXPORT Application
 	{
 	protected:
 		char *m_name = nullptr;
@@ -22,9 +22,6 @@ namespace eXngine::Applications
 		Application(const char *name, Point position, Size size, bool maximized);
 		Application();
 		~Application();
-		virtual bool Initialize() = 0;
-		virtual int Run() = 0;
-		virtual int Loop() = 0;
 		const char *GetName();
 		Size GetSize();
 		Point GetPosition();
@@ -33,5 +30,9 @@ namespace eXngine::Applications
 		void SetSize(Size size);
 		void SetPosition(Point position);
 		void SetMaximized(bool maximized);
+
+		virtual bool Initialize() = 0;
+		virtual int Run() = 0;
+		virtual int Loop() = 0;
 	};
 }

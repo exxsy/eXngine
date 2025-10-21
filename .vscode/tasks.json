@@ -1,0 +1,93 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build All",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [],
+            "group": "build",
+            "detail": "Build all of the projects"
+        },
+        {
+            "label": "Build Window",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [
+                "window"
+            ],
+            "group": "build",
+            "detail": "Build window project only"
+        },
+        {
+            "label": "Build Core",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [
+                "core"
+            ],
+            "group": "build",
+            "detail": "Build core project only"
+        },
+        {
+            "label": "Build Renderer",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [
+                "renderer"
+            ],
+            "group": "build",
+            "detail": "Build renderer project only"
+        },
+        {
+            "label": "Build Assets",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [
+                "assets"
+            ],
+            "group": "build",
+            "detail": "Build assets project only"
+        },
+        {
+            "label": "Build Example",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [
+                "example"
+            ],
+            "group": "build",
+            "detail": "Build example project only"
+        }
+    ]
+}

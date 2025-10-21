@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <cassert>
+
 #include <windows/window.h>
 #include <GLFW/glfw3.h>
-#include <vector>
 
 namespace eXngine::Applications
 {
@@ -12,7 +14,7 @@ namespace eXngine::Applications
 	typedef GLFWcharfun GLFWCharacterCallback;
 	typedef GLFWkeyfun GLFWKeyboardCallback;
 
-	class GLFWApplication : public Application
+	class EXNEXPORT GLFWApplication : public Application
 	{
 	private:
 		int Loop() override;
@@ -28,7 +30,6 @@ namespace eXngine::Applications
 		[[maybe_unused]] bool maximized = false;
 
 	public:
-		GLFWApplication() = default;
 		GLFWApplication(const char *name, Point position, Size size, bool maximized = false);
 		bool Initialize() override;
 		int Run() override;
