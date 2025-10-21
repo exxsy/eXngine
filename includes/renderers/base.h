@@ -5,8 +5,9 @@
 #include <mutex>
 #include <vector>
 #include <combaseapi.h>
+#include <renderers/defines.h>
+#include <renderers/abstract.h>
 
-//#include <utils/fbx-loader.h>
 #include <texture/image.h>
 
 namespace eXngine::Renderers
@@ -53,7 +54,7 @@ namespace eXngine::Renderers
 		virtual void PopRenderCommand() = 0;
 	};
 
-	class BaseRenderer
+	class BaseRenderer : virtual public AbstractRenderer
 	{
 	protected:
 		char *m_szName = nullptr;
@@ -75,10 +76,6 @@ namespace eXngine::Renderers
 
 		FPSData GetFPS() const;
 		Images::ImageManager* GetImageManager();
-
-		virtual void Initialize() = 0;
-		virtual void OnRender() = 0;
-		virtual void OnExit() = 0;
 
 		virtual bool LoadShader(const char*, const std::vector<char>&, eXshader) = 0;
 		virtual void UseShader(const char*) = 0;

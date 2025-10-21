@@ -10,3 +10,4 @@ example/imgui.ini
 glfw.dir/**/*
 *.vcxproj.user
 /3rdparty/lib/**/*
+/build/**/*

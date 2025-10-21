@@ -23,6 +23,7 @@ namespace eXngine::Applications
 		GLFWMousePosCallback *m_fnMousePos = nullptr;
 		GLFWMouseClickCallback *m_fnMouseClick = nullptr;
 		GLFWScrollCallback *m_fnScroll = nullptr;
+		GLFWframebuffersizefun *m_fnFramebufferSize = nullptr;
 
 		[[maybe_unused]] bool maximized = false;
 
@@ -39,5 +40,6 @@ namespace eXngine::Applications
 		void SetMousePosHandler(GLFWMousePosCallback handler);
 		void SetMouseClickHandler(GLFWMouseClickCallback handler);
 		void SetScrollHandler(GLFWScrollCallback handler);
+		void SetFramebufferSizeHandler(GLFWframebuffersizefun handler);
 	};
 }

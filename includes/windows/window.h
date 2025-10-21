@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <eXngine.h>
-#include <renderers/base.h>
+#include <renderers/abstract.h>
 
 using namespace eXngine::Renderers;
 
@@ -16,8 +16,7 @@ namespace eXngine::Applications
 		Size m_size;
 		bool maximized;
 
-		std::optional<BaseRenderer *> m_pRenderer = nullptr;
-
+		std::optional<AbstractRenderer *> m_pRenderer = nullptr;
 	public:
 		void *m_pInstance = nullptr;
 		Application(const char *name, Point position, Size size, bool maximized);
@@ -30,7 +29,7 @@ namespace eXngine::Applications
 		Size GetSize();
 		Point GetPosition();
 		bool IsMaximized();
-		void SetRenderer(BaseRenderer *);
+		void SetRenderer(AbstractRenderer *);
 		void SetSize(Size size);
 		void SetPosition(Point position);
 		void SetMaximized(bool maximized);

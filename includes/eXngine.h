@@ -1,8 +1,5 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #define EXENGINE_MAKE_VERSION(patch, major, minor) (((patch) << 16) | ((major) << 8) | (minor))
 #define EXENGINE_GET_PATCH_VERSION(version) (((version) >> 16) & 0xFF)
 #define EXENGINE_GET_MAJOR_VERSION(version) (((version) >> 8) & 0xFF)
@@ -25,12 +22,6 @@
 #define EXCHAR          char
 #define EXBOOL          bool
 #define EXUINTPTR       EXUINT32*
-#define EXVEC2          glm::vec2
-#define EXVEC3          glm::vec3
-#define EXVEC4          glm::vec4
-#define EXMAT4          glm::mat4
-#define EXMAT3          glm::mat3
-#define EXMAT2          glm::mat2
 
 #define EXENGINE "eXngine"
 #define EXENGINE_VERSION EXENGINE_MAKE_VERSION(1, 0, 0)
@@ -40,7 +31,6 @@
 #define EXN_FALSE false
 #define EXN_NULL NULL
 #define EXN_NULL_HANDLE nullptr
-#define EXN_DUMMY_TEXTURE (const unsigned char*)"\xff\x00\x00"
 
 #define EXN_SINGLETON(type, name, ...) \
 	public: \
