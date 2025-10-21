@@ -24,7 +24,7 @@ namespace eXngine::Applications
 		GLFWMouseClickCallback *m_fnMouseClick = nullptr;
 		GLFWScrollCallback *m_fnScroll = nullptr;
 
-		bool maximized = false;
+		[[maybe_unused]] bool maximized = false;
 
 	public:
 		GLFWApplication() = default;

@@ -7,3 +7,6 @@
 /CMakeFiles
 CMakeCache.txt
 example/imgui.ini
+glfw.dir/**/*
+*.vcxproj.user
+/3rdparty/lib/**/*

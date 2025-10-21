@@ -163,6 +163,8 @@ void ScrollHandler(GLFWwindow* window, double xoffset, double yoffset)
         m_fZoomFactor -= 1.0f;
     else
 		m_fZoomFactor += 1.0f;
+
+	m_fZoomFactor = glm::clamp(m_fZoomFactor, 5.0f, 100.0f);
 }
 
 void UpdateUniformBuffer(void* buffer, uint32_t currentImage)
@@ -209,8 +211,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
     auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 
-    renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
-    renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
+    //renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
+    //renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
 
     renderer->LoadShader("default.vertex", vert, eXngine::Vertex);
     renderer->LoadShader("default.fragment", frag, eXngine::Fragment);
@@ -242,8 +244,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
 	renderer->Initialize();
 
-    renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
-    renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
+    //renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
+    //renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);
