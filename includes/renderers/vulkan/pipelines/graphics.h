@@ -7,6 +7,7 @@
 #include <eXngine.h>
 #include <vulkan/vulkan.h>
 #include <renderers/vulkan/vertex.h>
+#include <renderers/vulkan/texture.h>
 
 namespace eXngine::Renderers::Vulkan
 {
@@ -16,28 +17,28 @@ namespace eXngine::Renderers::Vulkan
         const EXUINT32 MAX_FRAMES_IN_FLIGHT = 2;
         const EXUINT32 MAX_TEXTURE_COUNT = 16;
     
-        VkDevice m_pDevice = EXN_NULL_HANDLE;
+        VkDevice* m_pDevice = EXN_NULL_HANDLE;
+        VkDescriptorPool* m_pDescriptorPool = EXN_NULL_HANDLE;
+        VkExtent2D* m_pExtent = EXN_NULL_HANDLE;
         VkPipelineLayout m_pLayout = EXN_NULL_HANDLE;
         VkPipeline m_pPipeline = EXN_NULL_HANDLE;
-        VkDescriptorPool m_pDescriptorPool = EXN_NULL_HANDLE;
         VkDescriptorSetLayout m_pDescriptorSetLayout = EXN_NULL_HANDLE;
-        VkExtent2D m_pExtent = { 0, 0 };
         std::vector<VkPipelineShaderStageCreateInfo> m_ShaderStages;
+		std::vector<VkDescriptorSet> m_DescriptorSets;
         std::vector<VkViewport> m_Viewports;
         std::vector<VkRect2D> m_Scissors;
-        std::vector<VkDynamicState> states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        std::vector<VkDynamicState> m_DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     
-        VkGraphicsPipeline(VkDevice, VkExtent2D);
+        VkGraphicsPipeline(VkDevice*, VkDescriptorPool*, VkExtent2D*);
         ~VkGraphicsPipeline();
     
         void SetExtent(VkExtent2D);
+        void SetDynamicStates(std::vector<VkDynamicState>);
         void AddViewport(VkViewport);
         void AddScissor(VkRect2D);
-        void SetDynamicStates(std::vector<VkDynamicState>);
     
         void CreateDescriptorSetLayout();
-        void CreateDescriptorPool();
-        //void CreateDescriptorSets();
+		void CreateDescriptorSets(VkSampler, VkTexture*, VkBuffer);
     
         virtual VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyInfo();
         virtual VkPipelineDynamicStateCreateInfo GetDynamicStateInfo();
@@ -79,7 +80,7 @@ namespace eXngine::Renderers::Vulkan
             VkPipelineDynamicStateCreateInfo dynamicState = GetDynamicStateInfo();
             VkPipelineLayoutCreateInfo layoutInfo = GetLayoutInfo();
     
-            assert(vkCreatePipelineLayout(m_pDevice, &layoutInfo, nullptr, &this->m_pLayout) == VK_SUCCESS);
+            assert(vkCreatePipelineLayout(*m_pDevice, &layoutInfo, nullptr, &this->m_pLayout) == VK_SUCCESS);
     
             VkGraphicsPipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -99,7 +100,7 @@ namespace eXngine::Renderers::Vulkan
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = -1;
     
-            assert(vkCreateGraphicsPipelines(m_pDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &this->m_pPipeline) == VK_SUCCESS);
+            assert(vkCreateGraphicsPipelines(*m_pDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &this->m_pPipeline) == VK_SUCCESS);
         }
     };
     

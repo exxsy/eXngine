@@ -6,4 +6,4 @@
 /output
 /CMakeFiles
 CMakeCache.txt
-/example/imgui.ini
+example/imgui.ini

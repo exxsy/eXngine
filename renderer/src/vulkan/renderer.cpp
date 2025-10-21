@@ -32,36 +32,22 @@ namespace eXngine::Renderers::Vulkan
         CreateImageViews();
         CreateRenderPass();
         CreateShaders();
-        CreateDefaultGraphicsPipeline();
         CreateCommandPool();
         CreateDepthResources();
         CreateFramebuffers();
-        CreateGraphicPipelines();
-
-       //     for (const auto & model_pair : m_Models)
-       //     {
-       //         auto &model = model_pair.second;
-       //         if (model.m_pTextures.empty())
-       //             continue;
-       //         for (const auto & pair : model.m_pTextures) 
-       //         {
-       //             const auto texture = pair.second;
-       //             if (texture->path == nullptr)
-       //                 continue;
-       //             texture->texture = new VkTexture(*this);
-       //             texture->texture->CreateFromTextureFile(pair.first, texture->path);
-	   //         }
-       //     }
-
         CreateTextureSampler();
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffers();
+        CreateDescriptorPool();
         CreateDescriptorSets();
         CreateCommandBuffers();
         CreateSyncObjects();
-    }
+        CreateGraphicPipelines();
 
+		this->m_pGraphicPipelines[EXN_DEFAULT_PIPELINE]->CreatePipeline<VkVertex>(m_pRenderPass);
+    }
+        
     void Renderer::RecordCommandBuffer(EXUINT32 imageIndex)
     {
         const VkCommandBuffer commandBuffer = m_pCurrentCommandBuffer;
@@ -131,6 +117,24 @@ namespace eXngine::Renderers::Vulkan
 				}
             }*/
 
+            for (auto & pipeline_pair : m_pGraphicPipelines)
+            {
+                const auto pipeline = pipeline_pair.second;
+				const auto scissorCount = static_cast<EXUINT32>(pipeline->m_Scissors.size());
+				const auto viewportCount = static_cast<EXUINT32>(pipeline->m_Viewports.size());
+
+                vkCmdSetViewport(commandBuffer, 0, viewportCount, pipeline->m_Viewports.data());
+                vkCmdSetScissor(commandBuffer, 0, scissorCount, pipeline->m_Scissors.data());
+
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pPipeline);
+                vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+                vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    pipeline->m_pLayout, 0, 1, &pipeline->m_DescriptorSets[m_currentFrame], 0, nullptr);
+                vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, 0, 0);
+			}
+
             if (m_fOnRender) m_fOnRender(this, commandBuffer);
         }
         vkCmdEndRenderPass(commandBuffer);
@@ -155,8 +159,7 @@ namespace eXngine::Renderers::Vulkan
         return 0;
     }
 
-    void Renderer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                                VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+    void Renderer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
     {
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -181,14 +184,16 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateGraphicPipelines()
     {
-        for (const auto& pipeline_pair : m_pGraphicPipelines)
+        for (EXUINT32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            const auto& pipeline = pipeline_pair.second;
+            for (auto& pipeline_pair : m_pGraphicPipelines)
+            {
+                auto& pipeline = pipeline_pair.second;
 
-            pipeline->m_pDevice = m_pDevice;
-            pipeline->CreateDescriptorSetLayout();
-            pipeline->CreateDescriptorPool();
-        }
+                pipeline->CreateDescriptorSetLayout();
+                pipeline->CreateDescriptorSets(m_pTextureSampler, m_DefaultTexture, m_pFrameObjects[i].uniformBuffer);
+            }
+		}
     }
 
     void Renderer::CreateDescriptorSets()
@@ -480,8 +485,8 @@ namespace eXngine::Renderers::Vulkan
         }
 
         vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
-        vkDestroyPipeline(m_pDevice, m_pDefaultGraphicsPipeline->m_pPipeline, nullptr);
-        vkDestroyPipelineLayout(m_pDevice, m_pDefaultGraphicsPipeline->m_pLayout, nullptr);
+        //vkDestroyPipeline(m_pDevice, m_pDefaultGraphicsPipeline->m_pPipeline, nullptr);
+        //vkDestroyPipelineLayout(m_pDevice, m_pDefaultGraphicsPipeline->m_pLayout, nullptr);
         vkDestroyRenderPass(m_pDevice, m_pRenderPass, nullptr);
         vkDestroySampler(m_pDevice, m_pTextureSampler, nullptr);
 
@@ -516,7 +521,7 @@ namespace eXngine::Renderers::Vulkan
         if (data.empty())
             return false;
 
-        std::string pipeline;
+        std::string pipeline = "default";
 		std::string entrypoint = name;
 
         if (strstr(name, ".") != nullptr) {
@@ -546,9 +551,6 @@ namespace eXngine::Renderers::Vulkan
             {
                 shaderObject->m_pPipeline = it->second;
             }
-        }
-        else {
-			shaderObject->m_pPipeline = m_pDefaultGraphicsPipeline;
         }
 
         this->m_Shaders.emplace(name, shaderObject);
@@ -582,7 +584,7 @@ namespace eXngine::Renderers::Vulkan
 			return;
 
 		const auto shader = reinterpret_cast<VkShaderModuleObject*>(shader_module->second);
-		const auto pipeline = shader->m_pPipeline->m_pPipeline ? shader->m_pPipeline->m_pPipeline : this->m_pDefaultGraphicsPipeline->m_pPipeline;
+		const auto pipeline = shader->m_pPipeline->m_pPipeline;
 
         vkCmdBindPipeline(m_pCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
@@ -690,9 +692,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateDefaultGraphicsPipeline()
     {
-        m_pDefaultGraphicsPipeline->CreateDescriptorPool();
-		m_pDefaultGraphicsPipeline->CreateDescriptorSetLayout();
-        m_pDefaultGraphicsPipeline->CreatePipeline<VkVertex>(m_pRenderPass);
+        this->m_pGraphicPipelines.emplace(EXN_DEFAULT_PIPELINE, new VkGraphicsPipeline(&m_pDevice, &m_pDescriptorPool, &m_szSwapChainExtent));
     }
 
     /*
@@ -984,12 +984,13 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateVertexBuffer()
     {
-        std::vector<Utils::Vertex> vertices = { 
-            {
-			    .position = {0.0f, -0.5f, 0.0f},
-			    .texture_coordinates = {1.0f, 0.0f},
-            } 
+        const std::vector<eXngine::Utils::Vertex> vertices{
+            {{1.0f, 0.0f, 0.0f}, {-0.5f, -0.5f}},
+            {{0.0f, 1.0f, 0.0f}, {0.5f, -0.5f}},
+            {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}},
+            {{1.0f, 1.0f, 1.0f}, {-0.5f, 0.5f}}
         };
+
         // for (const auto model : m_Models)
         // {
         //     for (const auto mesh : model.second.m_vMeshes)
@@ -1000,6 +1001,7 @@ namespace eXngine::Renderers::Vulkan
 
         const auto verticesCount = vertices.size();
         const VkDeviceSize bufferSize = sizeof(vertices[0]) * verticesCount;
+        m_nVerticesCount = verticesCount;
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1022,7 +1024,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateIndexBuffer()
     {
-        std::vector<EXUINT16> indices = { 0 };
+        std::vector<EXUINT16> indices = { 0, 1, 2, 2, 3, 0 };
         // for (const auto &model : m_Models)
         // {
         //     for (const auto &mesh : model.second.m_vMeshes)
@@ -1033,6 +1035,7 @@ namespace eXngine::Renderers::Vulkan
 
         const auto indicesCount = indices.size();
         const VkDeviceSize bufferSize = sizeof(EXUINT16) * indicesCount;
+        m_nIndicesCount = indicesCount;
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1053,7 +1056,6 @@ namespace eXngine::Renderers::Vulkan
         vkFreeMemory(m_pDevice, stagingBufferMemory, nullptr);
     }
 
-    /*
     void Renderer::CreateDescriptorPool()
     {
         constexpr int maxCount = 10;
@@ -1079,9 +1081,8 @@ namespace eXngine::Renderers::Vulkan
         pool_info.poolSizeCount = static_cast<EXUINT32>(EX_ARRAYSIZE(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
 
-        assert(vkCreateDescriptorPool(m_pDevice, &pool_info, nullptr, &m_pDefaultGraphicsPipeline->m_pDescriptorPool) == VK_SUCCESS);
+        assert(vkCreateDescriptorPool(m_pDevice, &pool_info, nullptr, &m_pDescriptorPool) == VK_SUCCESS);
     }
-        */
 
     void Renderer::CreateLogicalDevice()
     {
@@ -1196,22 +1197,12 @@ namespace eXngine::Renderers::Vulkan
         m_swapChainImageFormat = surfaceFormat.format;
         m_szSwapChainExtent = extent;
 
-		if (m_pDefaultGraphicsPipeline == EXN_NULL_HANDLE)
-            m_pDefaultGraphicsPipeline = new VkGraphicsPipeline(m_pDevice, m_szSwapChainExtent);
-        else {
-            m_pDefaultGraphicsPipeline->m_Scissors.clear();
-			m_pDefaultGraphicsPipeline->m_Viewports.clear();
-			m_pDefaultGraphicsPipeline->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
-			m_pDefaultGraphicsPipeline->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
-			m_pDefaultGraphicsPipeline->SetExtent(m_szSwapChainExtent);
-        }
-
         for (auto& pipeline : m_pGraphicPipelines)
         {
-            pipeline.second->m_Scissors.clear();
-            pipeline.second->m_Viewports.clear();
-            pipeline.second->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
-            pipeline.second->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
+            //pipeline.second->m_Scissors.clear();
+            //pipeline.second->m_Viewports.clear();
+            //pipeline.second->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
+            //pipeline.second->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
             pipeline.second->SetExtent(m_szSwapChainExtent);
         }
     }
@@ -1314,8 +1305,6 @@ namespace eXngine::Renderers::Vulkan
             
             if (shaderModuleObject->m_pPipeline != EXN_NULL_HANDLE)
 			    shaderModuleObject->m_pPipeline->m_ShaderStages.push_back(stageInfo);
-            else
-				m_pDefaultGraphicsPipeline->m_ShaderStages.push_back(stageInfo);
 		}
     }
 
@@ -1610,17 +1599,20 @@ namespace eXngine::Renderers::Vulkan
     Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
     {
         CreateInstance(this->m_extensions);
+        CreateDefaultGraphicsPipeline();
     }
 
     Renderer::Renderer(const char *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
         CreateInstance(this->m_extensions);
+        CreateDefaultGraphicsPipeline();
     }
 
     Renderer::Renderer(const char *name, Size sz, std::vector<const char *> extensions) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
         m_extensions.insert(m_extensions.end(), extensions.begin(), extensions.end());
         CreateInstance(this->m_extensions);
+        CreateDefaultGraphicsPipeline();
     }
 }
 #endif

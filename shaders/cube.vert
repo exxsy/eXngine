@@ -1,9 +1,13 @@
 #version 450
 
-// Simple pass-through vertex shader for a cube
-// Expects 3D positions at location 0
-layout(location = 0) in vec3 inPosition;
+const vec2 POSITIONS[3] = vec2[](
+    vec2(-0.5, -0.5),
+    vec2( 0.5, -0.5),
+    vec2( 0.5,  0.5)
+);
 
 void main() {
-    gl_Position = vec4(inPosition, 1.0);
+    uint idx = uint(gl_VertexIndex) % 6u;
+    vec2 p = POSITIONS[idx];
+    gl_Position = vec4(p, 0.0, 1.0);
 }

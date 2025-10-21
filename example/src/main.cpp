@@ -9,7 +9,15 @@ float m_fRotationScale = 5.0f;
 
 struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
 {
+    static VkVertexInputBindingDescription GetBindingDescription() 
+    {
+        return {};
+    }
 
+    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() 
+    {
+        return {};
+    }
 };
 
 #ifdef _DEBUG
@@ -46,9 +54,6 @@ void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& create
 const std::vector<const char*> debug_extensions = { };
 #endif
 
-GLFWApplication* app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
-Renderers::Vulkan::Renderer* renderer = new Renderers::Vulkan::Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
-
 #ifndef IMGUI_DISABLE
 void ImGui_CheckVkResult(VkResult result)
 {
@@ -84,7 +89,7 @@ void ImGui_OnInit(GLFWApplication * app, Renderer * renderer, Size sz)
 
     init_info.Queue = renderer->m_pGraphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
-    init_info.DescriptorPool = renderer->m_pDefaultGraphicsPipeline->m_pDescriptorPool;
+    init_info.DescriptorPool = renderer->m_pDescriptorPool;
     init_info.Subpass = 0;
     init_info.MinImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
     init_info.ImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
@@ -134,6 +139,9 @@ void ImGui_OnExit()
     ImGui::DestroyContext();
 }
 #endif
+
+GLFWApplication* app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
+Renderer* renderer = new Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
 
 VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwindow *window)
 {
@@ -194,22 +202,26 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     app->SetScrollHandler(ScrollHandler);
     app->SetRenderer(reinterpret_cast<Renderers::BaseRenderer*>(renderer));
 
+    auto tri_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.vert.spv");
+    auto tri_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.frag.spv");
+    auto cube_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\cube.vert.spv");
+    auto cube_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\cube.frag.spv");
     auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
     auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 
-    auto custom_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\custom.vert.spv");
-    auto custom_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\custom.frag.spv");
+    renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
+    renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
 
-    renderer->AllocatePipeline<VkGraphicsPipeline>("test_custom_pipeline");
+    renderer->LoadShader("default.vertex", vert, eXngine::Vertex);
+    renderer->LoadShader("default.fragment", frag, eXngine::Fragment);
+    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::Fragment);
+    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::Vertex);
+    renderer->LoadShader("cube_pipeline.vertex", cube_vert, eXngine::Vertex);
+    renderer->LoadShader("cube_pipeline.fragment", cube_frag, eXngine::Fragment);
 
-    renderer->LoadShader("vertex", vert, eXngine::Vertex);
-    renderer->LoadShader("fragment", frag, eXngine::Fragment);
-    renderer->LoadShader("test_custom_pipeline.vertex", custom_vert, eXngine::Vertex);
-    renderer->LoadShader("test_custom_pipeline.fragment", custom_frag, eXngine::Fragment);
-
-    const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
-    const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
-
+    //const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
+    //const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
+    
     //renderer->LoadModel(
     //    "dragon", dragonModel.GetMeshes(),
     //    { 
@@ -217,11 +229,12 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     //        //{ "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
     //    }
     //);
+
     //renderer->LoadModel(
-    //    "ball", ballModel.GetMeshes(), {}, "test_custom_pipeline"
-    //    /*{
+    //    "ball", ballModel.GetMeshes(),
+    //    {
     //        { "texture", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg" }
-    //    }*/
+    //    }
     //    //"test_custom_pipeline"
     //);
 
@@ -229,7 +242,8 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
 	renderer->Initialize();
 
-    renderer->CreatePipeline<VkTestVertex>("test_custom_pipeline");
+    renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
+    renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);

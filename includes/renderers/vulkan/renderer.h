@@ -25,6 +25,7 @@
 
 #undef EXN_NULL_HANDLE
 #define EXN_NULL_HANDLE VK_NULL_HANDLE
+#define EXN_DEFAULT_PIPELINE "default"
 
 namespace eXngine::Renderers::Vulkan
 {
@@ -237,7 +238,7 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkDynamicState> m_dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 		std::vector<const char *> m_extensions = {"VK_KHR_win32_surface"};
 		std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
-		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
+		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME};
 		//std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>> m_shaders = {};
 		/* VULKAN */
 	private:
@@ -250,7 +251,6 @@ namespace eXngine::Renderers::Vulkan
 		void CreateRenderPass();
 		void CreateDefaultGraphicsPipeline();
 		void CreateGraphicPipelines();
-		//void CreateGraphicsPipeline();
 		void CreateFramebuffers();
 		void CreateCommandPool();
 		void CreateCommandBuffers();
@@ -258,10 +258,9 @@ namespace eXngine::Renderers::Vulkan
 		void CreateDescriptorSets();
 		void CreateTextureSampler();
 		void CreateDepthResources();
-		//void CreateDescriptorSetLayout();
 		void CreateVertexBuffer();
 		void CreateIndexBuffer();
-		//void CreateDescriptorPool();
+		void CreateDescriptorPool();
 		void CreateUniformBuffers();
 		void CreateShaders();
 		void CleanupSwapChain();
@@ -282,12 +281,13 @@ namespace eXngine::Renderers::Vulkan
 		const EXUINT32 MAX_FRAMES_IN_FLIGHT = 2;
 		const EXUINT32 MAX_TEXTURE_COUNT = 16;
 
-		VkGraphicsPipeline* m_pDefaultGraphicsPipeline = EXN_NULL_HANDLE;
-		std::unordered_map<std::string, VkGraphicsPipeline *> m_pGraphicPipelines;
-		
+		//VkGraphicsPipeline* m_pDefaultGraphicsPipeline = EXN_NULL_HANDLE;
+		std::unordered_map<std::string, VkGraphicsPipeline*> m_pGraphicPipelines;
+		 
 		VkExtent2D m_szSwapChainExtent;
 		VkDevice m_pDevice = EXN_NULL_HANDLE;
 		VkPhysicalDevice m_pPhysicalDevice = EXN_NULL_HANDLE;
+		VkDescriptorPool m_pDescriptorPool = EXN_NULL_HANDLE;
 		VkInstance m_pInstance = EXN_NULL_HANDLE;
 		VkQueue m_pGraphicsQueue = EXN_NULL_HANDLE;
 		VkQueue m_pPresentQueue = EXN_NULL_HANDLE;
@@ -339,18 +339,18 @@ namespace eXngine::Renderers::Vulkan
 				return;
 			}
 
-			m_pGraphicPipelines[name] = new T(m_pDevice, m_szSwapChainExtent);
+			m_pGraphicPipelines[name] = new T(&m_pDevice, &m_pDescriptorPool, &m_szSwapChainExtent);
 		}
 
 		template<std::derived_from<VkVertex> T>
 		inline void CreatePipeline(std::string name)
 		{
 			const auto pipeline = m_pGraphicPipelines[name];//new VkGraphicsPipeline(m_pDevice);
-			pipeline->SetExtent(m_szSwapChainExtent);
-			pipeline->m_Scissors.clear();
-			pipeline->m_Viewports.clear();
-			pipeline->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
-			pipeline->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
+			//pipeline->SetExtent(m_szSwapChainExtent);
+			//pipeline->m_Scissors.clear();
+			//pipeline->m_Viewports.clear();
+			//pipeline->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
+			//pipeline->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
 			pipeline->CreatePipeline<T>(m_pRenderPass);
 		}
 	
