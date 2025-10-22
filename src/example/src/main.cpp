@@ -242,8 +242,8 @@ EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstan
     auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
     auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 
-    renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
-    renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
+    // renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
+    // renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
 
     renderer->LoadShader("default.vertex", vert, eXngine::eXshader_Vertex);
     renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
@@ -275,8 +275,8 @@ EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstan
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
     renderer->Initialize();
 
-    renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
-    renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
+    // renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
+    // renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
 
     app->SetOnRenderHandler(App_OnRender);
     app->SetOnCleanupHandler(App_OnCleanup);

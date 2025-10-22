@@ -7,8 +7,6 @@
 #define EX_DEBUG_BREAK() __debugbreak()
 #define EX_ASSERT(expr)       \
     {                         \
-        if (!(expr))          \
-            EX_DEBUG_BREAK(); \
         assert(expr);         \
     }
 #else

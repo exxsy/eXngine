@@ -21,7 +21,6 @@ namespace eXngine::Renderers::Vulkan
 {
     void Renderer::Initialize()
     {
-        CreateDefaultGraphicsPipeline();
         CreateInstance();
         CreateSurface();
         SelectPhysicalDevice();
@@ -39,9 +38,9 @@ namespace eXngine::Renderers::Vulkan
         CreateUniformBuffers();
         CreateDescriptorPool();
         CreateDescriptorSets();
+        CreateGraphicPipelines();
         CreateCommandBuffers();
         CreateSyncObjects();
-        CreateGraphicPipelines();
 
         this->m_pGraphicPipelines[EXN_DEFAULT_PIPELINE]->CreatePipeline<VkVertex>(m_pRenderPass);
     }
@@ -1190,13 +1189,14 @@ namespace eXngine::Renderers::Vulkan
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; 
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
-        EX_FATAL(vkCreateSwapchainKHR(m_pDevice, &createInfo, nullptr, &m_pSwapChain) == VK_SUCCESS, "Failed to create swap chain.");
+        const auto res = vkCreateSwapchainKHR(m_pDevice, &createInfo, nullptr, &m_pSwapChain);
+        EX_FATAL( res == VK_SUCCESS, "Failed to create swap chain.");
 
         vkGetSwapchainImagesKHR(m_pDevice, m_pSwapChain, &imageCount, nullptr);
         m_swapChainImages.resize(imageCount);
@@ -1621,10 +1621,12 @@ namespace eXngine::Renderers::Vulkan
 
     Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
     {
+        CreateDefaultGraphicsPipeline();
     }
 
     Renderer::Renderer(const char *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
+        CreateDefaultGraphicsPipeline();
     }
 }
 #endif
