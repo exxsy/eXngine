@@ -21,17 +21,17 @@ namespace eXngine::Renderers::Vulkan
 {
     void Renderer::Initialize()
     {
+        SelectPhysicalDevice();
         CreateInstance();
         CreateSurface();
-        SelectPhysicalDevice();
         CreateLogicalDevice();
         CreateSwapChain();
+        CreateCommandPool();
         CreateImageViews();
         CreateRenderPass();
-        CreateShaders();
-        CreateCommandPool();
         CreateDepthResources();
         CreateFramebuffers();
+        CreateShaders();
         CreateTextureSampler();
         CreateVertexBuffer();
         CreateIndexBuffer();
@@ -45,13 +45,8 @@ namespace eXngine::Renderers::Vulkan
         this->m_pGraphicPipelines[EXN_DEFAULT_PIPELINE]->CreatePipeline<VkVertex>(m_pRenderPass);
     }
 
-    void Renderer::RecordCommandBuffer(EXUINT32 imageIndex)
+    void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex)
     {
-        const VkCommandBuffer commandBuffer = m_pCurrentCommandBuffer;
-
-        if (commandBuffer == EXN_NULL_HANDLE)
-            return;
-
         vkResetCommandBuffer(commandBuffer, 0);
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -59,9 +54,10 @@ namespace eXngine::Renderers::Vulkan
         beginInfo.flags = 0;
         beginInfo.pInheritanceInfo = nullptr;
 
-        EX_ERROR(vkBeginCommandBuffer(commandBuffer, &beginInfo) == VK_SUCCESS, "Failed to begin command buffer for recording.");
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        // EX_ERROR(vkBeginCommandBuffer(commandBuffer, &beginInfo) == VK_SUCCESS, "Failed to begin command buffer for recording.");
 
-        std::array<VkClearValue, 2> clearValues{};
+        static std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
 
@@ -78,41 +74,6 @@ namespace eXngine::Renderers::Vulkan
         {
             VkBuffer vertexBuffers[] = {m_pVertexBuffer};
             VkDeviceSize offsets[] = {0};
-
-            /*auto currIndicesCount = 0;
-            auto currVertexCount = 0;
-            for (const auto model_pair : m_Models)
-            {
-                auto model = model_pair.second;
-
-                if (model.m_vMeshes.empty())
-                    continue;
-
-                const auto pipeline = model.pipeline.empty() ? m_pDefaultGraphicsPipeline : m_pGraphicPipelines[model.pipeline.c_str()];
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pPipeline);
-
-                vkCmdSetViewport(commandBuffer, 0, static_cast<EXUINT32>(pipeline->m_Viewports.size()), pipeline->m_Viewports.data());
-                vkCmdSetScissor(commandBuffer, 0, static_cast<EXUINT32>(pipeline->m_Scissors.size()), pipeline->m_Scissors.data());
-
-                VkModelPushConstants pushConstants {
-                    .textureIndex = model.m_vMeshes.front().textureIndex,
-                    .numTextures = model.m_vMeshes.front().numTextureCount
-                };
-
-                vkCmdPushConstants(commandBuffer, pipeline->m_pLayout,
-                    VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkModelPushConstants),
-                    &pushConstants);
-
-                for (const auto descriptorSet : model.descriptorSets)
-                {
-                    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-                    vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &descriptorSet, 0, nullptr);
-                    vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, currVertexCount, 0);
-                    //currIndicesCount += static_cast<EXUINT32>(model.m_vMeshes.front().indices.size());
-                    currVertexCount += static_cast<EXUINT32>(model.m_vMeshes.front().vertices.size());
-                }
-            }*/
 
             for (auto &pipeline_pair : m_pGraphicPipelines)
             {
@@ -137,7 +98,8 @@ namespace eXngine::Renderers::Vulkan
         }
         vkCmdEndRenderPass(commandBuffer);
 
-        EX_ERROR(vkEndCommandBuffer(commandBuffer) == VK_SUCCESS, "Failed to end recorded command buffer.");
+        vkEndCommandBuffer(commandBuffer);
+        // EX_ERROR(vkEndCommandBuffer(commandBuffer) == VK_SUCCESS, "Failed to end recorded command buffer.");
     }
 
     EXUINT32 Renderer::FindMemoryType(EXUINT32 typeFilter, VkMemoryPropertyFlags properties)
@@ -408,7 +370,7 @@ namespace eXngine::Renderers::Vulkan
     {
         auto &frameObject = m_pFrameObjects[m_currentFrame];
 
-        UpdateFPS();
+        // UpdateFPS();
         vkWaitForFences(m_pDevice, 1, &frameObject.inFlightFence, VK_TRUE, UINT64_MAX);
 
         EXUINT32 imageIndex;
@@ -420,13 +382,15 @@ namespace eXngine::Renderers::Vulkan
             ResetSwapChain();
             return;
         }
+        else
+        {
+            EX_ERROR(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire next image from swap chain.");
+        }
 
-        EX_ERROR(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire next image from swap chain.");
-
-        m_pCurrentCommandBuffer = frameObject.commandBuffer;
         vkResetFences(m_pDevice, 1, &frameObject.inFlightFence);
+        // m_pCurrentCommandBuffer = frameObject.commandBuffer;
         m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
-        RecordCommandBuffer(imageIndex);
+        RecordCommandBuffer(frameObject.commandBuffer, imageIndex);
 
         VkSemaphore waitSemaphores[] = {frameObject.imageAvailableSemaphore};
         VkSemaphore signalSemaphores[] = {frameObject.renderFinishedSemaphore};
@@ -442,7 +406,8 @@ namespace eXngine::Renderers::Vulkan
         submitInfo.signalSemaphoreCount = EX_ARRAYSIZE(signalSemaphores);
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        EX_ERROR(vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence) == VK_SUCCESS, "Failed to submit draw command buffer to graphics queue.");
+        vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence);
+        // EX_ERROR(vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence) == VK_SUCCESS, "Failed to submit draw command buffer to graphics queue.");
 
         VkPresentInfoKHR presentInfo{};
         VkSwapchainKHR swapChains[] = {m_pSwapChain};
@@ -457,18 +422,19 @@ namespace eXngine::Renderers::Vulkan
 
         result = vkQueuePresentKHR(m_pPresentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_bFrameBufferResized)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
             EX_INFO("Swap chain out of date, recreating...");
-            m_bFrameBufferResized = false;
             ResetSwapChain();
             return;
         }
-
-        EX_ERROR(result == VK_SUCCESS, "Failed to present swap chain image.");
+        else
+        {
+            EX_ERROR(result == VK_SUCCESS, "Failed to present swap chain image.");
+        }
 
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-        m_pCurrentCommandBuffer = EXN_NULL_HANDLE;
+        // m_pCurrentCommandBuffer = EXN_NULL_HANDLE;
     }
 
     void Renderer::OnExit()
@@ -913,7 +879,7 @@ namespace eXngine::Renderers::Vulkan
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = m_pCommandPool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1; // (EXUINT32)m_pFrameObjects.size();
+        allocInfo.commandBufferCount = 1;
 
         m_pFrameObjects.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -985,10 +951,10 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateDepthResources()
     {
-        m_Depth = new VkTexture(*this);
+        m_Depth = new VkTexture(this);
         m_Depth->CreateDepthImage(this->m_szSwapChainExtent, this->FindDepthFormat());
 
-        m_DefaultTexture = new VkTexture(*this);
+        m_DefaultTexture = new VkTexture(this);
         m_DefaultTexture->CreateFromImageData(EXN_DUMMY_TEXTURE, 1, 1);
     }
 
@@ -1189,14 +1155,14 @@ namespace eXngine::Renderers::Vulkan
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; 
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
         const auto res = vkCreateSwapchainKHR(m_pDevice, &createInfo, nullptr, &m_pSwapChain);
-        EX_FATAL( res == VK_SUCCESS, "Failed to create swap chain.");
+        EX_FATAL(res == VK_SUCCESS, "Failed to create swap chain.");
 
         vkGetSwapchainImagesKHR(m_pDevice, m_pSwapChain, &imageCount, nullptr);
         m_swapChainImages.resize(imageCount);
@@ -1617,6 +1583,123 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::AddDeviceExtension(const char *extension)
     {
         m_DeviceExtensions.push_back(extension);
+    }
+
+    void Renderer::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        barrier.image = image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1; // no mipmaps levels
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1; // image is not an array
+
+        barrier.srcAccessMask = 0; // TODO
+        barrier.dstAccessMask = 0; // TODO
+
+        VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_NONE;
+        VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_NONE;
+
+        if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else
+        {
+            assert(false); // unsupported layout transition
+        }
+
+        vkCmdPipelineBarrier(
+            commandBuffer,
+            sourceStage, destinationStage,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
+
+        EndSingleTimeCommands(commandBuffer);
+    }
+
+    void Renderer::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {
+            width,
+            height,
+            1};
+
+        vkCmdCopyBufferToImage(
+            commandBuffer,
+            buffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region);
+
+        EndSingleTimeCommands(commandBuffer);
+    }
+
+    void Renderer::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+                               VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory)
+    {
+        VkImageCreateInfo imageInfo{};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = static_cast<uint32_t>(width);
+        imageInfo.extent.height = static_cast<uint32_t>(height);
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = usage;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.flags = 0; // Optional
+        assert(vkCreateImage(m_pDevice, &imageInfo, nullptr, &image) == VK_SUCCESS);
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(m_pDevice, image, &memRequirements);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+        assert(vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &imageMemory) == VK_SUCCESS);
+        vkBindImageMemory(m_pDevice, image, imageMemory, 0);
     }
 
     Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()

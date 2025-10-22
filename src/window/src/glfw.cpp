@@ -46,8 +46,8 @@ namespace eXngine::Applications
 		{
 			glfwPollEvents();
 
-			if (m_fnOnRender != EXN_NULL_HANDLE)
-				m_fnOnRender(this->m_pInstance);
+			if (m_fnOnLoop != EXN_NULL_HANDLE)
+				m_fnOnLoop(this->m_pInstance);
 		}
 
 		if (m_fnOnCleanup != EXN_NULL_HANDLE)

@@ -200,7 +200,7 @@ void UpdateUniformBuffer(void *buffer, uint32_t currentImage)
     memcpy(buffer, &ubo, sizeof(ubo));
 }
 
-void App_OnRender(void *unused)
+void App_OnLoop(void *unused)
 {
     renderer->OnRender();
 }
@@ -210,7 +210,7 @@ void App_OnCleanup(void *unused)
     renderer->OnExit();
 }
 
-EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
+EXINT32 WINAPI Window()
 {
     app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
     renderer = new Renderer(m_szName, window_size);
@@ -275,10 +275,14 @@ EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstan
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
     renderer->Initialize();
 
+#ifndef IMGUI_DISABLE
+    ImGui_OnInit(app, renderer, window_size);
+#endif
+
     // renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
     // renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
 
-    app->SetOnRenderHandler(App_OnRender);
+    app->SetOnLoopHandler(App_OnLoop);
     app->SetOnCleanupHandler(App_OnCleanup);
 
 #ifdef _DEBUG
@@ -293,17 +297,17 @@ EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstan
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);
     renderer->SetOnCleanupHandler(ImGui_OnExit);
-
-    ImGui_OnInit(app, renderer, window_size);
 #endif
 
     return app->Run();
 }
 
-EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance,
-                         _In_opt_ HINSTANCE hPrevInstance,
-                         _In_ LPSTR /*lpCmdLine*/,
-                         _In_ int nShowCmd)
+EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
-    return wWinMain(hInstance, hPrevInstance, GetCommandLineW(), nShowCmd);
+    return Window();
+}
+
+EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
+{
+    return Window();
 }

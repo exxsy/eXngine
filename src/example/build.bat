@@ -48,12 +48,12 @@ IF /I "%ARCH%"=="x64" (
 
 IF /I "%CONFIG%"=="Debug" (
     SET "compilerFlags=%compilerFlags% -g -O0"
-    SET "defines=-D_DEBUG"
+    SET "defines=-D_DEBUG -DUNICODE"
     SET "linkerFlags=%linkerFlags% -lmsvcrtd -lvulkan-1"
 ) ELSE (
     SET "CONFIG=Release"
     SET "compilerFlags=%compilerFlags% -O2"
-    SET "defines=-DNDEBUG"
+    SET "defines=-DNDEBUG -DUNICODE"
     SET "linkerFlags=%linkerFlags% -lmsvcrt -lvulkan-1"
 )
 

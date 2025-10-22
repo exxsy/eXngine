@@ -6,7 +6,7 @@
 namespace eXngine::Applications
 {
 	typedef void (*OnInitializeHandler)(void *);
-	typedef void (*OnRenderHandler)(void *);
+	typedef void (*OnLoopHandler)(void *);
 	typedef void (*OnCleanupHandler)(void *);
 
 	class EXNEXPORT Application
@@ -19,7 +19,7 @@ namespace eXngine::Applications
 		EXUINTPTR m_pInstance = EXN_NULL_HANDLE;
 
 		OnInitializeHandler m_fnOnInitialize = EXN_NULL_HANDLE;
-		OnRenderHandler m_fnOnRender = EXN_NULL_HANDLE;
+		OnLoopHandler m_fnOnLoop = EXN_NULL_HANDLE;
 		OnCleanupHandler m_fnOnCleanup = EXN_NULL_HANDLE;
 	public:
 		Application(const char *name, Point position, Size size, bool maximized);
@@ -33,7 +33,7 @@ namespace eXngine::Applications
 		void SetPosition(Point position);
 		void SetMaximized(bool maximized);
 		void SetOnInitializeHandler(OnInitializeHandler handler);
-		void SetOnRenderHandler(OnRenderHandler handler);
+		void SetOnLoopHandler(OnLoopHandler handler);
 		void SetOnCleanupHandler(OnCleanupHandler handler);
 		EXUINTPTR GetInstance();
 

@@ -42,9 +42,9 @@ namespace eXngine::Applications
 		this->m_fnOnInitialize = handler;
 	}
 
-	void Application::SetOnRenderHandler(OnRenderHandler handler)
+	void Application::SetOnLoopHandler(OnLoopHandler handler)
 	{
-		this->m_fnOnRender = handler;
+		this->m_fnOnLoop = handler;
 	}
 
 	void Application::SetOnCleanupHandler(OnCleanupHandler handler)
