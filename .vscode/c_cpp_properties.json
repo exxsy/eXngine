@@ -19,7 +19,7 @@
         "_UNICODE",
         "_VULKAN",
         "EXN_TEXTURE_STRATEGY_STBI",
-        "GLFW_INCLUDE_VULKAN",
+        "GLFW_EXPOSE_NATIVE_WIN32",
         "_GLFW_WIN32"
       ],
       "compilerPath": "\"C:/Program Files/LLVM/bin/clang\"",

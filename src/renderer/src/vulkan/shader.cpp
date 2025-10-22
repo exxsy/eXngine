@@ -28,17 +28,17 @@ namespace eXngine::Renderers::Vulkan
     {
         switch (type)
         {
-        case eXngine::Vertex:
+        case eXngine::eXshader_Vertex:
             return VK_SHADER_STAGE_VERTEX_BIT;
-        case eXngine::Fragment:
+        case eXngine::eXshader_Fragment:
             return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case eXngine::Geometry:
+        case eXngine::eXshader_Geometry:
             return VK_SHADER_STAGE_GEOMETRY_BIT;
-        case eXngine::Compute:
+        case eXngine::eXshader_Compute:
             return VK_SHADER_STAGE_COMPUTE_BIT;
-        case eXngine::TessellationControl:
+        case eXngine::eXshader_TessellationControl:
             return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        case eXngine::TessellationEvaluation:
+        case eXngine::eXshader_TessellationEvaluation:
             return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         default:
             return VK_SHADER_STAGE_ALL;

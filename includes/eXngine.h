@@ -50,48 +50,6 @@
 			return s_##name; \
 		};
 
-namespace eXngine
-{
-	struct Point
-	{
-	public:
-		Point(int X, int Y) : X(X), Y(Y) {}
-		int X, Y;
-	};
-
-	struct Size
-	{
-	public:
-		Size(int W, int H) : W(W), H(H) {}
-		int W, H;
-	};
-
-	struct Boundary
-	{
-	public:
-		Boundary(Point pos, Size size) : position(pos), size(size) {}
-		Point position;
-		Size size;
-	};
-
-	enum PrimitiveTypes : EXUINT32
-	{
-		Points,
-		Lines,
-		LineStrip,
-		Triangles,
-		TriangleStrip
-	};
-
-	enum eXshader : EXUINT32
-	{
-		Vertex,
-		Fragment,
-		Geometry,
-		Compute,
-		TessellationControl,
-		TessellationEvaluation,
-
-		COUNT
-	};
-}
+#include <eXtypes.h>
+#include <eXdebug.h>
+#include <eXmemory.h>

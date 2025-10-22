@@ -3,6 +3,8 @@
 const char *m_szName = "eXngine Demo";
 const eXngine::Size window_size = eXngine::Size(1024, 768);
 float m_fRotationScale = 5.0f;
+GLFWApplication *app = nullptr;
+Renderer *renderer = nullptr;
 
 struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
 {
@@ -17,9 +19,11 @@ struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
     }
 };
 
-#ifdef _DEBUG
-const std::vector<const char *> debug_extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+// template void VkGraphicsPipeline::CreatePipeline<VkTestVertex>(VkRenderPass);
+// template void Renderer::CreatePipeline<VkTestVertex>(std::string);
+// template void Renderer::AllocatePipeline<VkGraphicsPipeline>(std::string);
 
+#ifdef _DEBUG
 VkDebugUtilsMessengerEXT debugMessenger;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -28,10 +32,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
     void *pUserData)
 {
+    EX_INFO("Validation Layer: %s", pCallbackData->pMessage);
 
-    std::cout << "================" << "\n";
-    std::cout << pCallbackData->pMessage << "\n";
-    std::cout << "================" << "\n";
     return VK_FALSE;
 }
 
@@ -49,8 +51,6 @@ void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &create
         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
 }
-#else
-const std::vector<const char *> debug_extensions = {};
 #endif
 
 #ifndef IMGUI_DISABLE
@@ -141,11 +141,20 @@ void ImGui_OnExit()
 
 VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwindow *window)
 {
-    assert(glfwVulkanSupported() == GLFW_TRUE);
+    // EX_FATAL(glfwVulkanSupported() == GLFW_TRUE, "GLFW Vulkan not supported on this system.");
+
+    // renderer->AddExtension(VK_KHR_SURFACE_EXTENSION_NAME);
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;
-    const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), window, nullptr, &surface);
-    assert(result == VK_SUCCESS);
+    VkWin32SurfaceCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    createInfo.hwnd = (HWND)app->GetInstance();
+    createInfo.hinstance = GetModuleHandle(0);
+
+    const VkResult result = vkCreateWin32SurfaceKHR(renderer->GetVulkanInstance(), &createInfo, nullptr, &surface);
+    // const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), window, nullptr, &surface);
+
+    EX_FATAL(result == VK_SUCCESS, "Failed to create window surface.");
 
     return surface;
 }
@@ -191,29 +200,40 @@ void UpdateUniformBuffer(void *buffer, uint32_t currentImage)
     memcpy(buffer, &ubo, sizeof(ubo));
 }
 
+void App_OnRender(void *unused)
+{
+    renderer->OnRender();
+}
+
+void App_OnCleanup(void *unused)
+{
+    renderer->OnExit();
+}
+
 EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
-    GLFWApplication *app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
-    Renderer *renderer = new Renderer(m_szName, window_size, merge(app->GetExtensions(), debug_extensions));
+    app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
+    renderer = new Renderer(m_szName, window_size);
 
 #ifdef _DEBUG
     FILE *stream;
     AllocConsole();
     freopen_s(&stream, "CONOUT$", "w", stdout);
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-    populateDebugMessengerCreateInfo(debugCreateInfo);
-    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
-
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(renderer->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
-    func(renderer->GetVulkanInstance(), &debugCreateInfo, nullptr, &debugMessenger);
+    renderer->AddValidationLayer("VK_LAYER_KHRONOS_validation");
+    renderer->AddValidationLayer("VK_LAYER_LUNARG_monitor");
+    renderer->AddExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
+    renderer->AddExtension(VK_KHR_SURFACE_EXTENSION_NAME);
+    renderer->AddExtension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    renderer->AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    renderer->CreateInstance();
 
     app->Initialize();
     app->SetKeyboardHandler(KeyboardHandler);
     app->SetScrollHandler(ScrollHandler);
     app->SetFramebufferSizeHandler(ResizeHandler);
-    app->SetRenderer(static_cast<Renderers::AbstractRenderer *>(renderer));
+    // app->SetRenderer(static_cast<Renderers::AbstractRenderer *>(renderer));
 
     auto tri_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.vert.spv");
     auto tri_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.frag.spv");
@@ -222,15 +242,15 @@ EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstan
     auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
     auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 
-    // renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
-    // renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
+    renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
+    renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
 
-    renderer->LoadShader("default.vertex", vert, eXngine::Vertex);
-    renderer->LoadShader("default.fragment", frag, eXngine::Fragment);
-    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::Fragment);
-    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::Vertex);
-    renderer->LoadShader("cube_pipeline.vertex", cube_vert, eXngine::Vertex);
-    renderer->LoadShader("cube_pipeline.fragment", cube_frag, eXngine::Fragment);
+    renderer->LoadShader("default.vertex", vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
+    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
+    renderer->LoadShader("cube_pipeline.vertex", cube_vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("cube_pipeline.fragment", cube_frag, eXngine::eXshader_Fragment);
 
     // const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
     // const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
@@ -255,8 +275,20 @@ EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstan
     renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
     renderer->Initialize();
 
-    // renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
-    // renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
+    renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
+    renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
+
+    app->SetOnRenderHandler(App_OnRender);
+    app->SetOnCleanupHandler(App_OnCleanup);
+
+#ifdef _DEBUG
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+    populateDebugMessengerCreateInfo(debugCreateInfo);
+    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
+
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(renderer->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
+    func(renderer->GetVulkanInstance(), &debugCreateInfo, nullptr, &debugMessenger);
+#endif
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);

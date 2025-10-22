@@ -2,23 +2,26 @@
 
 #include <optional>
 #include <eXngine.h>
-#include <renderers/abstract.h>
-
-using namespace eXngine::Renderers;
 
 namespace eXngine::Applications
 {
+	typedef void (*OnInitializeHandler)(void *);
+	typedef void (*OnRenderHandler)(void *);
+	typedef void (*OnCleanupHandler)(void *);
+
 	class EXNEXPORT Application
 	{
 	protected:
-		char *m_name = nullptr;
-		Point m_position;
-		Size m_size;
-		bool maximized;
+		EXINT8 * m_szName = EXN_NULL_HANDLE;
+		Point m_szPosition;
+		Size m_szSize;
+		EXBOOL m_bMaximized = false;
+		EXUINTPTR m_pInstance = EXN_NULL_HANDLE;
 
-		std::optional<AbstractRenderer *> m_pRenderer = nullptr;
+		OnInitializeHandler m_fnOnInitialize = EXN_NULL_HANDLE;
+		OnRenderHandler m_fnOnRender = EXN_NULL_HANDLE;
+		OnCleanupHandler m_fnOnCleanup = EXN_NULL_HANDLE;
 	public:
-		void *m_pInstance = nullptr;
 		Application(const char *name, Point position, Size size, bool maximized);
 		Application();
 		~Application();
@@ -26,13 +29,15 @@ namespace eXngine::Applications
 		Size GetSize();
 		Point GetPosition();
 		bool IsMaximized();
-		void SetRenderer(AbstractRenderer *);
 		void SetSize(Size size);
 		void SetPosition(Point position);
 		void SetMaximized(bool maximized);
+		void SetOnInitializeHandler(OnInitializeHandler handler);
+		void SetOnRenderHandler(OnRenderHandler handler);
+		void SetOnCleanupHandler(OnCleanupHandler handler);
+		EXUINTPTR GetInstance();
 
 		virtual bool Initialize() = 0;
 		virtual int Run() = 0;
-		virtual int Loop() = 0;
 	};
 }

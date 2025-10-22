@@ -25,6 +25,8 @@ namespace eXngine::Renderers::Vulkan
 {
     void Renderer::Initialize()
     {
+        CreateDefaultGraphicsPipeline();
+        CreateInstance();
         CreateSurface();
         SelectPhysicalDevice();
         CreateLogicalDevice();
@@ -518,7 +520,7 @@ namespace eXngine::Renderers::Vulkan
     {
     }
 
-    bool Renderer::LoadShader(const char* name, const std::vector<char>& data, const eXshader type)
+    bool Renderer::LoadShader(const char* name, const std::vector<char>& data, const ShaderTypes type)
     {
         if (data.empty())
             return false;
@@ -603,11 +605,16 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::SetExtensions(std::vector<const char *> ex)
     {
-        this->m_extensions = ex;
+        this->m_Extensions = ex;
     }
 
-    void Renderer::CreateInstance(std::vector<const char *> extensions)
+    void Renderer::CreateInstance()
     {
+        if (this->m_pInstance != EXN_NULL_HANDLE) {
+            EX_TRACE("Vulkan instance already created.");
+            return;
+        }
+
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = this->m_szName;
@@ -620,8 +627,8 @@ namespace eXngine::Renderers::Vulkan
             VkInstanceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             createInfo.pApplicationInfo = &appInfo;
-            createInfo.enabledExtensionCount = static_cast<EXUINT32>(extensions.size());
-            createInfo.ppEnabledExtensionNames = extensions.data();
+            createInfo.enabledExtensionCount = static_cast<EXUINT32>(m_Extensions.size());
+            createInfo.ppEnabledExtensionNames = m_Extensions.data();
 
             EXUINT32 layerCount;
             vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -629,7 +636,7 @@ namespace eXngine::Renderers::Vulkan
             std::vector<VkLayerProperties> availableLayers(layerCount);
             vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-            for (const char *layerName : m_validationLayers)
+            for (const char *layerName : m_ValidationLayers)
             {
                 for (const auto &layerProperties : availableLayers)
                 {
@@ -642,8 +649,8 @@ namespace eXngine::Renderers::Vulkan
 
             if (m_enableValidationLayers)
             {
-                createInfo.enabledLayerCount = static_cast<EXUINT32>(m_validationLayers.size());
-                createInfo.ppEnabledLayerNames = m_validationLayers.data();
+                createInfo.enabledLayerCount = static_cast<EXUINT32>(m_ValidationLayers.size());
+                createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
             }
             else
             {
@@ -651,8 +658,8 @@ namespace eXngine::Renderers::Vulkan
             }
 
             const VkResult result = vkCreateInstance(&createInfo, nullptr, &m_pInstance);
-            if (result != VK_SUCCESS)
-                std::cout << "m_pInstance is not created due to, (" << result << ") error code." << std::endl;
+            
+            EX_FATAL(result == VK_SUCCESS, "Failed to create Vulkan instance!");
         }
     }
 
@@ -1140,13 +1147,13 @@ namespace eXngine::Renderers::Vulkan
             createInfo.pQueueCreateInfos = queueCreateInfos.data();
             createInfo.pEnabledFeatures = &deviceFeatures;
             createInfo.pNext = &indexingFeatures;
-            createInfo.enabledExtensionCount = static_cast<EXUINT32>(m_deviceExtensions.size());
-            createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
-            
+            createInfo.enabledExtensionCount = static_cast<EXUINT32>(m_DeviceExtensions.size());
+            createInfo.ppEnabledExtensionNames = m_DeviceExtensions.data();
+
             if (m_enableValidationLayers)
             {
-                createInfo.enabledLayerCount = static_cast<EXUINT32>(m_validationLayers.size());
-                createInfo.ppEnabledLayerNames = m_validationLayers.data();
+                createInfo.enabledLayerCount = static_cast<EXUINT32>(m_ValidationLayers.size());
+                createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
             }
             else
             {
@@ -1380,7 +1387,7 @@ namespace eXngine::Renderers::Vulkan
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-        std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
+        std::set<std::string> requiredExtensions(m_DeviceExtensions.begin(), m_DeviceExtensions.end());
 
         for (const auto &extension : availableExtensions)
         {
@@ -1418,7 +1425,6 @@ namespace eXngine::Renderers::Vulkan
     Renderer::QuerySwapChainSupport(VkPhysicalDevice device)
     {
         SwapChainSupportDetails details;
-
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_pSurface, &details.capabilities);
 
         EXUINT32 formatCount;
@@ -1598,23 +1604,27 @@ namespace eXngine::Renderers::Vulkan
         this->m_fOnRender = fn;
     }
 
+    void Renderer::AddExtension(const char *extension)
+    {
+        m_Extensions.push_back(extension);
+    }
+
+    void Renderer::AddValidationLayer(const char *layer)
+    {
+        m_ValidationLayers.push_back(layer);
+    }
+
+    void Renderer::AddDeviceExtension(const char *extension)
+    {
+        m_DeviceExtensions.push_back(extension);
+    }
+
     Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
     {
-        CreateInstance(this->m_extensions);
-        CreateDefaultGraphicsPipeline();
     }
 
     Renderer::Renderer(const char *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
-        CreateInstance(this->m_extensions);
-        CreateDefaultGraphicsPipeline();
-    }
-
-    Renderer::Renderer(const char *name, Size sz, std::vector<const char *> extensions) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
-    {
-        m_extensions.insert(m_extensions.end(), extensions.begin(), extensions.end());
-        CreateInstance(this->m_extensions);
-        CreateDefaultGraphicsPipeline();
     }
 }
 #endif

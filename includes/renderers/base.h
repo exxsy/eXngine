@@ -28,7 +28,7 @@ namespace eXngine::Renderers
 	{
 	public:
 		std::vector<char> code;
-		eXshader type;
+		ShaderTypes type;
 	};
 
 	template <typename MemoryType, typename IndexType = EXUINT32>
@@ -77,7 +77,7 @@ namespace eXngine::Renderers
 		FPSData GetFPS() const;
 		Images::ImageManager* GetImageManager();
 
-		virtual bool LoadShader(const char*, const std::vector<char>&, eXshader) = 0;
+		virtual bool LoadShader(const char*, const std::vector<char>&, ShaderTypes) = 0;
 		virtual void UseShader(const char*) = 0;
 		virtual void DestroyShader(const char*) = 0;
 	};

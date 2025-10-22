@@ -10,14 +10,14 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/src/example",
       "environment": [],
-      "externalConsole": false,
+      "console": "integratedTerminal",
       "symbolOptions": {
         "searchPaths": [
           "${workspaceFolder}/3rdparty/lib/**/*",
         ],
         "searchMicrosoftSymbolServer": false
       },
-      "preLaunchTask": "Build Example",
+      // "preLaunchTask": "Build Example",
     },
   ]
 }

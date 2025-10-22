@@ -5,6 +5,7 @@
 
 #include <windows/window.h>
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 namespace eXngine::Applications
 {
@@ -17,8 +18,6 @@ namespace eXngine::Applications
 	class EXNEXPORT GLFWApplication : public Application
 	{
 	private:
-		int Loop() override;
-
 		GLFWwindow *m_pWindow = nullptr;
 		GLFWKeyboardCallback *m_fnKeyboard = nullptr;
 		GLFWCharacterCallback *m_fnCharacter = nullptr;
@@ -26,9 +25,6 @@ namespace eXngine::Applications
 		GLFWMouseClickCallback *m_fnMouseClick = nullptr;
 		GLFWScrollCallback *m_fnScroll = nullptr;
 		GLFWframebuffersizefun *m_fnFramebufferSize = nullptr;
-
-		[[maybe_unused]] bool maximized = false;
-
 	public:
 		GLFWApplication(const char *name, Point position, Size size, bool maximized = false);
 		bool Initialize() override;

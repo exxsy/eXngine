@@ -11,6 +11,13 @@
 
 namespace eXngine::Renderers::Vulkan
 {
+    struct VkModelPushConstants
+    {
+    public:
+        alignas(4) EXUINT32 textureIndex = 0;
+        alignas(4) EXUINT32 numTextures = 1;
+    };
+
     struct VkGraphicsPipeline
     {
     public:
@@ -29,8 +36,16 @@ namespace eXngine::Renderers::Vulkan
         std::vector<VkRect2D> m_Scissors;
         std::vector<VkDynamicState> m_DynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
-        VkGraphicsPipeline(VkDevice *, VkDescriptorPool *, VkExtent2D *);
+        // VkGraphicsPipeline(VkDevice *, VkDescriptorPool *, VkExtent2D *);
         // ~VkGraphicsPipeline();
+
+        VkGraphicsPipeline(VkDevice *device, VkDescriptorPool *pool, VkExtent2D *extent)
+        {
+            m_pDevice = device;
+            m_pDescriptorPool = pool;
+            m_pExtent = extent;
+            m_ShaderStages = std::vector<VkPipelineShaderStageCreateInfo>();
+        };
 
         virtual ~VkGraphicsPipeline()
         {
@@ -47,18 +62,163 @@ namespace eXngine::Renderers::Vulkan
         void CreateDescriptorSetLayout();
         void CreateDescriptorSets(VkSampler, VkTexture *, VkBuffer);
 
-        virtual VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyInfo();
-        virtual VkPipelineDynamicStateCreateInfo GetDynamicStateInfo();
-        virtual VkPipelineViewportStateCreateInfo GetViewportStateInfo();
-        virtual VkPipelineRasterizationStateCreateInfo GetRasterizationStateInfo();
-        virtual VkPipelineMultisampleStateCreateInfo GetMultisampleStateInfo();
-        virtual VkPipelineColorBlendAttachmentState GetColorBlendAttachmentState();
-        virtual VkPipelineColorBlendStateCreateInfo GetColorBlendStateInfo();
-        virtual VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateInfo();
-        virtual VkPushConstantRange *GetPushContantRangeInfo(EXUINT32 &);
-        virtual VkPipelineLayoutCreateInfo GetLayoutInfo();
+        // virtual VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyInfo();
+        // virtual VkPipelineDynamicStateCreateInfo GetDynamicStateInfo();
+        // virtual VkPipelineViewportStateCreateInfo GetViewportStateInfo();
+        // virtual VkPipelineRasterizationStateCreateInfo GetRasterizationStateInfo();
+        // virtual VkPipelineMultisampleStateCreateInfo GetMultisampleStateInfo();
+        // virtual VkPipelineColorBlendAttachmentState GetColorBlendAttachmentState();
+        // virtual VkPipelineColorBlendStateCreateInfo GetColorBlendStateInfo();
+        // virtual VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateInfo();
+        // virtual VkPushConstantRange *GetPushContantRangeInfo(EXUINT32 &);
+        // virtual VkPipelineLayoutCreateInfo GetLayoutInfo();
 
-        template <std::derived_from<VkVertex> T>
+        VkPipelineInputAssemblyStateCreateInfo virtual GetInputAssemblyInfo()
+        {
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                .primitiveRestartEnable = VK_FALSE,
+            };
+        }
+
+        VkPipelineDynamicStateCreateInfo virtual GetDynamicStateInfo()
+        {
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+                .dynamicStateCount = static_cast<EXUINT32>(m_DynamicStates.size()),
+                .pDynamicStates = m_DynamicStates.data(),
+            };
+        }
+
+        VkPipelineViewportStateCreateInfo virtual GetViewportStateInfo()
+        {
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+                .viewportCount = static_cast<EXUINT32>(m_Viewports.size()),
+                .pViewports = m_Viewports.data(),
+                .scissorCount = static_cast<EXUINT32>(m_Scissors.size()),
+                .pScissors = m_Scissors.data(),
+            };
+        }
+
+        VkPipelineRasterizationStateCreateInfo virtual GetRasterizationStateInfo()
+        {
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+                .depthClampEnable = VK_FALSE,
+                .rasterizerDiscardEnable = VK_FALSE,
+                .polygonMode = VK_POLYGON_MODE_FILL,
+                .cullMode = VK_CULL_MODE_NONE,
+                .frontFace = VK_FRONT_FACE_CLOCKWISE,
+                .depthBiasEnable = VK_FALSE,
+                .depthBiasConstantFactor = 0.0f,
+                .depthBiasClamp = 0.0f,
+                .depthBiasSlopeFactor = 0.0f,
+                .lineWidth = 1.0f,
+            };
+        }
+
+        VkPipelineMultisampleStateCreateInfo virtual GetMultisampleStateInfo()
+        {
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+                .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+                .sampleShadingEnable = VK_FALSE,
+                .minSampleShading = 1.0f,
+                .pSampleMask = nullptr,
+                .alphaToCoverageEnable = VK_FALSE,
+                .alphaToOneEnable = VK_FALSE,
+            };
+        }
+
+        VkPipelineColorBlendAttachmentState virtual GetColorBlendAttachmentState()
+        {
+            return {
+                .blendEnable = VK_FALSE,
+                .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+                .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+                .colorBlendOp = VK_BLEND_OP_ADD,
+                .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+                .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+                .alphaBlendOp = VK_BLEND_OP_ADD,
+                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+            };
+        }
+
+        VkPipelineColorBlendStateCreateInfo virtual GetColorBlendStateInfo()
+        {
+            static VkPipelineColorBlendAttachmentState colorBlendAttachment = GetColorBlendAttachmentState();
+
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+                .logicOpEnable = VK_FALSE,
+                .logicOp = VK_LOGIC_OP_COPY,
+                .attachmentCount = 1,
+                .pAttachments = &colorBlendAttachment,
+                .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
+            };
+        }
+
+        VkPipelineDepthStencilStateCreateInfo virtual GetDepthStencilStateInfo()
+        {
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+                .depthTestEnable = VK_TRUE,
+                .depthWriteEnable = VK_TRUE,
+                .depthCompareOp = VK_COMPARE_OP_LESS,
+                .depthBoundsTestEnable = VK_FALSE,
+                .stencilTestEnable = VK_FALSE,
+                .front = {},
+                .back = {},
+                .minDepthBounds = 0.0f,
+                .maxDepthBounds = 1.0f,
+            };
+        }
+
+        virtual VkPushConstantRange * GetPushContantRangeInfo(EXUINT32 &size)
+        {
+            static std::vector<VkPushConstantRange> pushConstants{
+                //{
+                //    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                //    .offset = sizeof(float) * 0,
+                //    .size = sizeof(float) * 4,
+                //},
+                {
+                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .offset = 0,
+                    .size = sizeof(VkModelPushConstants),
+                }};
+
+            size = static_cast<EXUINT32>(pushConstants.size());
+
+            /*static VkPushConstantRange* pushConstants = new VkPushConstantRange();
+            pushConstants->stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            pushConstants->offset = 0;
+            pushConstants->size = sizeof(VkModelPushConstants);
+
+            size = 1;*/
+
+            static VkPushConstantRange *ptr = pushConstants.data();
+
+            return ptr;
+        }
+
+        VkPipelineLayoutCreateInfo virtual GetLayoutInfo()
+        {
+            EXUINT32 pushContantsSize = 0;
+            auto pushConstants = GetPushContantRangeInfo(pushContantsSize);
+
+            return {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+                .setLayoutCount = 1,
+                .pSetLayouts = &m_pDescriptorSetLayout,
+                .pushConstantRangeCount = pushContantsSize,
+                .pPushConstantRanges = pushConstants,
+            };
+        }
+
+        template <typename T>
         inline VkPipelineVertexInputStateCreateInfo GetVertexInputInfo()
         {
             static VkVertexInputBindingDescription bindingDescription = T::GetBindingDescription();
@@ -73,7 +233,7 @@ namespace eXngine::Renderers::Vulkan
             };
         }
 
-        template <std::derived_from<VkVertex> T>
+        template <typename T>
         inline void CreatePipeline(VkRenderPass renderPass)
         {
             VkPipelineRasterizationStateCreateInfo rasterizer = GetRasterizationStateInfo();

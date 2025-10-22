@@ -57,13 +57,6 @@ namespace eXngine::Renderers::Vulkan
 		alignas(16) EXMAT4 proj;
 	};
 	
-	struct VkModelPushConstants
-	{
-	public:
-		alignas(4) EXUINT32 textureIndex = 0;
-		alignas(4) EXUINT32 numTextures = 1;
-	};
-
 	struct EXNEXPORT VkFrameObject
 	{
 		VkCommandBuffer commandBuffer;
@@ -235,15 +228,13 @@ namespace eXngine::Renderers::Vulkan
 		const bool m_enableValidationLayers = true;
 #endif
 
-		std::vector<VkDynamicState> m_dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-		std::vector<const char *> m_extensions = {"VK_KHR_win32_surface"};
-		std::vector<const char *> m_validationLayers = {"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
-		std::vector<const char *> m_deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME};
-		//std::vector<std::tuple<const char *, VkShaderStageFlagBits, std::vector<char>>> m_shaders = {};
+		// std::vector<VkDynamicState> m_dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+		std::vector<const char *> m_Extensions = {};//{"VK_KHR_win32_surface"};
+		std::vector<const char *> m_ValidationLayers = {};//{"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
+		std::vector<const char *> m_DeviceExtensions = {};//{VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME};
 		/* VULKAN */
 	private:
 		void SelectPhysicalDevice();
-		void CreateInstance(std::vector<const char *>);
 		void CreateSurface();
 		void CreateLogicalDevice();
 		void CreateSwapChain();
@@ -280,6 +271,8 @@ namespace eXngine::Renderers::Vulkan
 	public:
 		const EXUINT32 MAX_FRAMES_IN_FLIGHT = 2;
 		const EXUINT32 MAX_TEXTURE_COUNT = 16;
+		
+		void CreateInstance();
 
 		//VkGraphicsPipeline* m_pDefaultGraphicsPipeline = EXN_NULL_HANDLE;
 		std::unordered_map<std::string, VkGraphicsPipeline*> m_pGraphicPipelines;
@@ -303,13 +296,12 @@ namespace eXngine::Renderers::Vulkan
 
 		Renderer(const char *);
 		Renderer(const char *, Size);
-		Renderer(const char *, Size, std::vector<const char *>);
 
 		void Initialize() override;
 		void OnRender() override;
 		void OnExit() override;
 
-		bool LoadShader(const char*, const std::vector<char>&, eXshader) override;
+		bool LoadShader(const char*, const std::vector<char>&, ShaderTypes) override;
 		void UseShader(const char*) override;
 		void DestroyShader(const char*) override;
 
@@ -322,6 +314,10 @@ namespace eXngine::Renderers::Vulkan
 		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
 		void SetOnRenderHandler(OnRenderHandler);
 
+		void AddExtension(const char *);
+		void AddValidationLayer(const char *);
+		void AddDeviceExtension(const char *);
+
 		//void LoadModel(const char *, std::vector<Utils::Mesh>, std::map<const char*, const char *>, const char* = nullptr);
 
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
@@ -331,7 +327,7 @@ namespace eXngine::Renderers::Vulkan
 		VkInstance GetVulkanInstance();
 		VkFormat FindDepthFormat();
 
-		template<std::derived_from<VkGraphicsPipeline> T>
+		template<typename T>
 		inline void AllocatePipeline(std::string name)
 		{
 			if (m_pGraphicPipelines.find(name) != m_pGraphicPipelines.end()) {
@@ -342,7 +338,7 @@ namespace eXngine::Renderers::Vulkan
 			m_pGraphicPipelines[name] = new T(&m_pDevice, &m_pDescriptorPool, &m_szSwapChainExtent);
 		}
 
-		template<std::derived_from<VkVertex> T>
+		template<typename T>
 		inline void CreatePipeline(std::string name)
 		{
 			const auto pipeline = m_pGraphicPipelines[name];//new VkGraphicsPipeline(m_pDevice);

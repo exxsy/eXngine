@@ -1,55 +1,75 @@
-#include <windows/window.h>
 #include <malloc.h>
 #include <string.h>
 
+#include <windows/window.h>
+
 namespace eXngine::Applications
 {
-	Application::Application(const char * name, Point position, Size size, bool maximized):
-		m_name(const_cast<char*>(name)), m_position(position), m_size(size), maximized(maximized)
-	{}
+	Application::Application(const char * name, Point position, Size size, bool maximized) : 
+		m_szName(const_cast<char*>(name)), m_szPosition(position), m_szSize(size), m_bMaximized(maximized)
+	{
+		name = static_cast<EXINT8 *>(EX_ALLOC(strlen(name) + 1));
+		strcpy_s(const_cast<char *>(name), strlen(name) + 1, name);
+	}
 	
 	Application::~Application()
 	{
-		delete this->m_name;
-	}
-	
-	const char* Application::GetName()
-	{
-		return this->m_name;
-	}
-	
-	eXngine::Size Application::GetSize()
-	{
-		return this->m_size;
-	}
-	
-	eXngine::Point Application::GetPosition()
-	{
-		return this->m_position;
+		EX_FREE(this->m_szName);
 	}
 	
 	bool Application::IsMaximized()
 	{
-		return this->maximized;
-	}
-	
-	void Application::SetRenderer(AbstractRenderer*renderer)
-	{
-		this->m_pRenderer = renderer;
+		return this->m_bMaximized;
 	}
 	
 	void Application::SetSize(Size size)
 	{
-		this->m_size = size;
+		this->m_szSize = size;
 	}
 	
 	void Application::SetPosition(Point position)
 	{
-		this->m_position = position;
+		this->m_szPosition = position;
 	}
 	
 	void Application::SetMaximized(bool maximized)
 	{
-		this->maximized = maximized;
+		this->m_bMaximized = maximized;
+	}
+	
+	void Application::SetOnInitializeHandler(OnInitializeHandler handler)
+	{
+		this->m_fnOnInitialize = handler;
+	}
+
+	void Application::SetOnRenderHandler(OnRenderHandler handler)
+	{
+		this->m_fnOnRender = handler;
+	}
+
+	void Application::SetOnCleanupHandler(OnCleanupHandler handler)
+	{
+		this->m_fnOnCleanup = handler;
+	}
+
+	const char* Application::GetName()
+	{
+		return this->m_szName;
+	}
+	
+	Size Application::GetSize()
+	{
+		return this->m_szSize;
+	}
+	
+	Point Application::GetPosition()
+	{
+		return this->m_szPosition;
+	}
+
+	EXUINTPTR Application::GetInstance()
+	{
+		return this->m_pInstance;
 	}
 }
+
