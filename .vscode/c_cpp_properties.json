@@ -18,6 +18,7 @@
         "UNICODE",
         "_UNICODE",
         "_VULKAN",
+        "NOMINMAX",
         "EXN_TEXTURE_STRATEGY_STBI",
         "GLFW_EXPOSE_NATIVE_WIN32",
         "_GLFW_WIN32"

@@ -109,8 +109,8 @@ namespace eXngine::Applications
 
 	void GLFWApplication::SetCharacterHandler(GLFWCharacterCallback handler)
 	{
-		EX_FATAL(m_pWindow != EXN_NULL_HANDLE);
-		EX_ERROR(handler != EXN_NULL_HANDLE);
+		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
+		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid character handler.");
 
 		m_fnCharacter = &handler;
 

@@ -48,19 +48,19 @@ IF /I "%ARCH%"=="x64" (
 
 IF /I "%CONFIG%"=="Debug" (
     SET "compilerFlags=%compilerFlags% -g -O0"
-    SET "defines=-D_DEBUG -DEXNEXPORT"
+    SET "defines=-D_DEBUG -DEXNEXPORT -DNOMINMAX"
     SET "linkerFlags=%linkerFlags% -lmsvcrtd"
 ) ELSE (
     SET "CONFIG=Release"
     SET "compilerFlags=%compilerFlags% -O2"
-    SET "defines=-DNDEBUG -DEXNEXPORT"
+    SET "defines=-DNDEBUG -DEXNEXPORT -DNOMINMAX"
     SET "linkerFlags=%linkerFlags% -lmsvcrt"
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib"
 SET "includeFlags=-Isrc -Iincludes -I3rdparty -I3rdparty\glm -I3rdparty\vulkan"
 SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR%\%ARCH%\%CONFIG% -L%CD%\output\%ARCH%\%CONFIG% -L%VULKAN_SDK%\Lib"
-SET "linkerFlags=%linkerFlags% -leXngine.core -leXngine.window -leXngine.assets -lvulkan-1 -lshell32 -lgdi32 -luser32"
+SET "linkerFlags=%linkerFlags% -leXngine.core -leXngine.assets -lvulkan-1 -lshell32 -lgdi32 -luser32"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
 IF NOT EXIST "%OUT_DIR%" (
     MKDIR "%OUT_DIR%" >NUL 2>&1

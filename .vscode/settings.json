@@ -136,6 +136,7 @@
     "unordered_map": "cpp",
     "xhash": "cpp",
     "ranges": "cpp",
-    "cassert": "cpp"
+    "cassert": "cpp",
+    "csignal": "cpp"
   }
 }
