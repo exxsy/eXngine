@@ -114,6 +114,7 @@ void ImGui_OnRender(Renderer *renderer, VkCommandBuffer commandBuffer)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
     ImGui::Begin("eXngine Demo");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     // ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", 1000.0f / VulkanRenderer->GetFPS().m_fFPS, VulkanRenderer->GetFPS().m_fFPS);
@@ -242,8 +243,8 @@ EXINT32 WINAPI Window()
     auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
     auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
 
-    // renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
-    // renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
+    renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
+    renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
 
     renderer->LoadShader("default.vertex", vert, eXngine::eXshader_Vertex);
     renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
@@ -279,8 +280,8 @@ EXINT32 WINAPI Window()
     ImGui_OnInit(app, renderer, window_size);
 #endif
 
-    // renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
-    // renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
+    renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
+    renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
 
     app->SetOnLoopHandler(App_OnLoop);
     app->SetOnCleanupHandler(App_OnCleanup);

@@ -88,8 +88,7 @@ namespace eXngine::Renderers::Vulkan
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                 vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        pipeline->m_pLayout, 0, 1, &pipeline->m_DescriptorSets[m_currentFrame], 0, nullptr);
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &pipeline->m_DescriptorSets[m_currentFrame], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, 0, 0);
             }
 
@@ -97,9 +96,7 @@ namespace eXngine::Renderers::Vulkan
                 m_fOnRender(this, commandBuffer);
         }
         vkCmdEndRenderPass(commandBuffer);
-
         vkEndCommandBuffer(commandBuffer);
-        // EX_ERROR(vkEndCommandBuffer(commandBuffer) == VK_SUCCESS, "Failed to end recorded command buffer.");
     }
 
     EXUINT32 Renderer::FindMemoryType(EXUINT32 typeFilter, VkMemoryPropertyFlags properties)
