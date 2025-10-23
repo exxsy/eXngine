@@ -23,35 +23,7 @@ struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
 // template void Renderer::CreatePipeline<VkTestVertex>(std::string);
 // template void Renderer::AllocatePipeline<VkGraphicsPipeline>(std::string);
 
-#ifdef _DEBUG
-VkDebugUtilsMessengerEXT debugMessenger;
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-    void *pUserData)
-{
-    EX_INFO("Validation Layer: %s", pCallbackData->pMessage);
-
-    return VK_FALSE;
-}
-
-void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
-{
-    createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType =
-        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
-}
-#endif
+// Debug messenger is now handled internally by the renderer
 
 #ifndef IMGUI_DISABLE
 void ImGui_CheckVkResult(VkResult result)
@@ -286,14 +258,7 @@ EXINT32 WINAPI Window()
     app->SetOnLoopHandler(App_OnLoop);
     app->SetOnCleanupHandler(App_OnCleanup);
 
-#ifdef _DEBUG
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-    populateDebugMessengerCreateInfo(debugCreateInfo);
-    debugCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
-
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(renderer->GetVulkanInstance(), "vkCreateDebugUtilsMessengerEXT");
-    func(renderer->GetVulkanInstance(), &debugCreateInfo, nullptr, &debugMessenger);
-#endif
+    // Debug messenger is automatically set up by the renderer during Initialize()
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);

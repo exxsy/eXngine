@@ -223,6 +223,7 @@ namespace eXngine::Renderers::Vulkan
 		VkTexture *m_Depth = nullptr;
 		VkTexture *m_DefaultTexture = nullptr;
 		VkCommandBuffer m_pCurrentCommandBuffer = EXN_NULL_HANDLE;
+		VkDebugUtilsMessengerEXT m_pDebugMessenger = EXN_NULL_HANDLE;
 
 #ifdef NDEBUG
 		const bool m_enableValidationLayers = false;
@@ -256,6 +257,8 @@ namespace eXngine::Renderers::Vulkan
 		void CreateShaders();
 		void CleanupSwapChain();
 		void ResetSwapChain();
+		void SetupDebugMessenger();
+		void DestroyDebugMessenger();
 
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);

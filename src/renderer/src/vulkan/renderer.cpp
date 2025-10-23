@@ -23,6 +23,7 @@ namespace eXngine::Renderers::Vulkan
     {
         SelectPhysicalDevice();
         CreateInstance();
+        SetupDebugMessenger();
         CreateSurface();
         CreateLogicalDevice();
         CreateSwapChain();
@@ -471,6 +472,7 @@ namespace eXngine::Renderers::Vulkan
 
         vkDestroyCommandPool(m_pDevice, m_pCommandPool, nullptr);
         vkDestroyDevice(m_pDevice, nullptr);
+        DestroyDebugMessenger();
         vkDestroyInstance(m_pInstance, nullptr);
     }
 
@@ -624,6 +626,90 @@ namespace eXngine::Renderers::Vulkan
             const VkResult result = vkCreateInstance(&createInfo, nullptr, &m_pInstance);
 
             EX_FATAL(result == VK_SUCCESS, "Failed to create Vulkan instance!");
+        }
+    }
+
+    void Renderer::SetupDebugMessenger()
+    {
+        if (!m_enableValidationLayers || m_pInstance == EXN_NULL_HANDLE)
+            return;
+
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity = 
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType = 
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        
+        // Debug callback lambda
+        createInfo.pfnUserCallback = [](
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            void* pUserData) -> VkBool32
+        {
+            EX_INFO("Vulkan Debug Message: %s", pCallbackData->pMessage);
+            // Format message based on severity
+            // const char* severityStr = "UNKNOWN";
+            // if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+            //     severityStr = "VERBOSE";
+            // else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+            //     severityStr = "INFO";
+            // else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            //     severityStr = "WARNING";
+            // else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+            //     severityStr = "ERROR";
+
+            // // Log using the engine's logging system
+            // if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+            //     EX_ERROR(false, string::format("[Vulkan %s] %s", severityStr, pCallbackData->pMessage).c_str());
+            // else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            //     EX_WARNING(string::format("[Vulkan %s] %s", severityStr, pCallbackData->pMessage).c_str());
+            // else
+            //     EX_INFO(string::format("[Vulkan %s] %s", severityStr, pCallbackData->pMessage).c_str());
+
+            return VK_FALSE;
+        };
+
+        // Get the function pointer for creating debug messenger
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            m_pInstance, "vkCreateDebugUtilsMessengerEXT");
+        
+        if (func != nullptr)
+        {
+            VkResult result = func(m_pInstance, &createInfo, nullptr, &m_pDebugMessenger);
+            if (result == VK_SUCCESS)
+            {
+                EX_INFO("Vulkan debug messenger created successfully");
+            }
+            else
+            {
+                EX_WARNING("Failed to create Vulkan debug messenger");
+            }
+        }
+        else
+        {
+            EX_WARNING("vkCreateDebugUtilsMessengerEXT extension not available");
+        }
+    }
+
+    void Renderer::DestroyDebugMessenger()
+    {
+        if (m_pDebugMessenger == EXN_NULL_HANDLE || m_pInstance == EXN_NULL_HANDLE)
+            return;
+
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            m_pInstance, "vkDestroyDebugUtilsMessengerEXT");
+        
+        if (func != nullptr)
+        {
+            func(m_pInstance, m_pDebugMessenger, nullptr);
+            m_pDebugMessenger = EXN_NULL_HANDLE;
+            EX_INFO("Vulkan debug messenger destroyed");
         }
     }
 
