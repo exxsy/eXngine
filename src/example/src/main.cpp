@@ -196,6 +196,7 @@ EXINT32 WINAPI Window()
     renderer->AddValidationLayer("VK_LAYER_KHRONOS_validation");
     renderer->AddValidationLayer("VK_LAYER_LUNARG_monitor");
     renderer->AddExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    renderer->CreateDebugPipeline();
 #endif
     renderer->AddExtension(VK_KHR_SURFACE_EXTENSION_NAME);
     renderer->AddExtension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
@@ -208,12 +209,12 @@ EXINT32 WINAPI Window()
     app->SetFramebufferSizeHandler(ResizeHandler);
     // app->SetRenderer(static_cast<Renderers::AbstractRenderer *>(renderer));
 
-    auto tri_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.vert.spv");
-    auto tri_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\triangle.frag.spv");
-    auto cube_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\cube.vert.spv");
-    auto cube_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\cube.frag.spv");
-    auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.vert.spv");
-    auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shader.frag.spv");
+    auto tri_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\triangle.vert.spv");
+    auto tri_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\triangle.frag.spv");
+    auto cube_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\cube.vert.spv");
+    auto cube_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\cube.frag.spv");
+    auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\shader.vert.spv");
+    auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\shader.frag.spv");
 
     renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
     renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
@@ -257,8 +258,6 @@ EXINT32 WINAPI Window()
 
     app->SetOnLoopHandler(App_OnLoop);
     app->SetOnCleanupHandler(App_OnCleanup);
-
-    // Debug messenger is automatically set up by the renderer during Initialize()
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);

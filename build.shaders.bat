@@ -1,6 +1,6 @@
 @echo off
 FOR /r %%i IN (shaders\*.frag, shaders\*.vert) DO (
-    %VULKAN_SDK%/Bin/glslangValidator.exe -V %%i -o output/%%~nxi.spv
+    %VULKAN_SDK%/Bin/glslangValidator.exe -V %%i -o output/shaders/%%~nxi.spv
     IF ERRORLEVEL 1 (
         powershell -Command "Write-Host 'Shader compilation failed' -ForegroundColor Red"
         exit /b 1

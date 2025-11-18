@@ -23,7 +23,6 @@ namespace eXngine::Renderers::Vulkan
     {
         SelectPhysicalDevice();
         CreateInstance();
-        SetupDebugMessenger();
         CreateSurface();
         CreateLogicalDevice();
         CreateSwapChain();
@@ -629,7 +628,7 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::SetupDebugMessenger()
+    void Renderer::CreateDebugPipeline()
     {
         if (!m_enableValidationLayers || m_pInstance == EXN_NULL_HANDLE)
             return;

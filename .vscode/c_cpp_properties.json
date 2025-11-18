@@ -9,9 +9,9 @@
         "${workspaceFolder}/3rdparty/vulkan/**",
         "${workspaceFolder}/3rdparty/glm/**",
         "${workspaceFolder}/3rdparty/imgui/**",
-        "${workspaceFolder}/3rdparty/fbx/**",
-        "\"C:\\Program Files (x86)\\Microsoft SDKs\\Windows Kits\\**\"",
-        "\"D:\\Code\\cpp\\**\""
+        // "${workspaceFolder}/3rdparty/fbx/**",
+        "\"${env:MICROSOFT_SDK_PATH}\\**\"",
+        "\"${env:SDK_PATH}\\**\""
       ],
       "defines": [
         "_DEBUG",
@@ -23,7 +23,7 @@
         "GLFW_EXPOSE_NATIVE_WIN32",
         "_GLFW_WIN32"
       ],
-      "compilerPath": "\"C:/Program Files/LLVM/bin/clang\"",
+      "compilerPath": "clang",
       "intelliSenseMode": "windows-clang-x64",
       "cStandard": "${default}",
       "cppStandard": "c++20",

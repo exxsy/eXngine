@@ -1,7 +1,7 @@
 #include <renderers/base.h>
 #include <chrono>
 
-#pragma comment(lib, "eXngine.texture.lib")
+#pragma comment(lib, "eXngine.assets.lib")
 
 namespace eXngine::Renderers
 {

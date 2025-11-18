@@ -175,6 +175,8 @@ echo   shaders     Compile shaders via build.shaders.bat (if present).
 echo   window      Run window\build.bat (if present).
 echo   assets      Run assets\build.bat (if present).
 echo   core        Run core\build.bat (if present).
+echo   example     Run example\build.bat (if present).
+echo   renderer    Run renderer\build.bat (if present).
 echo   clean       Delete the output directory.
 echo   all         shaders + window  ^(default^)
 echo.

@@ -257,7 +257,6 @@ namespace eXngine::Renderers::Vulkan
 		void CreateShaders();
 		void CleanupSwapChain();
 		void ResetSwapChain();
-		void SetupDebugMessenger();
 		void DestroyDebugMessenger();
 
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex);
@@ -277,6 +276,7 @@ namespace eXngine::Renderers::Vulkan
 		const EXUINT32 MAX_TEXTURE_COUNT = 16;
 
 		void CreateInstance();
+		void CreateDebugPipeline();
 
 		// VkGraphicsPipeline* m_pDefaultGraphicsPipeline = EXN_NULL_HANDLE;
 		std::unordered_map<std::string, VkGraphicsPipeline *> m_pGraphicPipelines;
