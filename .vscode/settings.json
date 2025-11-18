@@ -137,6 +137,7 @@
     "xhash": "cpp",
     "ranges": "cpp",
     "cassert": "cpp",
-    "csignal": "cpp"
+    "csignal": "cpp",
+    "filesystem": "cpp"
   }
 }
