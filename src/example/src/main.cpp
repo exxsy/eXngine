@@ -1,4 +1,5 @@
 #include "../headers/main.h"
+#include <filesystem>
 
 const char *m_szName = "eXngine Demo";
 const eXngine::Size window_size = eXngine::Size(1024, 768);
@@ -209,12 +210,28 @@ EXINT32 WINAPI Window()
     app->SetFramebufferSizeHandler(ResizeHandler);
     // app->SetRenderer(static_cast<Renderers::AbstractRenderer *>(renderer));
 
-    auto tri_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\triangle.vert.spv");
-    auto tri_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\triangle.frag.spv");
-    auto cube_vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\cube.vert.spv");
-    auto cube_frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\cube.frag.spv");
-    auto vert = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\shader.vert.spv");
-    auto frag = eXngine::Utils::File::Read("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\shaders\\shader.frag.spv");
+    namespace fs = std::filesystem;
+
+    char exePathBuf[MAX_PATH] = {0};
+    fs::path exeDir;
+    if (GetModuleFileNameA(nullptr, exePathBuf, MAX_PATH) != 0)
+    {
+        exeDir = fs::path(exePathBuf).remove_filename();
+    }
+    else
+    {
+        exeDir = fs::current_path();
+    }
+
+    // shaders directory is two levels up from the exe directory
+    fs::path shadersDir = (exeDir / ".." / ".." / "shaders").lexically_normal();
+
+    auto tri_vert = eXngine::Utils::File::Read((shadersDir / "triangle.vert.spv").string());
+    auto tri_frag = eXngine::Utils::File::Read((shadersDir / "triangle.frag.spv").string());
+    auto cube_vert = eXngine::Utils::File::Read((shadersDir / "cube.vert.spv").string());
+    auto cube_frag = eXngine::Utils::File::Read((shadersDir / "cube.frag.spv").string());
+    auto vert = eXngine::Utils::File::Read((shadersDir / "shader.vert.spv").string());
+    auto frag = eXngine::Utils::File::Read((shadersDir / "shader.frag.spv").string());
 
     renderer->AllocatePipeline<VkGraphicsPipeline>("triangle_pipeline");
     renderer->AllocatePipeline<VkGraphicsPipeline>("cube_pipeline");
@@ -226,21 +243,21 @@ EXINT32 WINAPI Window()
     renderer->LoadShader("cube_pipeline.vertex", cube_vert, eXngine::eXshader_Vertex);
     renderer->LoadShader("cube_pipeline.fragment", cube_frag, eXngine::eXshader_Fragment);
 
-    // const auto dragonModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\dragon.fbx");
-    // const auto ballModel = Utils::FbxLoader("C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\models\\model.fbx");
+    // const auto dragonModel = Utils::FbxLoader("..\\..\\assets\\models\\dragon.fbx");
+    // const auto ballModel = Utils::FbxLoader("..\\..\\assets\\models\\model.fbx");
 
     // renderer->LoadModel(
     //     "dragon", dragonModel.GetMeshes(),
     //     {
-    //         { "skin",   "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon.jpg"      },
-    //         //{ "scales", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\dragon_skin.jpg" },
+    //         { "skin",   "..\\..\\assets\\textures\\dragon.jpg"      },
+    //         //{ "scales", "..\\..\\assets\\textures\\dragon_skin.jpg" },
     //     }
     //);
 
     // renderer->LoadModel(
     //     "ball", ballModel.GetMeshes(),
     //     {
-    //         { "texture", "C:\\Users\\ex\\Desktop\\GitHub\\eXngine\\output\\assets\\textures\\texture.jpg" }
+    //         { "texture", "..\\..\\assets\\textures\\texture.jpg" }
     //     }
     //     //"test_custom_pipeline"
     //);
