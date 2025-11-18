@@ -67,9 +67,9 @@ namespace eXngine::Applications
 		return this->m_szPosition;
 	}
 
-	EXUINTPTR Application::GetInstance()
+	void* Application::GetHandle()
 	{
-		return this->m_pInstance;
+		return this->m_pHandle;
 	}
 }
 

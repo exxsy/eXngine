@@ -138,6 +138,7 @@
     "ranges": "cpp",
     "cassert": "cpp",
     "csignal": "cpp",
-    "filesystem": "cpp"
+    "filesystem": "cpp",
+    "internal.h": "c"
   }
 }

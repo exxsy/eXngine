@@ -91,10 +91,11 @@ namespace eXngine::Renderers::Vulkan
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &pipeline->m_DescriptorSets[m_currentFrame], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, 0, 0);
             }
-
-            if (m_fOnRender)
-                m_fOnRender(this, commandBuffer);
         }
+
+        if (m_fOnRender)
+            m_fOnRender(this, commandBuffer);
+            
         vkCmdEndRenderPass(commandBuffer);
         vkEndCommandBuffer(commandBuffer);
     }
@@ -635,21 +636,21 @@ namespace eXngine::Renderers::Vulkan
 
         VkDebugUtilsMessengerCreateInfoEXT createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = 
+        createInfo.messageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = 
+        createInfo.messageType =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        
+
         // Debug callback lambda
         createInfo.pfnUserCallback = [](
-            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            VkDebugUtilsMessageTypeFlagsEXT messageType,
-            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-            void* pUserData) -> VkBool32
+                                         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                         VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                         void *pUserData) -> VkBool32
         {
             EX_INFO("Vulkan Debug Message: %s", pCallbackData->pMessage);
             // Format message based on severity
@@ -677,7 +678,7 @@ namespace eXngine::Renderers::Vulkan
         // Get the function pointer for creating debug messenger
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
             m_pInstance, "vkCreateDebugUtilsMessengerEXT");
-        
+
         if (func != nullptr)
         {
             VkResult result = func(m_pInstance, &createInfo, nullptr, &m_pDebugMessenger);
@@ -703,7 +704,7 @@ namespace eXngine::Renderers::Vulkan
 
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
             m_pInstance, "vkDestroyDebugUtilsMessengerEXT");
-        
+
         if (func != nullptr)
         {
             func(m_pInstance, m_pDebugMessenger, nullptr);
@@ -1133,7 +1134,7 @@ namespace eXngine::Renderers::Vulkan
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000 * EX_ARRAYSIZE(pool_sizes);
+        pool_info.maxSets = 1000;
         pool_info.poolSizeCount = static_cast<EXUINT32>(EX_ARRAYSIZE(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
 

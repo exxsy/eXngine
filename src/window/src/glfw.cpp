@@ -20,18 +20,18 @@ namespace eXngine::Applications
 		m_pWindow = glfwCreateWindow(GetSize().W, GetSize().H, GetName(), nullptr, nullptr);
 
 #ifdef GLFW_EXPOSE_NATIVE_COCOA
-		m_pInstance = reinterpret_cast<EXUINTPTR>(glfwGetCocoaWindow(m_pWindow));
+		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetCocoaWindow(m_pWindow));
 #elif GLFW_EXPOSE_NATIVE_WAYLAND
-		m_pInstance = reinterpret_cast<EXUINTPTR>(glfwGetWaylandWindow(m_pWindow));
+		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetWaylandWindow(m_pWindow));
 #elif GLFW_EXPOSE_NATIVE_X11
-		m_pInstance = reinterpret_cast<EXUINTPTR>(glfwGetX11Window(m_pWindow));
+		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetX11Window(m_pWindow));
 #elif GLFW_EXPOSE_NATIVE_WIN32
-		m_pInstance = reinterpret_cast<EXUINTPTR>(glfwGetWin32Window(m_pWindow));
+		m_pHandle = reinterpret_cast<void*>(glfwGetWin32Window(m_pWindow));
 #endif
 
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
-		EX_FATAL(m_pInstance != EXN_NULL_HANDLE, "Failed to get native window handle.");
-		EX_INFO("Native Handle 0x%x", m_pInstance);
+		EX_FATAL(m_pHandle != EXN_NULL_HANDLE, "Failed to get native window handle.");
+		EX_INFO("Native Handle 0x%x", m_pHandle);
 		EX_INFO("GLFW window '%s' initialized successfully.", GetName());
 
 		return true;
@@ -40,18 +40,18 @@ namespace eXngine::Applications
 	int GLFWApplication::Run()
 	{
 		if (m_fnOnInitialize != EXN_NULL_HANDLE)
-			m_fnOnInitialize(this->m_pInstance);
+			m_fnOnInitialize(this->m_pHandle);
 
 		while (!glfwWindowShouldClose(m_pWindow))
 		{
 			glfwPollEvents();
 
 			if (m_fnOnLoop != EXN_NULL_HANDLE)
-				m_fnOnLoop(this->m_pInstance);
+				m_fnOnLoop(this->m_pHandle);
 		}
 
 		if (m_fnOnCleanup != EXN_NULL_HANDLE)
-			m_fnOnCleanup(this->m_pInstance);
+			m_fnOnCleanup(this->m_pHandle);
 
 		glfwDestroyWindow(m_pWindow);
 		glfwTerminate();

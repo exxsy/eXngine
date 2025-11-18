@@ -16,7 +16,7 @@ namespace eXngine::Applications
 		Point m_szPosition;
 		Size m_szSize;
 		EXBOOL m_bMaximized = false;
-		EXUINTPTR m_pInstance = EXN_NULL_HANDLE;
+		void* m_pHandle = EXN_NULL_HANDLE;
 
 		OnInitializeHandler m_fnOnInitialize = EXN_NULL_HANDLE;
 		OnLoopHandler m_fnOnLoop = EXN_NULL_HANDLE;
@@ -35,7 +35,7 @@ namespace eXngine::Applications
 		void SetOnInitializeHandler(OnInitializeHandler handler);
 		void SetOnLoopHandler(OnLoopHandler handler);
 		void SetOnCleanupHandler(OnCleanupHandler handler);
-		EXUINTPTR GetInstance();
+		void *GetHandle();
 
 		virtual bool Initialize() = 0;
 		virtual int Run() = 0;

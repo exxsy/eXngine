@@ -20,19 +20,13 @@ struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
     }
 };
 
-// template void VkGraphicsPipeline::CreatePipeline<VkTestVertex>(VkRenderPass);
-// template void Renderer::CreatePipeline<VkTestVertex>(std::string);
-// template void Renderer::AllocatePipeline<VkGraphicsPipeline>(std::string);
-
-// Debug messenger is now handled internally by the renderer
-
 #ifndef IMGUI_DISABLE
 void ImGui_CheckVkResult(VkResult result)
 {
     std::cout << result << "\n";
 }
 
-void ImGui_OnInit(GLFWApplication *app, Renderer *renderer, Size sz)
+void ImGui_OnInit(GLFWApplication *app, Renderer *renderer)
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -46,7 +40,7 @@ void ImGui_OnInit(GLFWApplication *app, Renderer *renderer, Size sz)
     // ImGui::StyleColorsLight();
 
     // Dimensions
-    io.DisplaySize = ImVec2(static_cast<float>(sz.W), static_cast<float>(sz.H));
+    io.DisplaySize = ImVec2(static_cast<float>(renderer->m_szSwapChainExtent.width), static_cast<float>(renderer->m_szSwapChainExtent.height));
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
     // Setup Platform/Renderer backends
@@ -113,7 +107,7 @@ void ImGui_OnExit()
 }
 #endif
 
-VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwindow *window)
+VkSurfaceKHR CreateWindowSurface(HINSTANCE hInstance, Renderers::Vulkan::Renderer *renderer)
 {
     // EX_FATAL(glfwVulkanSupported() == GLFW_TRUE, "GLFW Vulkan not supported on this system.");
 
@@ -122,11 +116,11 @@ VkSurfaceKHR CreateWindowSurface(Renderers::Vulkan::Renderer *renderer, GLFWwind
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkWin32SurfaceCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    createInfo.hwnd = (HWND)app->GetInstance();
-    createInfo.hinstance = GetModuleHandle(0);
+    createInfo.hwnd = (HWND)app->GetHandle();
+    createInfo.hinstance = hInstance;
 
     const VkResult result = vkCreateWin32SurfaceKHR(renderer->GetVulkanInstance(), &createInfo, nullptr, &surface);
-    // const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), window, nullptr, &surface);
+    //const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), app->GetWindow(), nullptr, &surface);
 
     EX_FATAL(result == VK_SUCCESS, "Failed to create window surface.");
 
@@ -176,6 +170,14 @@ void UpdateUniformBuffer(void *buffer, uint32_t currentImage)
 
 void App_OnLoop(void *unused)
 {
+    auto io = ImGui::GetIO();
+    auto size = app->GetSize();
+
+    int w, h;
+    int display_w, display_h;
+    glfwGetWindowSize(app->GetWindow(), &w, &h);
+    glfwGetFramebufferSize(app->GetWindow(), &display_w, &display_h);
+
     renderer->OnRender();
 }
 
@@ -184,7 +186,7 @@ void App_OnCleanup(void *unused)
     renderer->OnExit();
 }
 
-EXINT32 WINAPI Window()
+EXINT32 WINAPI Window(HINSTANCE hInstance)
 {
     app = new GLFWApplication(m_szName, eXngine::Point(0, 40), window_size, false);
     renderer = new Renderer(m_szName, window_size);
@@ -223,7 +225,6 @@ EXINT32 WINAPI Window()
         exeDir = fs::current_path();
     }
 
-    // shaders directory is two levels up from the exe directory
     fs::path shadersDir = (exeDir / ".." / ".." / "shaders").lexically_normal();
 
     auto tri_vert = eXngine::Utils::File::Read((shadersDir / "triangle.vert.spv").string());
@@ -263,33 +264,33 @@ EXINT32 WINAPI Window()
     //);
 
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
-    renderer->SetSurface(CreateWindowSurface(renderer, app->GetWindow()));
+    renderer->SetSurface(CreateWindowSurface(hInstance, renderer));
     renderer->Initialize();
 
 #ifndef IMGUI_DISABLE
-    ImGui_OnInit(app, renderer, window_size);
+    ImGui_OnInit(app, renderer);
 #endif
 
     renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
     renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
-
-    app->SetOnLoopHandler(App_OnLoop);
-    app->SetOnCleanupHandler(App_OnCleanup);
 
 #ifndef IMGUI_DISABLE
     renderer->SetOnRenderHandler(ImGui_OnRender);
     renderer->SetOnCleanupHandler(ImGui_OnExit);
 #endif
 
+    app->SetOnLoopHandler(App_OnLoop);
+    app->SetOnCleanupHandler(App_OnCleanup);
+
     return app->Run();
 }
 
 EXINT32 WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nShowCmd)
 {
-    return Window();
+    return Window(hInstance);
 }
 
 EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
-    return Window();
+    return Window(hInstance);
 }

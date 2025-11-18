@@ -9,3 +9,4 @@ glfw.dir/**/*
 *.vcxproj.*
 /3rdparty/lib/**/*
 /build/**/*
+imgui.ini
