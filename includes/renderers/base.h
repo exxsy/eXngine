@@ -57,7 +57,7 @@ namespace eXngine::Renderers
 	class EXNEXPORT BaseRenderer : virtual public AbstractRenderer
 	{
 	protected:
-		char *m_szName = nullptr;
+		EXCHAR *m_szName = nullptr;
 		Size m_szFrameBufferSize;
 		FPSData m_sFpsData;
 		std::map<std::string, ShaderModule*> m_Shaders;
@@ -68,7 +68,7 @@ namespace eXngine::Renderers
 
 		void* m_pDevice = nullptr;
 	public:
-		BaseRenderer(const char *, Size = Size(0, 0));
+		BaseRenderer(const EXCHAR *, Size = Size(0, 0));
 		void SetFrameBufferResized(bool);
 		void SetFrameBufferSize(Size);
 		void SetOnCleanupHandler(OnCleanupHandler);

@@ -38,7 +38,7 @@ powershell -Command "Write-Host 'Files: %cFilenames%' -ForegroundColor Cyan"
 
 SET "namespace=eXngine"
 SET "assembly=example"
-SET "compilerFlags=-std=c++20 -Werror -Wno-error=deprecated-builtins -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=nontrivial-memcall -Wno-error=reorder-ctor"
+SET "compilerFlags=-std=c++20 -Werror -Wno-error=macro-redefined -Wno-error=deprecated-builtins -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=nontrivial-memcall -Wno-error=reorder-ctor"
 
 IF /I "%ARCH%"=="x64" (
     SET "compilerFlags=%compilerFlags% -m64"
@@ -48,12 +48,12 @@ IF /I "%ARCH%"=="x64" (
 
 IF /I "%CONFIG%"=="Debug" (
     SET "compilerFlags=%compilerFlags% -g -O0"
-    SET "defines=-D_DEBUG -DUNICODE"
+    SET "defines=-D_DEBUG"
     SET "linkerFlags=%linkerFlags% -lmsvcrtd -lvulkan-1"
 ) ELSE (
     SET "CONFIG=Release"
     SET "compilerFlags=%compilerFlags% -O2"
-    SET "defines=-DNDEBUG -DUNICODE"
+    SET "defines=-DNDEBUG"
     SET "linkerFlags=%linkerFlags% -lmsvcrt -lvulkan-1"
 )
 

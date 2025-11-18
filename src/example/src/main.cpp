@@ -1,7 +1,12 @@
 #include "../headers/main.h"
 #include <filesystem>
 
-const char *m_szName = "eXngine Demo";
+#ifdef UNICODE
+const EXCHAR m_szName[] = L"eXngine Demo";
+#else
+const EXCHAR m_szName[] = "eXngine Demo";
+#endif
+
 const eXngine::Size window_size = eXngine::Size(1024, 768);
 float m_fRotationScale = 5.0f;
 GLFWApplication *app = nullptr;
@@ -120,7 +125,7 @@ VkSurfaceKHR CreateWindowSurface(HINSTANCE hInstance, Renderers::Vulkan::Rendere
     createInfo.hinstance = hInstance;
 
     const VkResult result = vkCreateWin32SurfaceKHR(renderer->GetVulkanInstance(), &createInfo, nullptr, &surface);
-    //const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), app->GetWindow(), nullptr, &surface);
+    // const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), app->GetWindow(), nullptr, &surface);
 
     EX_FATAL(result == VK_SUCCESS, "Failed to create window surface.");
 
@@ -210,7 +215,6 @@ EXINT32 WINAPI Window(HINSTANCE hInstance)
     app->SetKeyboardHandler(KeyboardHandler);
     app->SetScrollHandler(ScrollHandler);
     app->SetFramebufferSizeHandler(ResizeHandler);
-    // app->SetRenderer(static_cast<Renderers::AbstractRenderer *>(renderer));
 
     namespace fs = std::filesystem;
 

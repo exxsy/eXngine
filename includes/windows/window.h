@@ -12,7 +12,7 @@ namespace eXngine::Applications
 	class EXNEXPORT Application
 	{
 	protected:
-		EXINT8 * m_szName = EXN_NULL_HANDLE;
+		EXCHAR m_szName[256];
 		Point m_szPosition;
 		Size m_szSize;
 		EXBOOL m_bMaximized = false;
@@ -22,10 +22,10 @@ namespace eXngine::Applications
 		OnLoopHandler m_fnOnLoop = EXN_NULL_HANDLE;
 		OnCleanupHandler m_fnOnCleanup = EXN_NULL_HANDLE;
 	public:
-		Application(const char *name, Point position, Size size, bool maximized);
+		Application(const EXCHAR *name, Point position, Size size, bool maximized);
 		Application();
 		~Application();
-		const char *GetName();
+		const EXCHAR *GetName();
 		Size GetSize();
 		Point GetPosition();
 		bool IsMaximized();
@@ -35,8 +35,8 @@ namespace eXngine::Applications
 		void SetOnInitializeHandler(OnInitializeHandler handler);
 		void SetOnLoopHandler(OnLoopHandler handler);
 		void SetOnCleanupHandler(OnCleanupHandler handler);
-		void *GetHandle();
 
+		virtual void *GetHandle() = 0;
 		virtual bool Initialize() = 0;
 		virtual int Run() = 0;
 	};

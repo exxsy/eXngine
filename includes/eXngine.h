@@ -6,24 +6,31 @@
 #define EXENGINE_GET_MINOR_VERSION(version) ((version) & 0xFF)
 #define EX_ARRAYSIZE(_ARR) ((int)(sizeof(_ARR) / sizeof(*_ARR)))
 
-#define EXINT8          __int8
-#define EXINT16         __int16
-#define EXINT32         __int32
-#define EXINT64         __int64
-#define EXINT           EXINT32
-#define EXUINT8         unsigned __int8
-#define EXUINT16        unsigned __int16
-#define EXUINT32        unsigned __int32
-#define EXUINT64        unsigned __int64			
-#define EXUINT          EXUINT32
-#define EXFLOAT         float
-#define EXDOUBLE        double
-#define EXLONGDOUBLE    long double
-#define EXLONGLONG      long long
-#define EXSIZE          EXLONGLONG
-#define EXCHAR          char
-#define EXBOOL          bool
-#define EXUINTPTR       EXUINT32*
+#define EXINT8 __int8
+#define EXINT16 __int16
+#define EXINT32 __int32
+#define EXINT64 __int64
+#define EXINT EXINT32
+#define EXUINT8 unsigned __int8
+#define EXUINT16 unsigned __int16
+#define EXUINT32 unsigned __int32
+#define EXUINT64 unsigned __int64
+#define EXUINT EXUINT32
+#define EXFLOAT float
+#define EXDOUBLE double
+#define EXLONGDOUBLE long double
+#define EXLONGLONG long long
+#define EXSIZE EXLONGLONG
+#define EXBOOL bool
+#define EXUINTPTR EXUINT32 *
+#define EXVOIDPTR void *
+#define EXDWORD unsigned long
+
+#ifdef UNICODE
+#define EXCHAR wchar_t
+#else
+#define EXCHAR char
+#endif
 
 #define EXENGINE "eXngine"
 #define EXENGINE_VERSION EXENGINE_MAKE_VERSION(1, 0, 0)
@@ -40,15 +47,17 @@
 
 #define EXNEXPORT __declspec(dllexport)
 
-#define EXN_SINGLETON(type, name, ...) \
-	public: \
-		static type* GetInstance() { \
-			static type* s_##name = EXN_NULL_HANDLE;\
-			if (s_##name == EXN_NULL_HANDLE) { \
-				s_##name = new type(__VA_ARGS__); \
-			} \
-			return s_##name; \
-		};
+#define EXN_SINGLETON(type, name, ...)           \
+public:                                          \
+	static type *GetInstance()                   \
+	{                                            \
+		static type *s_##name = EXN_NULL_HANDLE; \
+		if (s_##name == EXN_NULL_HANDLE)         \
+		{                                        \
+			s_##name = new type(__VA_ARGS__);    \
+		}                                        \
+		return s_##name;                         \
+	};
 
 #include <eXtypes.h>
 #include <eXdebug.h>

@@ -8,7 +8,7 @@
 			<PreprocessorDefinitions>
 				EXN_TEXTURE_STRATEGY_STBI;
 				<!-- EXN_DISABLE_VULKAN; -->
-				GLFW_INCLUDE_VULKAN;
+				<!-- GLFW_INCLUDE_VULKAN; -->
 				%(PreprocessorDefinitions)
 			</PreprocessorDefinitions>
 		</ClCompile>

@@ -5,7 +5,7 @@
 
 namespace eXngine::Renderers
 {
-	BaseRenderer::BaseRenderer(const char* name, Size sz) : m_szName(const_cast<char*>(name)), m_szFrameBufferSize(sz) { }
+	BaseRenderer::BaseRenderer(const EXCHAR* name, Size sz) : m_szName(const_cast<EXCHAR*>(name)), m_szFrameBufferSize(sz) { }
 
 	void BaseRenderer::SetFrameBufferResized(bool state)
 	{

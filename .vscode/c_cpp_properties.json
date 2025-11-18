@@ -15,13 +15,13 @@
       ],
       "defines": [
         "_DEBUG",
-        "UNICODE",
-        "_UNICODE",
         "_VULKAN",
+        "_GLFW_WIN32",
+        // "UNICODE",
         "NOMINMAX",
         "EXN_TEXTURE_STRATEGY_STBI",
         "GLFW_EXPOSE_NATIVE_WIN32",
-        "_GLFW_WIN32"
+        "VK_VERSION_1_0"
       ],
       "compilerPath": "clang",
       "intelliSenseMode": "windows-clang-x64",

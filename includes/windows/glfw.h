@@ -26,8 +26,10 @@ namespace eXngine::Applications
 		GLFWScrollCallback *m_fnScroll = nullptr;
 		GLFWframebuffersizefun *m_fnFramebufferSize = nullptr;
 	public:
-		GLFWApplication(const char *name, Point position, Size size, bool maximized = false);
+		GLFWApplication(const EXCHAR *name, Point position, Size size, bool maximized = false);
 		bool Initialize() override;
+		void *GetHandle() override;
+
 		int Run() override;
 		GLFWwindow *GetWindow();
 		Size GetFrameBufferSize();

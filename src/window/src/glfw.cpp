@@ -1,10 +1,8 @@
-#undef GLFW_INCLUDE_VULKAN
-
 #include <windows/glfw.h>
 
 namespace eXngine::Applications
 {
-	GLFWApplication::GLFWApplication(const char *name, Point position, Size size, bool maximized) : Application(name, position, size, maximized), m_pWindow(nullptr)
+	GLFWApplication::GLFWApplication(const EXCHAR *name, Point position, Size size, bool maximized) : Application(name, position, size, maximized), m_pWindow(nullptr)
 	{
 	}
 
@@ -17,21 +15,18 @@ namespace eXngine::Applications
 		glfwWindowHint(GLFW_POSITION_X, (int)GetPosition().X);
 		glfwWindowHint(GLFW_POSITION_Y, (int)GetPosition().Y);
 
-		m_pWindow = glfwCreateWindow(GetSize().W, GetSize().H, GetName(), nullptr, nullptr);
+		char name[256] = {0};
 
-#ifdef GLFW_EXPOSE_NATIVE_COCOA
-		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetCocoaWindow(m_pWindow));
-#elif GLFW_EXPOSE_NATIVE_WAYLAND
-		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetWaylandWindow(m_pWindow));
-#elif GLFW_EXPOSE_NATIVE_X11
-		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetX11Window(m_pWindow));
-#elif GLFW_EXPOSE_NATIVE_WIN32
-		m_pHandle = reinterpret_cast<void*>(glfwGetWin32Window(m_pWindow));
+#ifdef UNICODE
+		size_t out_size;
+		wcstombs_s(&out_size, name, (const wchar_t *)this->m_szName, sizeof(name));
+#else
+		strncpy_s(name, this->m_szName, sizeof(name) - 1);
 #endif
 
+		m_pWindow = glfwCreateWindow(GetSize().W, GetSize().H, name, nullptr, nullptr);
+
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
-		EX_FATAL(m_pHandle != EXN_NULL_HANDLE, "Failed to get native window handle.");
-		EX_INFO("Native Handle 0x%x", m_pHandle);
 		EX_INFO("GLFW window '%s' initialized successfully.", GetName());
 
 		return true;
@@ -145,5 +140,25 @@ namespace eXngine::Applications
 		m_fnFramebufferSize = &handler;
 
 		glfwSetFramebufferSizeCallback(m_pWindow, handler);
+	}
+
+	void *eXngine::Applications::GLFWApplication::GetHandle()
+	{
+#ifdef GLFW_EXPOSE_NATIVE_COCOA
+		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetCocoaWindow(m_pWindow));
+#elif GLFW_EXPOSE_NATIVE_WAYLAND
+		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetWaylandWindow(m_pWindow));
+#elif GLFW_EXPOSE_NATIVE_X11
+		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetX11Window(m_pWindow));
+#elif GLFW_EXPOSE_NATIVE_WIN32
+		m_pHandle = reinterpret_cast<void *>(glfwGetWin32Window(m_pWindow));
+#else
+		EX_FATAL(false, "Native window handle retrieval not supported on this platform.");
+#endif
+
+		EX_FATAL(m_pHandle != EXN_NULL_HANDLE, "Failed to get native window handle.");
+		EX_INFO("Native Handle 0x%x", m_pHandle);
+
+		return m_pHandle;
 	}
 }

@@ -298,8 +298,8 @@ namespace eXngine::Renderers::Vulkan
 		VkBuffer m_pIndexBuffer = EXN_NULL_HANDLE;
 		VkDeviceMemory m_pIndexBufferMemory = EXN_NULL_HANDLE;
 
-		Renderer(const char *);
-		Renderer(const char *, Size);
+		Renderer(const EXCHAR *);
+		Renderer(const EXCHAR *, Size);
 
 		void Initialize() override;
 		void OnRender() override;

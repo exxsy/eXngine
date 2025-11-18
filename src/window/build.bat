@@ -48,24 +48,32 @@ IF /I "%ARCH%"=="x64" (
 
 IF /I "%CONFIG%"=="Debug" (
     SET "compilerFlags=%compilerFlags% -g -O0"
-    SET "defines=-D_DEBUG -DEXNEXPORT -DGLFW_EXPOSE_NATIVE_WIN32"
+    SET "defines=-D_DEBUG -DEXNEXPORT"
     SET "linkerFlags=%linkerFlags% -lmsvcrtd -Xlinker /NODEFAULTLIB:libcmt"
 ) ELSE (
     SET "CONFIG=Release"
     SET "compilerFlags=%compilerFlags% -O2"
-    SET "defines=-DNDEBUG -DEXNEXPORT -DGLFW_EXPOSE_NATIVE_WIN32"
+    SET "defines=-DNDEBUG -DEXNEXPORT"
     SET "linkerFlags=%linkerFlags% -lmsvcrt -Xlinker /NODEFAULTLIB:libcmt"
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib"
 SET "includeFlags=-Isrc -Iincludes -I3rdparty\glfw\include -II3rdparty\glfw\src"
+
+IF NOT "%EXTRA_OPTS%"=="%EXTRA_OPTS:GLFW_INCLUDE_VULKAN=%" (
+@REM IF "%EXTRA_OPTS:*"-DGLFW_INCLUDE_VULKAN"=%" NEQ "%EXTRA_OPTS%" (
+    SET "includeFlags=%includeFlags% -I3rdparty\vulkan"
+) ELSE (
+    powershell -Command "Write-Host 'Vulkan Implementation is not defined, skipping Vulkan includes.' -ForegroundColor Yellow"
+)
+
 SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -L%CD%\output\%ARCH%\%CONFIG% -leXngine.core -lglfw3 -lshell32 -lgdi32 -luser32"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
 IF NOT EXIST "%OUT_DIR%" (
     MKDIR "%OUT_DIR%" >NUL 2>&1
 )
 
-powershell -Command "Write-Host 'Building %assembly% for %ARCH% %CONFIG%...' -ForegroundColor Cyan"
+powershell -Command "Write-Host 'Building %assembly% for %ARCH% %CONF IG%...' -ForegroundColor Cyan"
 
 clang %cFilenames% %compilerFlags% %defines% %includeFlags% %EXTRA_OPTS% %linkerFlags% -o "%OUT_DIR%\%namespace%.%assembly%.dll"
 

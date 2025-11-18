@@ -91,11 +91,10 @@ namespace eXngine::Renderers::Vulkan
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &pipeline->m_DescriptorSets[m_currentFrame], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_nIndicesCount), 1, 0, 0, 0);
             }
-        }
 
-        if (m_fOnRender)
-            m_fOnRender(this, commandBuffer);
-            
+            if (m_fOnRender)
+                m_fOnRender(this, commandBuffer);
+        }
         vkCmdEndRenderPass(commandBuffer);
         vkEndCommandBuffer(commandBuffer);
     }
@@ -581,9 +580,18 @@ namespace eXngine::Renderers::Vulkan
             return;
         }
 
+        char name[256] = {0};
+
+#ifdef UNICODE
+		size_t out_size;
+        wcstombs_s(&out_size, name, (const wchar_t *)this->m_szName, sizeof(name));
+#else
+        strncpy_s(name, this->m_szName, sizeof(name));
+#endif
+
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = this->m_szName;
+        appInfo.pApplicationName = name;
         appInfo.pEngineName = EXENGINE;
         appInfo.applicationVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -1134,7 +1142,7 @@ namespace eXngine::Renderers::Vulkan
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000;
+        pool_info.maxSets = 1000 * EX_ARRAYSIZE(pool_sizes);
         pool_info.poolSizeCount = static_cast<EXUINT32>(EX_ARRAYSIZE(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
 
@@ -1785,12 +1793,12 @@ namespace eXngine::Renderers::Vulkan
         vkBindImageMemory(m_pDevice, image, imageMemory, 0);
     }
 
-    Renderer::Renderer(const char *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
+    Renderer::Renderer(const EXCHAR *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }
 
-    Renderer::Renderer(const char *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
+    Renderer::Renderer(const EXCHAR *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }
