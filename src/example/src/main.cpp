@@ -28,7 +28,8 @@ struct VkTestVertex : public eXngine::Renderers::Vulkan::VkVertex
 #ifndef IMGUI_DISABLE
 void ImGui_CheckVkResult(VkResult result)
 {
-    std::cout << result << "\n";
+    // std::cout << result << "\n";
+    EX_INFO("ImGui Vulkan result: %d", result);
 }
 
 void ImGui_OnInit(GLFWApplication *app, Renderer *renderer)
@@ -105,7 +106,6 @@ void ImGui_OnRender(Renderer *renderer, VkCommandBuffer commandBuffer)
 
 void ImGui_OnExit()
 {
-    // Cleanup
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -114,18 +114,15 @@ void ImGui_OnExit()
 
 VkSurfaceKHR CreateWindowSurface(HINSTANCE hInstance, Renderers::Vulkan::Renderer *renderer)
 {
-    // EX_FATAL(glfwVulkanSupported() == GLFW_TRUE, "GLFW Vulkan not supported on this system.");
-
-    // renderer->AddExtension(VK_KHR_SURFACE_EXTENSION_NAME);
-
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkWin32SurfaceCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     createInfo.hwnd = (HWND)app->GetHandle();
     createInfo.hinstance = hInstance;
+    createInfo.flags = 0;
 
     const VkResult result = vkCreateWin32SurfaceKHR(renderer->GetVulkanInstance(), &createInfo, nullptr, &surface);
-    // const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), app->GetWindow(), nullptr, &surface);
+    //const VkResult result = glfwCreateWindowSurface(renderer->GetVulkanInstance(), app->GetWindow(), nullptr, &surface);
 
     EX_FATAL(result == VK_SUCCESS, "Failed to create window surface.");
 
@@ -206,6 +203,7 @@ EXINT32 WINAPI Window(HINSTANCE hInstance)
     renderer->AddExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     renderer->CreateDebugPipeline();
 #endif
+
     renderer->AddExtension(VK_KHR_SURFACE_EXTENSION_NAME);
     renderer->AddExtension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
     renderer->AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);

@@ -28,6 +28,7 @@ namespace eXngine::Applications
 
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
 		EX_INFO("GLFW window '%s' initialized successfully.", GetName());
+		EX_INFO("Native Handle 0x%x", m_pHandle);
 		
 		return true;
 	}
@@ -157,7 +158,6 @@ namespace eXngine::Applications
 #endif
 
 		EX_FATAL(m_pHandle != EXN_NULL_HANDLE, "Failed to get native window handle.");
-		EX_INFO("Native Handle 0x%x", m_pHandle);
 
 		return m_pHandle;
 	}

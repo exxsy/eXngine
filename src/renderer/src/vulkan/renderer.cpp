@@ -43,6 +43,8 @@ namespace eXngine::Renderers::Vulkan
         CreateSyncObjects();
 
         this->m_pGraphicPipelines[EXN_DEFAULT_PIPELINE]->CreatePipeline<VkVertex>(m_pRenderPass);
+
+        EX_INFO("Vulkan renderer initialized.");
     }
 
     void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex)
@@ -112,7 +114,6 @@ namespace eXngine::Renderers::Vulkan
             }
         }
 
-        // No suitable memory type found for requested properties
         EX_FATAL(false, "Failed to find suitable memory type for buffer allocation.");
         return 0;
     }
@@ -583,7 +584,7 @@ namespace eXngine::Renderers::Vulkan
         char name[256] = {0};
 
 #ifdef UNICODE
-		size_t out_size;
+        size_t out_size;
         wcstombs_s(&out_size, name, (const wchar_t *)this->m_szName, sizeof(name));
 #else
         strncpy_s(name, this->m_szName, sizeof(name));
@@ -749,11 +750,11 @@ namespace eXngine::Renderers::Vulkan
         std::vector<VkExtensionProperties> extensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-        printf("Extensions: \n");
+        EX_INFO("Available Vulkan extensions:");
 
         for (const auto &extension : extensions)
         {
-            std::cout << "\t" << extension.extensionName << '\n';
+            EX_INFO("\t%s", extension.extensionName);
         }
     }
 
@@ -1359,7 +1360,8 @@ namespace eXngine::Renderers::Vulkan
 
             if (vkCreateShaderModule(m_pDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
             {
-                std::cout << "[ERROR] Failed to create shader module for shader: " << name << "\n";
+                EX_ERROR(false, "Failed to create shader module for shader: %s", name.c_str());
+
                 continue;
             }
 
@@ -1402,8 +1404,8 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::SelectPhysicalDevice()
     {
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
         EXUINT32 deviceCount = 0;
+
         vkEnumeratePhysicalDevices(m_pInstance, &deviceCount, nullptr);
         EX_FATAL(deviceCount > 0, "No Vulkan-compatible physical devices found.");
 
@@ -1473,6 +1475,19 @@ namespace eXngine::Renderers::Vulkan
 
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+        EX_INFO("Device Found: %s", deviceProperties.deviceName);
+        EX_INFO("\tDevice ID: %d", deviceProperties.deviceID);
+        EX_INFO("\tVendor ID: %d", deviceProperties.vendorID);
+        EX_INFO("\tDriver Version: %d.%d.%d",
+                EXENGINE_GET_PATCH_VERSION(deviceProperties.driverVersion),
+                EXENGINE_GET_MAJOR_VERSION(deviceProperties.driverVersion),
+                EXENGINE_GET_MINOR_VERSION(deviceProperties.driverVersion));
+        EX_INFO("\tAPI Version: %d.%d.%d",
+                EXENGINE_GET_PATCH_VERSION(deviceProperties.apiVersion),
+                EXENGINE_GET_MAJOR_VERSION(deviceProperties.apiVersion),
+                EXENGINE_GET_MINOR_VERSION(deviceProperties.apiVersion));
+        // EX_INFO("\tAPI Version: %d", deviceProperties.apiVersion);
 
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
                deviceFeatures.geometryShader && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
