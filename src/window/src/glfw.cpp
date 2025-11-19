@@ -12,8 +12,8 @@ namespace eXngine::Applications
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_MAXIMIZED, (int)IsMaximized());
-		glfwWindowHint(GLFW_POSITION_X, (int)GetPosition().X);
-		glfwWindowHint(GLFW_POSITION_Y, (int)GetPosition().Y);
+		glfwWindowHint(GLFW_POSITION_X, (int)m_szPosition.X);
+		glfwWindowHint(GLFW_POSITION_Y, (int)m_szPosition.Y);
 
 		char name[256] = {0};
 
@@ -24,11 +24,11 @@ namespace eXngine::Applications
 		strncpy_s(name, this->m_szName, sizeof(name) - 1);
 #endif
 
-		m_pWindow = glfwCreateWindow(GetSize().W, GetSize().H, name, nullptr, nullptr);
+		m_pWindow = glfwCreateWindow(m_szSize.W, m_szSize.H, name, nullptr, nullptr);
 
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
 		EX_INFO("GLFW window '%s' initialized successfully.", GetName());
-
+		
 		return true;
 	}
 

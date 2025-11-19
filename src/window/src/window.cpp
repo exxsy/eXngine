@@ -5,14 +5,14 @@
 
 namespace eXngine::Applications
 {
-	Application::Application(const EXCHAR *name, Point position, Size size, bool maximized) : m_szPosition(position), m_szSize(size), m_bMaximized(maximized)
+	Application::Application(const EXCHAR *name, Point position, Size size, bool maximized) : m_szPosition(position), m_szSize(size), m_bIsMaximized(maximized)
 	{
 #ifdef UNICODE
-		name = static_cast<EXCHAR *>(EX_ALLOC(wcslen(name) + 1));
-		wcscpy_s(const_cast<EXCHAR *>(name), wcslen(name) + 1, name);
+		m_szName = static_cast<EXCHAR *>(EX_ALLOC(wcslen(name) + 1));
+		wcscpy_s(m_szName, wcslen(name) + 1, name);
 #else
-		name = static_cast<EXCHAR *>(EX_ALLOC(strlen(name) + 1));
-		strcpy_s(const_cast<EXCHAR *>(name), strlen(name) + 1, name);
+		m_szName = static_cast<EXCHAR *>(EX_ALLOC(strlen(name) + 1));
+		strcpy_s(m_szName, strlen(name) + 1, name);
 #endif
 	}
 
@@ -23,7 +23,7 @@ namespace eXngine::Applications
 
 	bool Application::IsMaximized()
 	{
-		return this->m_bMaximized;
+		return this->m_bIsMaximized;
 	}
 
 	void Application::SetSize(Size size)
@@ -36,9 +36,9 @@ namespace eXngine::Applications
 		this->m_szPosition = position;
 	}
 
-	void Application::SetMaximized(bool maximized)
+	void Application::SetIsMaximized(bool maximized)
 	{
-		this->m_bMaximized = maximized;
+		this->m_bIsMaximized = maximized;
 	}
 
 	void Application::SetOnInitializeHandler(OnInitializeHandler handler)

@@ -18,7 +18,7 @@ namespace eXngine::Applications
 
     int eXapplication::Run()
     {
-        ShowWindow((HWND)m_pHandle, m_bMaximized ? SW_MAXIMIZE : SW_SHOWNORMAL);
+        ShowWindow((HWND)m_pHandle, m_bIsMaximized ? SW_MAXIMIZE : SW_SHOWNORMAL);
 
         MSG msg = {};
         while (GetMessage(&msg, NULL, 0, 0) > 0)
@@ -67,7 +67,7 @@ namespace eXngine::Applications
             m_dwWindowStyle,   // Window style
 
             // Size and position
-            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            m_szPosition.X, m_szPosition.Y, m_szSize.W, m_szSize.H,
 
             (HWND)m_pParentWindowHandle, // Parent window
             NULL,                        // Menu
