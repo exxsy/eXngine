@@ -18,13 +18,16 @@ namespace eXngine::Applications
 	class EXNEXPORT GLFWApplication : public Application
 	{
 	private:
-		GLFWwindow *m_pWindow = nullptr;
-		GLFWKeyboardCallback *m_fnKeyboard = nullptr;
-		GLFWCharacterCallback *m_fnCharacter = nullptr;
-		GLFWMousePosCallback *m_fnMousePos = nullptr;
-		GLFWMouseClickCallback *m_fnMouseClick = nullptr;
-		GLFWScrollCallback *m_fnScroll = nullptr;
-		GLFWframebuffersizefun *m_fnFramebufferSize = nullptr;
+		std::vector<GLFWmonitor *> m_vMonitors;
+		GLFWmonitor * m_pPrimaryMonitor = EXN_NULL_HANDLE;
+		GLFWwindow *m_pWindow = EXN_NULL_HANDLE;
+		GLFWKeyboardCallback *m_fnKeyboard = EXN_NULL_HANDLE;
+		GLFWCharacterCallback *m_fnCharacter = EXN_NULL_HANDLE;
+		GLFWMousePosCallback *m_fnMousePos = EXN_NULL_HANDLE;
+		GLFWMouseClickCallback *m_fnMouseClick = EXN_NULL_HANDLE;
+		GLFWScrollCallback *m_fnScroll = EXN_NULL_HANDLE;
+		GLFWframebuffersizefun *m_fnFramebufferSize = EXN_NULL_HANDLE;
+
 	public:
 		GLFWApplication(const EXCHAR *name, Point position, Size size, bool maximized = false);
 		bool Initialize() override;

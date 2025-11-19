@@ -8,12 +8,23 @@ namespace eXngine::Applications
 
 	bool GLFWApplication::Initialize()
 	{
-		glfwInit();
+		EX_FATAL(glfwInit() != GLFW_FALSE, "Failed to initialize GLFW.");
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_MAXIMIZED, (int)IsMaximized());
 		glfwWindowHint(GLFW_POSITION_X, (int)m_szPosition.X);
 		glfwWindowHint(GLFW_POSITION_Y, (int)m_szPosition.Y);
+
+		int count;
+		GLFWmonitor **monitors = glfwGetMonitors(&count);
+		m_pPrimaryMonitor = glfwGetPrimaryMonitor();
+		EX_FATAL(count != 0, "No GLFW monitors found.");
+
+		m_vMonitors.resize(count);
+		m_vMonitors = std::vector<GLFWmonitor *>(monitors, monitors + count);
+
+		if (m_pPrimaryMonitor == EXN_NULL_HANDLE)
+			m_pPrimaryMonitor = *m_vMonitors.begin();
 
 		char name[256] = {0};
 
@@ -24,12 +35,13 @@ namespace eXngine::Applications
 		strncpy_s(name, this->m_szName, sizeof(name) - 1);
 #endif
 
-		m_pWindow = glfwCreateWindow(m_szSize.W, m_szSize.H, name, nullptr, nullptr);
+		m_pWindow = glfwCreateWindow(m_szSize.W, m_szSize.H, name,
+									 IsMaximized() ? m_pPrimaryMonitor : EXN_NULL_HANDLE, EXN_NULL_HANDLE);
 
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
 		EX_INFO("GLFW window '%s' initialized successfully.", GetName());
-		EX_INFO("Native Handle 0x%x", m_pHandle);
-		
+		EX_INFO("Native Handle %p", GetHandle());
+
 		return true;
 	}
 

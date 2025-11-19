@@ -269,18 +269,17 @@ EXINT32 WINAPI Window(HINSTANCE hInstance)
     renderer->SetSurface(CreateWindowSurface(hInstance, renderer));
     renderer->Initialize();
 
-#ifndef IMGUI_DISABLE
-    ImGui_OnInit(app, renderer);
-#endif
-
     renderer->CreatePipeline<VkTestVertex>("triangle_pipeline");
     renderer->CreatePipeline<VkTestVertex>("cube_pipeline");
 
 #ifndef IMGUI_DISABLE
+    ImGui_OnInit(app, renderer);
+
     renderer->SetOnRenderHandler(ImGui_OnRender);
     renderer->SetOnCleanupHandler(ImGui_OnExit);
 #endif
 
+    // app->SetOnInitializeHandler(renderer->Initialize);
     app->SetOnLoopHandler(App_OnLoop);
     app->SetOnCleanupHandler(App_OnCleanup);
 
