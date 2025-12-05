@@ -173,4 +173,9 @@ namespace eXngine::Applications
 
 		return m_pHandle;
 	}
+
+	void GLFWApplication::ProcessInput(eXkey key, bool pressed)
+	{
+		m_bKeys[key] = pressed;
+	}
 }

@@ -11,7 +11,10 @@
 
 namespace eXngine::Applications
 {
-    // template <std::derived_from<sWindowData> T>
+#ifdef _WIN32
+    typedef HWND EXWND;
+#endif
+    // template <std::derived_from<sWindowData> T>B
     class EXNEXPORT eXapplication : public Application
     {
     public:
@@ -20,10 +23,14 @@ namespace eXngine::Applications
 
         virtual bool Initialize() override;
         virtual int Run() override;
+        virtual void ProcessInput(eXkey, bool) override;
+        virtual void *GetHandle() override { return m_pHandle; }
 
-        LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+        void SetClassName(const EXCHAR *);
+        void SetInstance(HINSTANCE hInstance) { m_hInstance = hInstance; }
+
     private:
-        EXCHAR m_szClassName[256] = { 0 };
+        EXCHAR m_szClassName[256] = {0};
         HINSTANCE m_hInstance = EXN_NULL_HANDLE;
         EXVOIDPTR m_pParentWindowHandle = EXN_NULL_HANDLE;
         EXVOIDPTR m_pApplicationData = EXN_NULL_HANDLE;

@@ -59,6 +59,11 @@ public:                                          \
 		return s_##name;                         \
 	};
 
+#ifdef _WIN32
+	#include <windows.h>
+	#define WINDOWS_LEAN_AND_MEAN
+#endif
+
 #include <eXtypes.h>
 #include <eXdebug.h>
 #include <eXmemory.h>

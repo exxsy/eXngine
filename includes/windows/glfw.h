@@ -32,6 +32,7 @@ namespace eXngine::Applications
 		GLFWApplication(const EXCHAR *name, Point position, Size size, bool maximized = false);
 		bool Initialize() override;
 		void *GetHandle() override;
+		void ProcessInput(eXkey, bool) override;
 
 		int Run() override;
 		GLFWwindow *GetWindow();
