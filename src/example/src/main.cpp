@@ -466,6 +466,7 @@ LRESULT WndProc(EXWND hwnd, EXUINT uMsg, WPARAM wParam, LPARAM lParam)
 
     switch (uMsg)
     {
+    case WM_SIZING:
     case WM_SIZE:
         EXINT width = LOWORD(lParam);
         EXINT height = HIWORD(lParam);
@@ -510,27 +511,26 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     app->SetInstance(hInstance);
     app->Initialize();
 
-    renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
-    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
-    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
+    renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
+
+    // renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
+    renderer->LoadShader("default.vertex", tri_vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("default.fragment", tri_frag, eXngine::eXshader_Fragment);
 
 #ifdef _DEBUG
     renderer->AddValidationLayer("VK_LAYER_KHRONOS_validation");
     renderer->AddValidationLayer("VK_LAYER_LUNARG_monitor");
     renderer->AddExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    renderer->CreateDebugPipeline();
 #endif
     renderer->AddExtension(VK_KHR_SURFACE_EXTENSION_NAME);
     renderer->AddExtension(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
     renderer->AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
-    renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
-
     renderer->CreateInstance();
+    renderer->CreateDebugPipeline();
     renderer->CreateSurface(app->GetHandle());
     renderer->Initialize();
 
-    renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
+    // renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);

@@ -338,13 +338,15 @@ namespace eXngine::Renderers::Vulkan
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        EX_FATAL(vkAllocateCommandBuffers(m_pDevice, &allocInfo, &commandBuffer) == VK_SUCCESS, "Failed to allocate command buffer.");
+        const VkResult allocateResult = vkAllocateCommandBuffers(m_pDevice, &allocInfo, &commandBuffer);
+        EX_FATAL(allocateResult == VK_SUCCESS, "Failed to allocate command buffer.");
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        EX_FATAL(vkBeginCommandBuffer(commandBuffer, &beginInfo) == VK_SUCCESS, "Failed to begin single-time command buffer.");
+        const VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        EX_FATAL(result == VK_SUCCESS, "Failed to begin single-time command buffer.");
 
         return commandBuffer;
     }
@@ -360,7 +362,6 @@ namespace eXngine::Renderers::Vulkan
 
         vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(m_pGraphicsQueue);
-
         vkFreeCommandBuffers(m_pDevice, m_pCommandPool, 1, &commandBuffer);
     }
 
@@ -1477,7 +1478,7 @@ namespace eXngine::Renderers::Vulkan
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
         bool isSuitable = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-               deviceFeatures.geometryShader && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+                          deviceFeatures.geometryShader && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 
         EX_INFO("Device Found: %s", deviceProperties.deviceName);
         EX_INFO("\tDevice ID: %d", deviceProperties.deviceID);
@@ -1495,7 +1496,7 @@ namespace eXngine::Renderers::Vulkan
         EX_INFO("\tSwap Chain Support: %s", swapChainAdequate ? "Yes" : "No");
         EX_INFO("\tExtensions Supported: %s", extensionsSupported ? "Yes" : "No");
         EX_INFO("\tDevice Selected: %s", isSuitable ? "Yes" : "No");
-        
+
         return isSuitable;
     }
 
@@ -1594,8 +1595,8 @@ namespace eXngine::Renderers::Vulkan
         {
             VkExtent2D actualExtent =
                 {
-                    static_cast<EXUINT32>(this->m_frameBufferSize.W),
-                    static_cast<EXUINT32>(this->m_frameBufferSize.H)};
+                    static_cast<EXUINT32>(this->m_szFrameBufferSize.W),
+                    static_cast<EXUINT32>(this->m_szFrameBufferSize.H)};
 
             actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
             actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -1833,12 +1834,12 @@ namespace eXngine::Renderers::Vulkan
         return m_pSurface;
     };
 
-    Renderer::Renderer(const EXCHAR *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
+    Renderer::Renderer(const EXCHAR *name) : BaseRenderer(name, Size(0, 0)), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }
 
-    Renderer::Renderer(const EXCHAR *name, Size sz) : BaseRenderer(name), m_frameBufferSize(sz), m_Depth()
+    Renderer::Renderer(const EXCHAR *name, Size sz) : BaseRenderer(name, sz), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }

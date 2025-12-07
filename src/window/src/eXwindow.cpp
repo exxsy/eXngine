@@ -13,6 +13,10 @@ namespace eXngine::Windows
     {
         EX_FREE(m_szName);
         EX_FREE(m_szClassName);
+
+        DestroyWindow((HWND)GetHandle());
+        UnregisterClass(GetClassNameA(), GetInstance());
+        EX_INFO("Windows eXwindow '%s' destroyed.", GetName());
     }
 
     EXBOOL eXwindow::Initialize()
@@ -27,25 +31,33 @@ namespace eXngine::Windows
 
     int eXwindow::Run()
     {
-        ShowWindow((HWND)m_pHandle, m_bIsMaximized ? SW_MAXIMIZE : SW_SHOWNORMAL);
+        ShowWindow((EXWND)m_pHandle, m_bIsMaximized ? SW_MAXIMIZE : SW_SHOWNORMAL);
+        UpdateWindow((EXWND)GetHandle());
 
         EX_INFO("Entering main application loop.");
 
         MSG msg = {};
-        while (GetMessage(&msg, NULL, 0, 0) > 0)
+        bool done = false;
+
+        while (!done)
         {
-            TranslateMessage(&msg);
+            while (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
 
             if (m_fnOnLoop)
                 m_fnOnLoop(this);
 
-            DispatchMessage(&msg);
+            if (msg.message == WM_QUIT)
+                done = true;
         }
 
         if (m_fnOnCleanup)
             m_fnOnCleanup(this);
 
-        return EXN_SUCCESS;
+        return (int)msg.wParam;
     }
 
     EXVOIDPTR eXwindow::GetHandle()
@@ -74,7 +86,8 @@ namespace eXngine::Windows
             // case WM_XBUTTONUP:
             static auto window = reinterpret_cast<eXwindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
-            if (!window) window = reinterpret_cast<eXwindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if (!window)
+                window = reinterpret_cast<eXwindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
             switch (uMsg)
             {
@@ -101,6 +114,9 @@ namespace eXngine::Windows
                             uMsg == WM_XBUTTONDOWN || uMsg == WM_CHAR || uMsg == WM_UNICHAR));
                 }
                 break;
+            case WM_DESTROY:
+                PostQuitMessage(0);
+                break;
             default:
                 break;
             }
@@ -117,7 +133,7 @@ namespace eXngine::Windows
             .lpszClassName = m_szClassName,
         };
 
-        RegisterClass(&wc);
+        EX_FATAL(RegisterClass(&wc) != TRUE, "Failed to register window class.");
 
         m_pApplicationData = this;
         m_pHandle = CreateWindowEx(

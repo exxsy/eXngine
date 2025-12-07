@@ -5,14 +5,18 @@ namespace eXngine
 	struct Point
 	{
 	public:
-		Point(int X, int Y) : X(X), Y(Y) {}
+		inline Point(int X, int Y) : X(X), Y(Y) {}
+		inline Point() : X(0), Y(0) {}
+		inline Point(const Point &point) : X(point.X), Y(point.Y) {}
 		int X, Y;
 	};
 
 	struct Size
 	{
 	public:
-		Size(int W, int H) : W(W), H(H) {}
+		inline Size(int W, int H) : W(W), H(H) {}
+		inline Size() : W(0), H(0) {}
+		inline Size(const Size &size) : W(size.W), H(size.H) {}
 		int W, H;
 	};
 

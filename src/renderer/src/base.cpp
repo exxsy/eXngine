@@ -5,27 +5,18 @@
 
 namespace eXngine::Renderers
 {
-	BaseRenderer::BaseRenderer(const EXCHAR* name, Size sz) : m_szName(const_cast<EXCHAR*>(name)), m_szFrameBufferSize(sz) { }
-
-	void BaseRenderer::SetFrameBufferResized(bool state)
-	{
-		this->m_bFrameBufferResized = state;
-	}
-
-	void BaseRenderer::SetFrameBufferSize(Size sz)
-	{
-		this->m_szFrameBufferSize = sz;
-	}
-
-    void BaseRenderer::SetFrameBufferSize(EXINT W, EXINT H)
+    BaseRenderer::BaseRenderer(const EXCHAR *name, Size sz) : m_szName(const_cast<EXCHAR *>(name)), m_szFrameBufferSize(sz), m_bFrameBufferResized(false)
     {
-        this->m_szFrameBufferSize = Size(W, H);
     }
+
+    // BaseRenderer::BaseRenderer()// : AbstractRenderer(), m_szName(const_cast<EXCHAR *>("Renderer")), m_szFrameBufferSize(Size(0, 0)), m_bFrameBufferResized(false)
+    // {
+    // }
 
     FPSData BaseRenderer::GetFPS() const
     {
-		return m_sFpsData;
-	}
+        return m_sFpsData;
+    }
 
     void BaseRenderer::UpdateFPS()
     {
@@ -50,8 +41,8 @@ namespace eXngine::Renderers
         this->m_fOnCleanup = fn;
     }
 
-	Images::ImageManager* BaseRenderer::GetImageManager()
+    Images::ImageManager *BaseRenderer::GetImageManager()
     {
         return Images::ImageManager::GetInstance();
-	}
+    }
 }

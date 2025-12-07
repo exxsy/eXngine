@@ -24,7 +24,7 @@ namespace eXngine::Renderers
 		float m_fAverageDeltaTime = 0.0f;
 	};
 
-	struct ShaderModule 
+	struct ShaderModule
 	{
 	public:
 		std::vector<char> code;
@@ -41,11 +41,12 @@ namespace eXngine::Renderers
 		IndexType m_nVerticesCount;
 		MemoryType m_pVertices;
 		MemoryType m_pIndices;
-		const char* m_szShaderName = nullptr;
+		const char *m_szShaderName = nullptr;
 	};
 
 	template <typename T, typename S = EXUINT32>
-	interface IRenderCommands {
+	interface IRenderCommands
+	{
 	protected:
 		std::vector<RenderCommand<T, S>> m_RenderCommands;
 
@@ -57,29 +58,35 @@ namespace eXngine::Renderers
 	class EXNEXPORT BaseRenderer : virtual public AbstractRenderer
 	{
 	protected:
-		EXCHAR *m_szName = EXN_NULL_HANDLE;
-		Size m_szFrameBufferSize;
 		FPSData m_sFpsData;
-		std::map<std::string, ShaderModule*> m_Shaders;
+		std::map<std::string, ShaderModule *> m_Shaders;
 		OnCleanupHandler m_fOnCleanup;
 
-		bool m_bFrameBufferResized = false;
-		//std::mutex m_resizeMutex;
+		// Size m_szFrameBufferSize;
+		// EXCHAR *m_szName = EXN_NULL_HANDLE;
+		// bool m_bFrameBufferResized = false;
+		// std::mutex m_resizeMutex;
+		// void* m_pDevice = EXN_NULL_HANDLE;
 
-		void* m_pDevice = EXN_NULL_HANDLE;
+		EXN_PROPERTY(EXVOIDPTR, Device, pDevice, EXN_NULL_HANDLE);
+		EXN_PROPERTY(EXCHAR *, Name, szName, EXN_NULL_HANDLE);
+		EXN_PROPERTY(Size, FrameBufferSize, szFrameBufferSize, Size(0, 0));
+		EXN_PROPERTY(EXBOOL, FrameBufferResized, bFrameBufferResized, false);
+
 	public:
-		BaseRenderer(const EXCHAR *, Size = Size(0, 0));
-		void SetFrameBufferResized(bool);
-		void SetFrameBufferSize(Size);
-		void SetFrameBufferSize(EXINT, EXINT);
+		BaseRenderer(const EXCHAR *, Size);
+		BaseRenderer() = default;
+		// void SetFrameBufferResized(bool);
+		// void SetFrameBufferSize(Size);
+		// void SetFrameBufferSize(EXINT, EXINT);
 		void SetOnCleanupHandler(OnCleanupHandler);
 		void UpdateFPS();
 
 		FPSData GetFPS() const;
-		Images::ImageManager* GetImageManager();
+		Images::ImageManager *GetImageManager();
 
-		virtual bool LoadShader(const char*, const std::vector<char>&, ShaderTypes) = 0;
-		virtual void UseShader(const char*) = 0;
-		virtual void DestroyShader(const char*) = 0;
+		virtual bool LoadShader(const char *, const std::vector<char> &, ShaderTypes) = 0;
+		virtual void UseShader(const char *) = 0;
+		virtual void DestroyShader(const char *) = 0;
 	};
 }

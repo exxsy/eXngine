@@ -204,7 +204,7 @@ namespace eXngine::Renderers::Vulkan
 		friend class VkTexture;
 
 	private:
-		Size m_frameBufferSize;
+		// Size m_frameBufferSize;
 		EXINT m_currentFrame = 0;
 		EXUINT32 m_nVerticesCount = 0;
 		EXUINT32 m_nIndicesCount = 0;
@@ -314,7 +314,6 @@ namespace eXngine::Renderers::Vulkan
 
 		void SetSurface(VkSurfaceKHR);
 		void SetExtensions(std::vector<const char *>);
-		void SetFrameBufferSize(Size);
 		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
 		void SetOnRenderHandler(OnRenderHandler);
 
