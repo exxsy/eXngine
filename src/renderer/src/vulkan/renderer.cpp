@@ -1476,6 +1476,9 @@ namespace eXngine::Renderers::Vulkan
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
+        bool isSuitable = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+               deviceFeatures.geometryShader && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+
         EX_INFO("Device Found: %s", deviceProperties.deviceName);
         EX_INFO("\tDevice ID: %d", deviceProperties.deviceID);
         EX_INFO("\tVendor ID: %d", deviceProperties.vendorID);
@@ -1487,10 +1490,13 @@ namespace eXngine::Renderers::Vulkan
                 EXENGINE_GET_PATCH_VERSION(deviceProperties.apiVersion),
                 EXENGINE_GET_MAJOR_VERSION(deviceProperties.apiVersion),
                 EXENGINE_GET_MINOR_VERSION(deviceProperties.apiVersion));
-        // EX_INFO("\tAPI Version: %d", deviceProperties.apiVersion);
-
-        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-               deviceFeatures.geometryShader && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+        EX_INFO("\tDiscrete GPU: %s", deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "Yes" : "No");
+        EX_INFO("\tGeometry Shader Support: %s", deviceFeatures.geometryShader ? "Yes" : "No");
+        EX_INFO("\tSwap Chain Support: %s", swapChainAdequate ? "Yes" : "No");
+        EX_INFO("\tExtensions Supported: %s", extensionsSupported ? "Yes" : "No");
+        EX_INFO("\tDevice Selected: %s", isSuitable ? "Yes" : "No");
+        
+        return isSuitable;
     }
 
     SwapChainSupportDetails
@@ -1807,6 +1813,25 @@ namespace eXngine::Renderers::Vulkan
         assert(vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &imageMemory) == VK_SUCCESS);
         vkBindImageMemory(m_pDevice, image, imageMemory, 0);
     }
+
+    VkSurfaceKHR Renderer::CreateSurface(EXVOIDPTR handle)
+    {
+        VkWin32SurfaceCreateInfoKHR createInfo{
+            .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+            .hinstance = GetModuleHandle(NULL),
+            .hwnd = static_cast<HWND>(handle),
+        };
+
+        vkCreateWin32SurfaceKHR(
+            m_pInstance,
+            &createInfo,
+            nullptr,
+            &m_pSurface);
+
+        EX_FATAL(m_pSurface != VK_NULL_HANDLE, "Failed to create window surface.");
+
+        return m_pSurface;
+    };
 
     Renderer::Renderer(const EXCHAR *name) : BaseRenderer(name), m_frameBufferSize(0, 0), m_Depth()
     {

@@ -323,7 +323,7 @@ namespace eXngine::Renderers::Vulkan
 		void AddDeviceExtension(const char *);
 
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
-        void CreateImage(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags, VkMemoryPropertyFlags, VkImage&, VkDeviceMemory&);
+		void CreateImage(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags, VkMemoryPropertyFlags, VkImage &, VkDeviceMemory &);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkBuffer, VkImage, uint32_t, uint32_t);
 		void TransitionImageLayout(VkImage, VkFormat, VkImageLayout, VkImageLayout);
@@ -331,6 +331,8 @@ namespace eXngine::Renderers::Vulkan
 		VkCommandBuffer BeginSingleTimeCommands();
 		VkInstance GetVulkanInstance();
 		VkFormat FindDepthFormat();
+
+		VkSurfaceKHR CreateSurface(EXVOIDPTR handle);
 
 		template <typename T>
 		inline void AllocatePipeline(std::string name)

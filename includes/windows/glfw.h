@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-namespace eXngine::Applications
+namespace eXngine::Windows
 {
 	typedef GLFWmousebuttonfun GLFWMouseClickCallback;
 	typedef GLFWscrollfun GLFWScrollCallback;
@@ -15,11 +15,11 @@ namespace eXngine::Applications
 	typedef GLFWcharfun GLFWCharacterCallback;
 	typedef GLFWkeyfun GLFWKeyboardCallback;
 
-	class EXNEXPORT GLFWApplication : public Application
+	class EXNEXPORT GLFWWindow : public Window
 	{
 	private:
 		std::vector<GLFWmonitor *> m_vMonitors;
-		GLFWmonitor * m_pPrimaryMonitor = EXN_NULL_HANDLE;
+		GLFWmonitor *m_pPrimaryMonitor = EXN_NULL_HANDLE;
 		GLFWwindow *m_pWindow = EXN_NULL_HANDLE;
 		GLFWKeyboardCallback *m_fnKeyboard = EXN_NULL_HANDLE;
 		GLFWCharacterCallback *m_fnCharacter = EXN_NULL_HANDLE;
@@ -28,13 +28,16 @@ namespace eXngine::Applications
 		GLFWScrollCallback *m_fnScroll = EXN_NULL_HANDLE;
 		GLFWframebuffersizefun *m_fnFramebufferSize = EXN_NULL_HANDLE;
 
-	public:
-		GLFWApplication(const EXCHAR *name, Point position, Size size, bool maximized = false);
-		bool Initialize() override;
-		void *GetHandle() override;
-		void ProcessInput(eXkey, bool) override;
+		EXVOIDPTR m_pHandle = EXN_NULL_HANDLE;
 
-		int Run() override;
+	public:
+		GLFWWindow(const EXCHAR *name, Point position, Size size, bool maximized = false);
+
+		virtual bool Initialize() override;
+		virtual void ProcessInput(eXkey, bool) override;
+		virtual EXVOIDPTR GetHandle() override;
+		virtual int Run() override;
+
 		GLFWwindow *GetWindow();
 		Size GetFrameBufferSize();
 		std::vector<const char *> GetExtensions();

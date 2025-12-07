@@ -38,7 +38,7 @@ powershell -Command "Write-Host 'Files: %cFilenames%' -ForegroundColor Cyan"
 
 SET "namespace=eXngine"
 SET "assembly=example"
-SET "compilerFlags=-std=c++20 -Werror -Wno-error=macro-redefined -Wno-error=deprecated-builtins -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=nontrivial-memcall -Wno-error=reorder-ctor"
+SET "compilerFlags=-std=c++20 -Werror -Wno-nontrivial-memcall -Wno-error=macro-redefined -Wno-error=deprecated-builtins -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=nontrivial-memcall -Wno-error=reorder-ctor"
 
 IF /I "%ARCH%"=="x64" (
     SET "compilerFlags=%compilerFlags% -m64"

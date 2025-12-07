@@ -71,6 +71,7 @@ namespace eXngine::Renderers
 		BaseRenderer(const EXCHAR *, Size = Size(0, 0));
 		void SetFrameBufferResized(bool);
 		void SetFrameBufferSize(Size);
+		void SetFrameBufferSize(EXINT, EXINT);
 		void SetOnCleanupHandler(OnCleanupHandler);
 		void UpdateFPS();
 

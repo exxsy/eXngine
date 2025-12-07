@@ -1,19 +1,19 @@
 #include <windows/glfw.h>
 
-namespace eXngine::Applications
+namespace eXngine::Windows
 {
-	GLFWApplication::GLFWApplication(const EXCHAR *name, Point position, Size size, bool maximized) : Application(name, position, size, maximized), m_pWindow(nullptr)
+	GLFWWindow::GLFWWindow(const EXCHAR *name, Point position, Size size, bool maximized) : Window(name, position, size, maximized), m_pWindow(nullptr)
 	{
 	}
 
-	bool GLFWApplication::Initialize()
+	bool GLFWWindow::Initialize()
 	{
 		EX_FATAL(glfwInit() != GLFW_FALSE, "Failed to initialize GLFW.");
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-		glfwWindowHint(GLFW_MAXIMIZED, (int)IsMaximized());
-		glfwWindowHint(GLFW_POSITION_X, (int)m_szPosition.X);
-		glfwWindowHint(GLFW_POSITION_Y, (int)m_szPosition.Y);
+		glfwWindowHint(GLFW_MAXIMIZED, (int)this->GetIsMaximized());
+		glfwWindowHint(GLFW_POSITION_X, (int)m_position.X);
+		glfwWindowHint(GLFW_POSITION_Y, (int)m_position.Y);
 
 		int count;
 		GLFWmonitor **monitors = glfwGetMonitors(&count);
@@ -35,8 +35,8 @@ namespace eXngine::Applications
 		strncpy_s(name, this->m_szName, sizeof(name) - 1);
 #endif
 
-		m_pWindow = glfwCreateWindow(m_szSize.W, m_szSize.H, name,
-									 IsMaximized() ? m_pPrimaryMonitor : EXN_NULL_HANDLE, EXN_NULL_HANDLE);
+		m_pWindow = glfwCreateWindow(m_size.W, m_size.H, name,
+									 GetIsMaximized() ? m_pPrimaryMonitor : EXN_NULL_HANDLE, EXN_NULL_HANDLE);
 
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
 		EX_INFO("GLFW window '%s' initialized successfully.", GetName());
@@ -45,7 +45,7 @@ namespace eXngine::Applications
 		return true;
 	}
 
-	int GLFWApplication::Run()
+	int GLFWWindow::Run()
 	{
 		if (m_fnOnInitialize != EXN_NULL_HANDLE)
 			m_fnOnInitialize(this->m_pHandle);
@@ -69,12 +69,12 @@ namespace eXngine::Applications
 		return EXN_SUCCESS;
 	}
 
-	GLFWwindow *GLFWApplication::GetWindow()
+	GLFWwindow *GLFWWindow::GetWindow()
 	{
 		return m_pWindow;
 	}
 
-	Size GLFWApplication::GetFrameBufferSize()
+	Size GLFWWindow::GetFrameBufferSize()
 	{
 		Size sz(0, 0);
 		glfwGetFramebufferSize(this->m_pWindow, &sz.W, &sz.H);
@@ -82,7 +82,7 @@ namespace eXngine::Applications
 		return sz;
 	}
 
-	std::vector<const char *> GLFWApplication::GetExtensions()
+	std::vector<const char *> GLFWWindow::GetExtensions()
 	{
 #ifdef GLFW_INCLUDE_VULKAN
 		if (!glfwVulkanSupported())
@@ -95,7 +95,7 @@ namespace eXngine::Applications
 		return std::vector<const char *>(extensions, extensions + extensionCount);
 	}
 
-	void GLFWApplication::SetKeyboardHandler(GLFWKeyboardCallback handler)
+	void GLFWWindow::SetKeyboardHandler(GLFWKeyboardCallback handler)
 	{
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
 		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid keyboard handler.");
@@ -105,7 +105,7 @@ namespace eXngine::Applications
 		glfwSetKeyCallback(m_pWindow, handler);
 	}
 
-	void GLFWApplication::SetScrollHandler(GLFWScrollCallback handler)
+	void GLFWWindow::SetScrollHandler(GLFWScrollCallback handler)
 	{
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
 		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid scroll handler.");
@@ -115,7 +115,7 @@ namespace eXngine::Applications
 		glfwSetScrollCallback(m_pWindow, handler);
 	}
 
-	void GLFWApplication::SetCharacterHandler(GLFWCharacterCallback handler)
+	void GLFWWindow::SetCharacterHandler(GLFWCharacterCallback handler)
 	{
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
 		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid character handler.");
@@ -125,7 +125,7 @@ namespace eXngine::Applications
 		glfwSetCharCallback(m_pWindow, handler);
 	}
 
-	void GLFWApplication::SetMousePosHandler(GLFWMousePosCallback handler)
+	void GLFWWindow::SetMousePosHandler(GLFWMousePosCallback handler)
 	{
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
 		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid mouse position handler.");
@@ -135,7 +135,7 @@ namespace eXngine::Applications
 		glfwSetCursorPosCallback(m_pWindow, handler);
 	}
 
-	void GLFWApplication::SetMouseClickHandler(GLFWMouseClickCallback handler)
+	void GLFWWindow::SetMouseClickHandler(GLFWMouseClickCallback handler)
 	{
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
 		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid mouse click handler.");
@@ -145,7 +145,7 @@ namespace eXngine::Applications
 		glfwSetMouseButtonCallback(m_pWindow, handler);
 	}
 
-	void GLFWApplication::SetFramebufferSizeHandler(GLFWframebuffersizefun handler)
+	void GLFWWindow::SetFramebufferSizeHandler(GLFWframebuffersizefun handler)
 	{
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Window not initialized.");
 		EX_ERROR(handler != EXN_NULL_HANDLE, "Invalid framebuffer size handler.");
@@ -155,16 +155,16 @@ namespace eXngine::Applications
 		glfwSetFramebufferSizeCallback(m_pWindow, handler);
 	}
 
-	void *eXngine::Applications::GLFWApplication::GetHandle()
+	void *GLFWWindow::GetHandle()
 	{
 #ifdef GLFW_EXPOSE_NATIVE_COCOA
-		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetCocoaWindow(m_pWindow));
+		m_pHandle = reinterpret_cast<EXVOIDPTR>(glfwGetCocoaWindow(m_pWindow));
 #elif GLFW_EXPOSE_NATIVE_WAYLAND
-		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetWaylandWindow(m_pWindow));
+		m_pHandle = reinterpret_cast<EXVOIDPTR>(glfwGetWaylandWindow(m_pWindow));
 #elif GLFW_EXPOSE_NATIVE_X11
-		m_pHandle = reinterpret_cast<EXUINTPTR>(glfwGetX11Window(m_pWindow));
+		m_pHandle = reinterpret_cast<EXVOIDPTR>(glfwGetX11Window(m_pWindow));
 #elif GLFW_EXPOSE_NATIVE_WIN32
-		m_pHandle = reinterpret_cast<void *>(glfwGetWin32Window(m_pWindow));
+		m_pHandle = reinterpret_cast<EXVOIDPTR>(glfwGetWin32Window(m_pWindow));
 #else
 		EX_FATAL(false, "Native window handle retrieval not supported on this platform.");
 #endif
@@ -174,7 +174,7 @@ namespace eXngine::Applications
 		return m_pHandle;
 	}
 
-	void GLFWApplication::ProcessInput(eXkey key, bool pressed)
+	void GLFWWindow::ProcessInput(eXkey key, bool pressed)
 	{
 		m_bKeys[key] = pressed;
 	}

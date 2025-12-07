@@ -17,8 +17,13 @@ namespace eXngine::Renderers
 		this->m_szFrameBufferSize = sz;
 	}
 
-	FPSData BaseRenderer::GetFPS() const
-	{
+    void BaseRenderer::SetFrameBufferSize(EXINT W, EXINT H)
+    {
+        this->m_szFrameBufferSize = Size(W, H);
+    }
+
+    FPSData BaseRenderer::GetFPS() const
+    {
 		return m_sFpsData;
 	}
 

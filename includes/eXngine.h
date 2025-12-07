@@ -59,9 +59,23 @@ public:                                          \
 		return s_##name;                         \
 	};
 
+#define EXN_PROPERTY(type, name, prop, def)          \
+	type m_##prop = def;                              \
+                                                \
+public:                                         \
+	type Get##name() const { return m_##prop; } \
+	void Set##name(type value) { m_##prop = value; }
+
+#define EXN_PROPERTY_ARRAY(type, name, prop, sz)       \
+	type m_##prop[sz] = {0};                           \
+                                                       \
+public:                                                \
+	const type *Get##name() const { return m_##prop; } \
+	void Set##name(type *value) { memcpy_s((void *)m_##prop, sizeof(type) * sz, value, sizeof(type) * sz); }
+
 #ifdef _WIN32
-	#include <windows.h>
-	#define WINDOWS_LEAN_AND_MEAN
+#include <windows.h>
+#define WINDOWS_LEAN_AND_MEAN
 #endif
 
 #include <eXtypes.h>
