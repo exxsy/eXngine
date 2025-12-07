@@ -312,6 +312,9 @@ using namespace eXngine;
 using namespace eXngine::Renderers::Vulkan;
 using namespace eXngine::Windows;
 
+char exePathBuf[MAX_PATH] = {0};
+char name[256] = "eXngine Window";
+char className[256] = "eXngineWindowClass";
 Size window_size = Size(1024, 768);
 Point window_position = Point(100, 100);
 Renderer *renderer;
@@ -484,26 +487,20 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     AllocConsole();
     freopen_s(&stream, "CONOUT$", "w", stdout);
 
-    char name[256] = "eXngine Window";
-    char className[256] = "eXngineWindowClass";
-
-    namespace fs = std::filesystem;
-
-    char exePathBuf[MAX_PATH] = {0};
-    fs::path exeDir;
-    if (GetModuleFileNameA(nullptr, exePathBuf, MAX_PATH) != 0)
-        exeDir = fs::path(exePathBuf).remove_filename();
+    std::filesystem::path exeDir;
+    if (GetModuleFileName(nullptr, exePathBuf, MAX_PATH) != 0)
+        exeDir = std::filesystem::path(exePathBuf).remove_filename();
     else
-        exeDir = fs::current_path();
+        exeDir = std::filesystem::current_path();
 
-    fs::path shadersDir = (exeDir / ".." / ".." / "shaders").lexically_normal();
+    std::filesystem::path shadersDir = (exeDir / ".." / ".." / "shaders").lexically_normal();
 
     auto tri_vert = eXngine::Utils::File::Read((shadersDir / "triangle.vert.spv").string());
     auto tri_frag = eXngine::Utils::File::Read((shadersDir / "triangle.frag.spv").string());
     // auto cube_vert = eXngine::Utils::File::Read((shadersDir / "cube.vert.spv").string());
     // auto cube_frag = eXngine::Utils::File::Read((shadersDir / "cube.frag.spv").string());
-    // auto vert = eXngine::Utils::File::Read((shadersDir / "shader.vert.spv").string());
-    // auto frag = eXngine::Utils::File::Read((shadersDir / "shader.frag.spv").string());
+    auto vert = eXngine::Utils::File::Read((shadersDir / "shader.vert.spv").string());
+    auto frag = eXngine::Utils::File::Read((shadersDir / "shader.frag.spv").string());
 
     renderer = new eXngine::Renderers::Vulkan::Renderer(name, window_size);
     app = new eXngine::Windows::eXwindow(name, window_position, window_size, false);
@@ -512,10 +509,10 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     app->Initialize();
 
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
+    renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
 
-    // renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
-    renderer->LoadShader("default.vertex", tri_vert, eXngine::eXshader_Vertex);
-    renderer->LoadShader("default.fragment", tri_frag, eXngine::eXshader_Fragment);
+    renderer->LoadShader("default.vertex", vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
 
 #ifdef _DEBUG
     renderer->AddValidationLayer("VK_LAYER_KHRONOS_validation");
@@ -530,7 +527,10 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->CreateSurface(app->GetHandle());
     renderer->Initialize();
 
-    // renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
+    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
+
+    renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);

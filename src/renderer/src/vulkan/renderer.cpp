@@ -405,8 +405,8 @@ namespace eXngine::Renderers::Vulkan
         submitInfo.signalSemaphoreCount = EX_ARRAYSIZE(signalSemaphores);
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence);
-        // EX_ERROR(vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence) == VK_SUCCESS, "Failed to submit draw command buffer to graphics queue.");
+        const VkResult queueSubmitResult = vkQueueSubmit(m_pGraphicsQueue, 1, &submitInfo, frameObject.inFlightFence);
+        EX_ERROR(queueSubmitResult == VK_SUCCESS, "Failed to submit draw command buffer to graphics queue.");
 
         VkPresentInfoKHR presentInfo{};
         VkSwapchainKHR swapChains[] = {m_pSwapChain};
@@ -1056,8 +1056,7 @@ namespace eXngine::Renderers::Vulkan
         const std::vector<eXngine::Utils::Vertex> vertices{
             {{1.0f, 0.0f, 0.0f}, {-0.5f, -0.5f}},
             {{0.0f, 1.0f, 0.0f}, {0.5f, -0.5f}},
-            {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}},
-            {{1.0f, 1.0f, 1.0f}, {-0.5f, 0.5f}}};
+            {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}}};
 
         // for (const auto model : m_Models)
         // {
@@ -1092,7 +1091,7 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateIndexBuffer()
     {
-        std::vector<EXUINT16> indices = {0, 1, 2, 2, 3, 0};
+        std::vector<EXUINT16> indices = {0, 1, 2};
         // for (const auto &model : m_Models)
         // {
         //     for (const auto &mesh : model.second.m_vMeshes)

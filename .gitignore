@@ -10,3 +10,4 @@ glfw.dir/**/*
 /3rdparty/lib/**/*
 /build/**/*
 imgui.ini
+src/example/imgui.ini

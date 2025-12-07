@@ -5,8 +5,6 @@ namespace eXngine::Windows
     eXwindow::eXwindow(const EXCHAR *name, Point position, Size size, EXBOOL maximized) : Window(name, position, size, maximized)
     {
         SetInstance(GetModuleHandle(NULL));
-        SetExWindowStyle(0);
-        SetWindowStyle(WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CAPTION);
     }
 
     eXwindow::~eXwindow()
@@ -31,9 +29,6 @@ namespace eXngine::Windows
 
     int eXwindow::Run()
     {
-        ShowWindow((EXWND)m_pHandle, m_bIsMaximized ? SW_MAXIMIZE : SW_SHOWNORMAL);
-        UpdateWindow((EXWND)GetHandle());
-
         EX_INFO("Entering main application loop.");
 
         MSG msg = {};
@@ -47,11 +42,11 @@ namespace eXngine::Windows
                 DispatchMessage(&msg);
             }
 
-            if (m_fnOnLoop)
-                m_fnOnLoop(this);
-
             if (msg.message == WM_QUIT)
                 done = true;
+
+            if (m_fnOnLoop)
+                m_fnOnLoop(this);
         }
 
         if (m_fnOnCleanup)
@@ -130,7 +125,7 @@ namespace eXngine::Windows
         WNDCLASS wc = {
             .lpfnWndProc = wndProc,
             .hInstance = this->GetInstance(),
-            .lpszClassName = m_szClassName,
+            .lpszClassName = this->GetClassNameA(),
         };
 
         EX_FATAL(RegisterClass(&wc) != TRUE, "Failed to register window class.");
@@ -147,12 +142,13 @@ namespace eXngine::Windows
             this->GetInstance(),
             m_pApplicationData);
 
-        DWORD error = GetLastError();
+        ShowWindow((EXWND)GetHandle(), m_bIsMaximized ? SW_MAXIMIZE : SW_SHOWNORMAL);
+        UpdateWindow((EXWND)GetHandle());
 
-        EX_FATAL(error == 0, "Failed to create window due to unknown error.");
-        EX_FATAL(m_pHandle != EXN_NULL_HANDLE, "Failed to create window.");
+        EX_FATAL(GetLastError() == 0, "Failed to create window due to unknown error.");
+        EX_FATAL(GetHandle() != EXN_NULL_HANDLE, "Failed to create window.");
 
-        // SetWindowLongPtr((HWND)m_pHandle, GWLP_USERDATA, (LONG_PTR)m_pApplicationData);
+        SetWindowText((EXWND)GetHandle(), GetName());
     }
 
 }

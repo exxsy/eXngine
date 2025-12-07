@@ -33,7 +33,7 @@ namespace eXngine::Windows
         EXN_PROPERTY(HMENU, Menu, hMenu, EXN_NULL_HANDLE);
         EXN_PROPERTY(EXPROC, WndProcHandler, pWndProcHandler, EXN_NULL_HANDLE);
         EXN_PROPERTY(EXDWORD, ExWindowStyle, dwExWindowStyle, 0);
-        EXN_PROPERTY(EXDWORD, WindowStyle, dwWindowStyle, 0);
+        EXN_PROPERTY(EXDWORD, WindowStyle, dwWindowStyle, WS_OVERLAPPEDWINDOW);
         EXN_PROPERTY(EXCHAR *, ClassName, szClassName, EXN_NULL_HANDLE);
 
     private:
