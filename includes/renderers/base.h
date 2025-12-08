@@ -7,8 +7,12 @@
 #include <combaseapi.h>
 #include <renderers/defines.h>
 #include <renderers/abstract.h>
-
 #include <texture/image.h>
+
+#include <types/vector.h>
+#include <types/color.h>
+
+using namespace eXngine::Types;
 
 namespace eXngine::Renderers
 {
@@ -88,5 +92,11 @@ namespace eXngine::Renderers
 		virtual bool LoadShader(const char *, const std::vector<char> &, ShaderTypes) = 0;
 		virtual void UseShader(const char *) = 0;
 		virtual void DestroyShader(const char *) = 0;
+
+		virtual void DrawLine(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) = 0;
+		virtual void DrawTriangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) = 0;	
+		virtual void DrawRectangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) = 0;
+		virtual void DrawCircle(eXvec<EXFLOAT, 2>, EXFLOAT, eXcolor) = 0;
+
 	};
 }

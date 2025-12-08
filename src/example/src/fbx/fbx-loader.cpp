@@ -135,7 +135,7 @@ namespace eXngine::Utils
                     vertex.y = static_cast<float>(buffer[1]);
                     vertex.z = static_cast<float>(buffer[2]);
 
-                    mesh.vertices[vertexIndex].position = vertex;
+                    mesh.vertices[vertexIndex].color = eXvec<EXUINT8, 3>{{vertex.x, vertex.y, vertex.z}}; // White color
                 }
             }
 
@@ -168,12 +168,11 @@ namespace eXngine::Utils
                 bool unmapped;
                 FbxVector2 uv;
                 bool result = fbxMesh->GetPolygonVertexUV(polygonIndex, 0, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex0].texture_coordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex0].coordinates = eXvec<EXFLOAT, 3> { {static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0} };
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 1, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex1].texture_coordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
+                mesh.vertices[vertexIndex1].coordinates = eXvec<EXFLOAT, 3> { {static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0} };
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 2, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex2].texture_coordinates = { static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]) };
-
+                mesh.vertices[vertexIndex2].coordinates = eXvec<EXFLOAT, 3> { {static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0} };
                 /*FbxVector4 normal;
                 result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 0, normal );
                 mesh.m_vertices[vertexIndex0].m_normal = { static_cast<float>( normal.Buffer()[0] ), static_cast<float>( normal.Buffer()[1] ), static_cast<float>( normal.Buffer()[2] ) };

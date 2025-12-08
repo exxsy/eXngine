@@ -23,9 +23,13 @@
 #include <utils/mesh.h>
 #include <renderers/vulkan/pipelines/graphics.h>
 
+#include <types/vector.h>
+#include <types/color.h>
+
 #undef EXN_NULL_HANDLE
 #define EXN_NULL_HANDLE VK_NULL_HANDLE
 #define EXN_DEFAULT_PIPELINE "default"
+#define EXN_SHAPE_PIPELINE "shapes"
 
 namespace eXngine::Renderers::Vulkan
 {
@@ -204,20 +208,16 @@ namespace eXngine::Renderers::Vulkan
 		friend class VkTexture;
 
 	private:
-		// Size m_frameBufferSize;
-		EXINT m_currentFrame = 0;
-		EXUINT32 m_nVerticesCount = 0;
-		EXUINT32 m_nIndicesCount = 0;
-		EXUINT32 m_queueRenderFamily = 0;
-		OnUpdateUniformBuffersHandler m_fOnUpdateUniformBuffers;
-		OnRenderHandler m_fOnRender;
+#ifdef NDEBUG
+		const bool m_enableValidationLayers = false;
+#else
+		const bool m_enableValidationLayers = true;
+#endif
 
-		std::vector<VkFrameObject> m_pFrameObjects;
-		std::vector<VkImage> m_swapChainImages;
-		std::vector<VkImageView> m_swapChainImageViews;
-		std::vector<VkFramebuffer> m_swapChainFramebuffers;
-		std::map<const char *, VkShaderModuleObject *> m_ShaderModules;
-		// std::map<const char*, VkModelObject> m_Models;
+		EXINT m_currentFrame = 0;
+		EXUINT32 m_queueRenderFamily = 0;
+		OnUpdateUniformBuffersHandler m_fOnUpdateUniformBuffers = EXN_NULL_HANDLE;
+		OnRenderHandler m_fOnRender = EXN_NULL_HANDLE;
 
 		VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
 		VkTexture *m_Depth = nullptr;
@@ -225,15 +225,17 @@ namespace eXngine::Renderers::Vulkan
 		VkCommandBuffer m_pCurrentCommandBuffer = EXN_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_pDebugMessenger = EXN_NULL_HANDLE;
 
-#ifdef NDEBUG
-		const bool m_enableValidationLayers = false;
-#else
-		const bool m_enableValidationLayers = true;
-#endif
-
+		std::vector<VkVertex> m_Vertices;
+		std::vector<EXUINT32> m_Indices;
 		std::vector<const char *> m_Extensions = {};	   //{"VK_KHR_win32_surface"};
 		std::vector<const char *> m_ValidationLayers = {}; //{"VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"};
 		std::vector<const char *> m_DeviceExtensions = {}; //{VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME};
+		std::vector<VkFrameObject> m_pFrameObjects;
+		std::vector<VkImage> m_swapChainImages;
+		std::vector<VkImageView> m_swapChainImageViews;
+		std::vector<VkFramebuffer> m_swapChainFramebuffers;
+		std::map<const char *, VkShaderModuleObject *> m_ShaderModules;
+		// std::map<const char*, VkModelObject> m_Models;
 	private:
 		void SelectPhysicalDevice();
 		void CreateSurface();
@@ -247,7 +249,6 @@ namespace eXngine::Renderers::Vulkan
 		void CreateCommandPool();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
-		void CreateDescriptorSets();
 		void CreateTextureSampler();
 		void CreateDepthResources();
 		void CreateVertexBuffer();
@@ -320,6 +321,11 @@ namespace eXngine::Renderers::Vulkan
 		void AddExtension(const char *);
 		void AddValidationLayer(const char *);
 		void AddDeviceExtension(const char *);
+
+		void DrawLine(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
+		void DrawTriangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;	
+		void DrawRectangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
+		void DrawCircle(eXvec<EXFLOAT, 2>, EXFLOAT, eXcolor) override;
 
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CreateImage(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags, VkMemoryPropertyFlags, VkImage &, VkDeviceMemory &);

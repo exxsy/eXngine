@@ -308,6 +308,8 @@
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_vulkan.h>
 
+#include <types/color.h>
+
 using namespace eXngine;
 using namespace eXngine::Renderers::Vulkan;
 using namespace eXngine::Windows;
@@ -445,9 +447,6 @@ void UpdateUniformBuffer(void *buffer, uint32_t currentImage)
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(m_fZoomFactor, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), (float)window_size.W / (float)window_size.H, 0.1f, 1000.0f);
-    // ubo.view = camera->GetViewMatrix();
-    // ubo.proj = camera->GetProjectionMatrix(window_size.W / window_size.H);
-
     ubo.proj[1][1] *= -1;
 
     memcpy(buffer, &ubo, sizeof(ubo));
@@ -499,8 +498,8 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     auto tri_frag = eXngine::Utils::File::Read((shadersDir / "triangle.frag.spv").string());
     // auto cube_vert = eXngine::Utils::File::Read((shadersDir / "cube.vert.spv").string());
     // auto cube_frag = eXngine::Utils::File::Read((shadersDir / "cube.frag.spv").string());
-    auto vert = eXngine::Utils::File::Read((shadersDir / "shader.vert.spv").string());
-    auto frag = eXngine::Utils::File::Read((shadersDir / "shader.frag.spv").string());
+    auto vert = eXngine::Utils::File::Read((shadersDir / "shape.vert.spv").string());
+    auto frag = eXngine::Utils::File::Read((shadersDir / "shape.frag.spv").string());
 
     renderer = new eXngine::Renderers::Vulkan::Renderer(name, window_size);
     app = new eXngine::Windows::eXwindow(name, window_position, window_size, false);
@@ -509,10 +508,14 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     app->Initialize();
 
     renderer->SetUpdateUniformBuffersHandler(UpdateUniformBuffer);
-    renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
+    // renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
 
     renderer->LoadShader("default.vertex", vert, eXngine::eXshader_Vertex);
     renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
+
+    renderer->DrawLine(eXvec<float, 2>{{0.0f, .2f}}, eXvec<float, 2>{{.3f, .2f}}, eXcolor(255, 0, 0, 255));
+    renderer->DrawTriangle(eXvec<float, 2>{{.3f, .2f}}, eXvec<float, 2>{{-.3f, .2f}}, eXvec<float, 2>{{.3f, .2f}}, eXcolor(0, 255, 0, 255));
+    renderer->DrawRectangle(eXvec<float, 2>{{-.3f, -.5f}}, eXvec<float, 2>{{.3f, -.5f}}, eXvec<float, 2>{{.3f, .5f}}, eXvec<float, 2>{{-.3f, .5f}}, eXcolor(0, 0, 255, 255));
 
 #ifdef _DEBUG
     renderer->AddValidationLayer("VK_LAYER_KHRONOS_validation");
@@ -527,10 +530,10 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->CreateSurface(app->GetHandle());
     renderer->Initialize();
 
-    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
-    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
+    // renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
+    // renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
 
-    renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
+    // renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);

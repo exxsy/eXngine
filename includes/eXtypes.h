@@ -68,8 +68,6 @@ namespace eXngine
 		eXshader_Count
 	};
 
-		// Global keyboard + mouse key codes (Unicode-capable / Windows VK mapping)
-	// Placed in the global namespace so the input processing callback can use it directly.
 	enum eXkey : unsigned int
 	{
 		eXkey_None = 0,
@@ -215,4 +213,17 @@ namespace eXngine
 		eXkey_MouseX1 = 0x1003,
 		eXkey_MouseX2 = 0x1004,
 	};
+}
+
+constexpr unsigned int operator""_rgb(unsigned long long value)
+{
+	unsigned int b = value % 1000;
+	unsigned int g = (value / 1000) % 1000;
+	unsigned int r = (value / 1000000) % 1000;
+
+	r = (r > 255) ? 255 : r;
+	g = (g > 255) ? 255 : g;
+	b = (b > 255) ? 255 : b;
+
+	return (r << 16) | (g << 8) | b;
 }

@@ -27,7 +27,7 @@ namespace eXngine::Windows
         return true;
     }
 
-    int eXwindow::Run()
+    EXINT eXwindow::Run()
     {
         EX_INFO("Entering main application loop.");
 
@@ -150,5 +150,4 @@ namespace eXngine::Windows
 
         SetWindowText((EXWND)GetHandle(), GetName());
     }
-
 }
