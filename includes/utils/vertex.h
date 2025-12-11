@@ -14,7 +14,7 @@ namespace eXngine::Utils
     struct Vertex
     {
     public:
-        eXvec<EXUINT8, 3> color;
-        eXvec<EXFLOAT, 3> coordinates;
+        eXvec3 color;
+        eXvec3 coordinates;
     };
 }

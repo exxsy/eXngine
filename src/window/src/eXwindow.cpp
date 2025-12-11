@@ -45,14 +45,14 @@ namespace eXngine::Windows
             if (msg.message == WM_QUIT)
                 done = true;
 
-            if (m_fnOnLoop)
+            if (m_fnOnLoop && !done)
                 m_fnOnLoop(this);
         }
 
         if (m_fnOnCleanup)
             m_fnOnCleanup(this);
 
-        return (int)msg.wParam;
+        return (EXINT)msg.wParam;
     }
 
     EXVOIDPTR eXwindow::GetHandle()

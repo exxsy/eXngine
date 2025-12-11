@@ -1,24 +1,20 @@
-#include <renderers/base.h>
+#include <renderers/renderer.h>
 #include <chrono>
 
 #pragma comment(lib, "eXngine.assets.lib")
 
 namespace eXngine::Renderers
 {
-    BaseRenderer::BaseRenderer(const EXCHAR *name, Size sz) : m_szName(const_cast<EXCHAR *>(name)), m_szFrameBufferSize(sz), m_bFrameBufferResized(false)
+    eXrenderer::eXrenderer(const EXCHAR *name, Size sz) : m_szName(const_cast<EXCHAR *>(name)), m_bFrameBufferResized(false), m_szFrameBufferSize(sz)
     {
     }
 
-    // BaseRenderer::BaseRenderer()// : AbstractRenderer(), m_szName(const_cast<EXCHAR *>("Renderer")), m_szFrameBufferSize(Size(0, 0)), m_bFrameBufferResized(false)
-    // {
-    // }
-
-    FPSData BaseRenderer::GetFPS() const
+    FPSData eXrenderer::GetFPS() const
     {
         return m_sFpsData;
     }
 
-    void BaseRenderer::UpdateFPS()
+    void eXrenderer::UpdateFPS()
     {
         auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
@@ -36,12 +32,15 @@ namespace eXngine::Renderers
         }
     }
 
-    void BaseRenderer::SetOnCleanupHandler(OnCleanupHandler fn)
+    void eXrenderer::AddCamera(const char * id, eXcamera & camera, EXBOOL isDefault = false)
     {
-        this->m_fOnCleanup = fn;
+        m_Cameras.emplace(id, &camera);
+
+        if (isDefault)
+            m_pMainCamera = m_Cameras.at(id);
     }
 
-    Images::ImageManager *BaseRenderer::GetImageManager()
+    Images::ImageManager *eXrenderer::GetImageManager()
     {
         return Images::ImageManager::GetInstance();
     }

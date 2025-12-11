@@ -10,7 +10,7 @@ EXNEXPORT void log(eXngine::LogLevels level, const char * message, ...)
 {
 	va_list args;
 	va_start(args, message);
-	char buffer[10480];
+	static char buffer[10480];
 	vsnprintf_s(buffer, sizeof(buffer), _TRUNCATE, message, args);
 	va_end(args);
 

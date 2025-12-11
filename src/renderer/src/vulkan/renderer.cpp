@@ -15,6 +15,7 @@
 #include <glm/glm.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
 #include <renderers/vulkan/renderer.h>
 
 namespace eXngine::Renderers::Vulkan
@@ -50,6 +51,8 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex)
     {
+        m_pCommandBuffer = commandBuffer;
+
         vkResetCommandBuffer(commandBuffer, 0);
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -97,10 +100,24 @@ namespace eXngine::Renderers::Vulkan
             }
 
             if (m_fOnRender != EXN_NULL_HANDLE)
-                m_fOnRender(this, commandBuffer);
+                m_fOnRender(this);
         }
         vkCmdEndRenderPass(commandBuffer);
         vkEndCommandBuffer(commandBuffer);
+    }
+
+    void Renderer::UpdateUniformBuffers()
+    {
+        if (m_pMainCamera == EXN_NULL_HANDLE)
+            return;
+
+        UniformBufferObject ubo;
+        ubo.model = EXMATH::mat4(1.0f);
+        ubo.view = m_pMainCamera->GetViewMatrix();
+        ubo.proj = m_pMainCamera->GetProjectionMatrix();
+        ubo.proj[1][1] *= -1;
+
+        memcpy(m_pFrameObjects[m_currentFrame].uniformBuffersMapped, &ubo, sizeof(UniformBufferObject));
     }
 
     EXUINT32 Renderer::FindMemoryType(EXUINT32 typeFilter, VkMemoryPropertyFlags properties)
@@ -212,8 +229,9 @@ namespace eXngine::Renderers::Vulkan
         }
 
         vkResetFences(m_pDevice, 1, &frameObject.inFlightFence);
+        UpdateUniformBuffers();
         // m_pCurrentCommandBuffer = frameObject.commandBuffer;
-        m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
+        // m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
         RecordCommandBuffer(frameObject.commandBuffer, imageIndex);
 
         VkSemaphore waitSemaphores[] = {frameObject.imageAvailableSemaphore};
@@ -300,19 +318,6 @@ namespace eXngine::Renderers::Vulkan
         vkDestroyDevice(m_pDevice, nullptr);
         DestroyDebugMessenger();
         vkDestroyInstance(m_pInstance, nullptr);
-    }
-
-    void Renderer::PushRenderCommand(RenderCommand<VkBuffer, EXUINT32> command)
-    {
-        m_RenderCommands.push_back(command);
-    }
-
-    void Renderer::PopRenderCommand()
-    {
-        if (m_RenderCommands.empty())
-            return;
-
-        m_RenderCommands.pop_back();
     }
 
     bool Renderer::LoadShader(const char *name, const std::vector<char> &data, const ShaderTypes type)
@@ -690,10 +695,17 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateVertexBuffer()
     {
-        // const std::vector<eXngine::Utils::Vertex> vertices{
+        const std::vector<eXngine::Utils::Vertex> vertices{
+            {{1.0f, 0.0f, 0.0f}, {-0.5f, -0.5f, 0.0f}},
+            {{0.0f, 1.0f, 0.0f}, {0.5f, -0.5f, 0.0f}},
+            {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f, 0.0f}},
+        };
+        // {
         //     {{1.0f, 0.0f, 0.0f}, {-0.5f, -0.5f}},
         //     {{0.0f, 1.0f, 0.0f}, {0.5f, -0.5f}},
         //     {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}}};
+
+        m_Vertices.insert(m_Vertices.end(), vertices.begin(), vertices.end());
 
         // for (const auto model : m_Models)
         // {
@@ -731,6 +743,14 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateIndexBuffer()
     {
+        const std::vector<EXUINT16> indices{
+            0,
+            1,
+            2,
+        };
+
+        m_Indices.insert(m_Indices.end(), indices.begin(), indices.end());
+
         // for (const auto &model : m_Models)
         // {
         //     for (const auto &mesh : model.second.m_vMeshes)
@@ -1314,16 +1334,6 @@ namespace eXngine::Renderers::Vulkan
         return VkFormat{};
     }
 
-    void Renderer::SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler fn)
-    {
-        this->m_fOnUpdateUniformBuffers = fn;
-    }
-
-    void Renderer::SetOnRenderHandler(OnRenderHandler fn)
-    {
-        this->m_fOnRender = fn;
-    }
-
     void Renderer::AddExtension(const char *extension)
     {
         m_Extensions.push_back(extension);
@@ -1343,15 +1353,11 @@ namespace eXngine::Renderers::Vulkan
     {
         m_Indices.push_back(static_cast<EXUINT32>(m_Indices.size()));
 
-        m_Vertices.push_back(VkVertex {{
-            .color = {{color.r, color.g, color.b}},
-            .coordinates = {{start.x, start.y, 0.0f}}
-        }});
+        m_Vertices.push_back(VkVertex{{.color = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f},
+                                       .coordinates = {start.x, start.y, 0.0f}}});
 
-        m_Vertices.push_back(VkVertex {{
-            .color = {{color.r, color.g, color.b}},
-            .coordinates = {{end.x, end.y, 0.0f}}
-        }});
+        m_Vertices.push_back(VkVertex{{.color = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f},
+                                       .coordinates = {end.x, end.y, 0.0f}}});
 
         m_Indices.push_back(static_cast<EXUINT32>(m_Indices.size()));
     }
@@ -1534,12 +1540,12 @@ namespace eXngine::Renderers::Vulkan
         return m_pSurface;
     };
 
-    Renderer::Renderer(const EXCHAR *name) : BaseRenderer(name, Size(0, 0)), m_Depth()
+    Renderer::Renderer(const EXCHAR *name) : eXrenderer(name, Size(0, 0)), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }
 
-    Renderer::Renderer(const EXCHAR *name, Size sz) : BaseRenderer(name, sz), m_Depth()
+    Renderer::Renderer(const EXCHAR *name, Size sz) : eXrenderer(name, sz), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }

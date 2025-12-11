@@ -214,16 +214,3 @@ namespace eXngine
 		eXkey_MouseX2 = 0x1004,
 	};
 }
-
-constexpr unsigned int operator""_rgb(unsigned long long value)
-{
-	unsigned int b = value % 1000;
-	unsigned int g = (value / 1000) % 1000;
-	unsigned int r = (value / 1000000) % 1000;
-
-	r = (r > 255) ? 255 : r;
-	g = (g > 255) ? 255 : g;
-	b = (b > 255) ? 255 : b;
-
-	return (r << 16) | (g << 8) | b;
-}

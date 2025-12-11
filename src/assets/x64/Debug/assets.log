@@ -1,0 +1,7 @@
+﻿  image.cpp
+C:\Users\ex\Desktop\GitHub\eXngine\includes\texture\image.h(36,36): warning C4251: 'eXngine::Images::ImageManager::m_sImages': 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>' needs to have dll-interface to be used by clients of 'eXngine::Images::ImageManager'
+  (compiling source file 'src/image.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>'
+  
+  assets.vcxproj -> C:\Users\ex\Desktop\GitHub\eXngine\Output\x64\Debug\eXngine.assets.lib

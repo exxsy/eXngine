@@ -25,6 +25,7 @@
 #define EXUINTPTR EXUINT32 *
 #define EXVOIDPTR void *
 #define EXDWORD unsigned long
+#define EXMATH glm
 
 #ifdef UNICODE
 #define EXCHAR wchar_t
@@ -46,6 +47,7 @@
 #endif
 
 #define EXNEXPORT __declspec(dllexport)
+#define EXNIMPORT __declspec(dllimport)
 
 #define EXN_SINGLETON(type, name, ...)           \
 public:                                          \
@@ -59,8 +61,8 @@ public:                                          \
 		return s_##name;                         \
 	};
 
-#define EXN_PROPERTY(type, name, prop, def)          \
-	type m_##prop = def;                              \
+#define EXN_PROPERTY(type, name, prop, def)     \
+	type m_##prop = def;                        \
                                                 \
 public:                                         \
 	type Get##name() const { return m_##prop; } \

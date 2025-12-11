@@ -6,7 +6,7 @@
 	<ItemDefinitionGroup>
 		<ClCompile>
 			<PreprocessorDefinitions>
-				EXN_TEXTURE_STRATEGY_STBI;
+				EXN_IMAGE_STRATEGY_STBI;
 				<!-- EXN_DISABLE_VULKAN; -->
 				<!-- GLFW_INCLUDE_VULKAN; -->
 				%(PreprocessorDefinitions)

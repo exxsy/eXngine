@@ -1,17 +1,17 @@
 
 #include <texture/image.h>
 
-// TODO: Add your own texture loading strategy, because why not!?
-#ifdef EXN_TEXTURE_STRATEGY_STBI
-#ifndef EXN_TEXTURE_STRATEGY_STBI_H
-#define EXN_TEXTURE_STRATEGY_STBI_H
+// TODO: Add your own image loading strategy, because why not!?
+#ifdef EXN_IMAGE_STRATEGY_STBI
+#ifndef EXN_IMAGE_STRATEGY_STBI_H
+#define EXN_IMAGE_STRATEGY_STBI_H
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
-#define EXN_LOAD_TEXTURE(...) stbi_load(__VA_ARGS__)
-#define EXN_FREE_TEXTURE(...) stbi_image_free(__VA_ARGS__)
+#include <stb_image.h>
+#define EXN_LOAD_IMAGE(...) stbi_load(__VA_ARGS__)
+#define EXN_FREE_IMAGE(...) stbi_image_free(__VA_ARGS__)
 #endif
 #else
-#error "No texture loading strategy defined. Please define EXN_TEXTURE_STRATEGY_STBI to use stb_image."
+#error "No image loading strategy defined. Please define EXN_IMAGE_STRATEGY_STBI to use stb_image."
 #endif
 
 
@@ -27,16 +27,16 @@ namespace eXngine::Images
         EXINT32 width = 0, height = 0, channels = 0;
 		EXUINT8* data = nullptr;
 
-#ifdef EXN_TEXTURE_STRATEGY_STBI
-        data = EXN_LOAD_TEXTURE(path, &width, &height, &channels, bytes);
+#ifdef EXN_IMAGE_STRATEGY_STBI
+        data = EXN_LOAD_IMAGE(path, &width, &height, &channels, bytes);
 #endif
 
         assert(data);
 
         const bool result = CreateImage(key, data, width, height, bytes);
 
-#ifdef EXN_TEXTURE_STRATEGY_STBI
-        if (data) EXN_FREE_TEXTURE(data);
+#ifdef EXN_IMAGE_STRATEGY_STBI
+        if (data) EXN_FREE_IMAGE(data);
 #endif
 
         return result;
@@ -102,8 +102,8 @@ namespace eXngine::Images
     {
         if (data)
         {
-#ifdef EXN_TEXTURE_STRATEGY_STBI
-            stbi_image_free(data);
+#ifdef EXN_IMAGE_STRATEGY_STBI
+            EXN_FREE_IMAGE(data);
 #endif
 
             delete data;

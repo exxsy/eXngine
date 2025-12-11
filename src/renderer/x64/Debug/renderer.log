@@ -1,0 +1,590 @@
+﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(1129,5): warning MSB8027: Two or more files with the name of renderer.cpp will produce outputs to the same location. This can lead to an incorrect build result.  The files involved are src\renderer.cpp, src\vulkan\renderer.cpp.
+  renderer.cpp
+C:\Users\ex\Desktop\GitHub\eXngine\includes\texture\image.h(36,36): warning C4251: 'eXngine::Images::ImageManager::m_sImages': 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>' needs to have dll-interface to be used by clients of 'eXngine::Images::ImageManager'
+  (compiling source file 'src/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42): warning C4251: 'glm::mat<4,4,glm::f32,glm::packed_highp>::value': 'glm::vec<4,float,glm::packed_highp>' needs to have dll-interface to be used by clients of 'glm::mat<4,4,glm::f32,glm::packed_highp>'
+  (compiling source file 'src/renderer.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\3rdparty\glm\glm\detail\type_vec4.hpp(17,9):
+      see declaration of 'glm::vec<4,float,glm::packed_highp>'
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42):
+      the template instantiation context (the oldest one first) is
+          C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(10,38):
+          see reference to class template instantiation 'eXngine::Types::eXmat<float,4>' being compiled
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,25): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,28): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,29): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,32): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,43): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,46): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\viewport\viewport.h(21,9): warning C4251: 'eXngine::Renderers::eXviewport::m_ClearColor': 'eXngine::Types::eXcolor' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXviewport'
+  (compiling source file 'src/renderer.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\color.h(7,12):
+      see declaration of 'eXngine::Types::eXcolor'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(49,3): warning C4251: 'eXngine::Renderers::eXrenderer::m_szFrameBufferSize': 'eXngine::Size' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/renderer.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\eXtypes.h(14,9):
+      see declaration of 'eXngine::Size'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(56,41): warning C4251: 'eXngine::Renderers::eXrenderer::m_Shaders': 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(57,38): warning C4251: 'eXngine::Renderers::eXrenderer::m_Cameras': 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>'
+  
+  graphics.cpp
+C:\Users\ex\Desktop\GitHub\eXngine\includes\texture\image.h(36,36): warning C4251: 'eXngine::Images::ImageManager::m_sImages': 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>' needs to have dll-interface to be used by clients of 'eXngine::Images::ImageManager'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42): warning C4251: 'glm::mat<4,4,glm::f32,glm::packed_highp>::value': 'glm::vec<4,float,glm::packed_highp>' needs to have dll-interface to be used by clients of 'glm::mat<4,4,glm::f32,glm::packed_highp>'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\3rdparty\glm\glm\detail\type_vec4.hpp(17,9):
+      see declaration of 'glm::vec<4,float,glm::packed_highp>'
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42):
+      the template instantiation context (the oldest one first) is
+          C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(10,38):
+          see reference to class template instantiation 'eXngine::Types::eXmat<float,4>' being compiled
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,25): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,28): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,29): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,32): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,43): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,46): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\viewport\viewport.h(21,9): warning C4251: 'eXngine::Renderers::eXviewport::m_ClearColor': 'eXngine::Types::eXcolor' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXviewport'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\color.h(7,12):
+      see declaration of 'eXngine::Types::eXcolor'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(49,3): warning C4251: 'eXngine::Renderers::eXrenderer::m_szFrameBufferSize': 'eXngine::Size' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\eXtypes.h(14,9):
+      see declaration of 'eXngine::Size'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(56,41): warning C4251: 'eXngine::Renderers::eXrenderer::m_Shaders': 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(57,38): warning C4251: 'eXngine::Renderers::eXrenderer::m_Cameras': 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(98,45): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_pTextures': 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(99,37): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_vMeshes': 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(100,32): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::descriptorSets': 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(101,38): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::imageInfos': 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(102,15): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::pipeline': 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xstring(2337,7):
+      see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(223,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Vertices': 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(224,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Indices': 'std::vector<unsigned int,std::allocator<unsigned int>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<unsigned int,std::allocator<unsigned int>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(225,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Extensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(226,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ValidationLayers': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(227,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_DeviceExtensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(228,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pFrameObjects': 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(229,24): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImages': 'std::vector<VkImage,std::allocator<VkImage>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImage,std::allocator<VkImage>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(230,28): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImageViews': 'std::vector<VkImageView,std::allocator<VkImageView>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImageView,std::allocator<VkImageView>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(231,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainFramebuffers': 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(232,50): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ShaderModules': 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(275,57): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pGraphicPipelines': 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/pipelines/graphics.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\unordered_map(61,7):
+      see declaration of 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>'
+  
+  renderer.cpp
+C:\Users\ex\Desktop\GitHub\eXngine\includes\texture\image.h(36,36): warning C4251: 'eXngine::Images::ImageManager::m_sImages': 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>' needs to have dll-interface to be used by clients of 'eXngine::Images::ImageManager'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42): warning C4251: 'glm::mat<4,4,glm::f32,glm::packed_highp>::value': 'glm::vec<4,float,glm::packed_highp>' needs to have dll-interface to be used by clients of 'glm::mat<4,4,glm::f32,glm::packed_highp>'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\3rdparty\glm\glm\detail\type_vec4.hpp(17,9):
+      see declaration of 'glm::vec<4,float,glm::packed_highp>'
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42):
+      the template instantiation context (the oldest one first) is
+          C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(10,38):
+          see reference to class template instantiation 'eXngine::Types::eXmat<float,4>' being compiled
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,25): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,28): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,29): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,32): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,43): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,46): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/renderer.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\viewport\viewport.h(21,9): warning C4251: 'eXngine::Renderers::eXviewport::m_ClearColor': 'eXngine::Types::eXcolor' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXviewport'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\color.h(7,12):
+      see declaration of 'eXngine::Types::eXcolor'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(49,3): warning C4251: 'eXngine::Renderers::eXrenderer::m_szFrameBufferSize': 'eXngine::Size' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\eXtypes.h(14,9):
+      see declaration of 'eXngine::Size'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(56,41): warning C4251: 'eXngine::Renderers::eXrenderer::m_Shaders': 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(57,38): warning C4251: 'eXngine::Renderers::eXrenderer::m_Cameras': 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(98,45): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_pTextures': 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(99,37): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_vMeshes': 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(100,32): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::descriptorSets': 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(101,38): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::imageInfos': 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(102,15): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::pipeline': 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xstring(2337,7):
+      see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(223,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Vertices': 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(224,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Indices': 'std::vector<unsigned int,std::allocator<unsigned int>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<unsigned int,std::allocator<unsigned int>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(225,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Extensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(226,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ValidationLayers': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(227,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_DeviceExtensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(228,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pFrameObjects': 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(229,24): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImages': 'std::vector<VkImage,std::allocator<VkImage>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImage,std::allocator<VkImage>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(230,28): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImageViews': 'std::vector<VkImageView,std::allocator<VkImageView>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImageView,std::allocator<VkImageView>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(231,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainFramebuffers': 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(232,50): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ShaderModules': 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(275,57): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pGraphicPipelines': 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/renderer.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\unordered_map(61,7):
+      see declaration of 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>'
+  
+  shader.cpp
+C:\Users\ex\Desktop\GitHub\eXngine\includes\texture\image.h(36,36): warning C4251: 'eXngine::Images::ImageManager::m_sImages': 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>' needs to have dll-interface to be used by clients of 'eXngine::Images::ImageManager'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42): warning C4251: 'glm::mat<4,4,glm::f32,glm::packed_highp>::value': 'glm::vec<4,float,glm::packed_highp>' needs to have dll-interface to be used by clients of 'glm::mat<4,4,glm::f32,glm::packed_highp>'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\3rdparty\glm\glm\detail\type_vec4.hpp(17,9):
+      see declaration of 'glm::vec<4,float,glm::packed_highp>'
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42):
+      the template instantiation context (the oldest one first) is
+          C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(10,38):
+          see reference to class template instantiation 'eXngine::Types::eXmat<float,4>' being compiled
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,25): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/shader.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,28): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/shader.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,29): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/shader.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,32): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/shader.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,43): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/shader.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,46): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/shader.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\viewport\viewport.h(21,9): warning C4251: 'eXngine::Renderers::eXviewport::m_ClearColor': 'eXngine::Types::eXcolor' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXviewport'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\color.h(7,12):
+      see declaration of 'eXngine::Types::eXcolor'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(49,3): warning C4251: 'eXngine::Renderers::eXrenderer::m_szFrameBufferSize': 'eXngine::Size' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\eXtypes.h(14,9):
+      see declaration of 'eXngine::Size'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(56,41): warning C4251: 'eXngine::Renderers::eXrenderer::m_Shaders': 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(57,38): warning C4251: 'eXngine::Renderers::eXrenderer::m_Cameras': 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(98,45): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_pTextures': 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(99,37): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_vMeshes': 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(100,32): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::descriptorSets': 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(101,38): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::imageInfos': 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(102,15): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::pipeline': 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xstring(2337,7):
+      see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(223,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Vertices': 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(224,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Indices': 'std::vector<unsigned int,std::allocator<unsigned int>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<unsigned int,std::allocator<unsigned int>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(225,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Extensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(226,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ValidationLayers': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(227,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_DeviceExtensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(228,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pFrameObjects': 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(229,24): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImages': 'std::vector<VkImage,std::allocator<VkImage>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImage,std::allocator<VkImage>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(230,28): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImageViews': 'std::vector<VkImageView,std::allocator<VkImageView>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImageView,std::allocator<VkImageView>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(231,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainFramebuffers': 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(232,50): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ShaderModules': 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(275,57): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pGraphicPipelines': 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/shader.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\unordered_map(61,7):
+      see declaration of 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>'
+  
+  texture.cpp
+C:\Users\ex\Desktop\GitHub\eXngine\includes\texture\image.h(36,36): warning C4251: 'eXngine::Images::ImageManager::m_sImages': 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>' needs to have dll-interface to be used by clients of 'eXngine::Images::ImageManager'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<unsigned int,eXngine::Images::Image *,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,eXngine::Images::Image *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42): warning C4251: 'glm::mat<4,4,glm::f32,glm::packed_highp>::value': 'glm::vec<4,float,glm::packed_highp>' needs to have dll-interface to be used by clients of 'glm::mat<4,4,glm::f32,glm::packed_highp>'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\3rdparty\glm\glm\detail\type_vec4.hpp(17,9):
+      see declaration of 'glm::vec<4,float,glm::packed_highp>'
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(6,42):
+      the template instantiation context (the oldest one first) is
+          C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(10,38):
+          see reference to class template instantiation 'eXngine::Types::eXmat<float,4>' being compiled
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,25): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/texture.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(16,28): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/texture.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,29): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/texture.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,32): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/texture.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,43): warning C4267: 'argument': conversion from 'size_t' to 'glm::mat<4,4,glm::f32,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/texture.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\types\matrix.h(22,46): warning C4267: 'argument': conversion from 'size_t' to 'glm::vec<4,float,glm::packed_highp>::length_type', possible loss of data
+  (compiling source file 'src/vulkan/texture.cpp')
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\viewport\viewport.h(21,9): warning C4251: 'eXngine::Renderers::eXviewport::m_ClearColor': 'eXngine::Types::eXcolor' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXviewport'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\types\color.h(7,12):
+      see declaration of 'eXngine::Types::eXcolor'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(49,3): warning C4251: 'eXngine::Renderers::eXrenderer::m_szFrameBufferSize': 'eXngine::Size' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Users\ex\Desktop\GitHub\eXngine\includes\eXtypes.h(14,9):
+      see declaration of 'eXngine::Size'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(56,41): warning C4251: 'eXngine::Renderers::eXrenderer::m_Shaders': 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<std::string,eXngine::Renderers::ShaderModule *,std::less<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::ShaderModule *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\renderer.h(57,38): warning C4251: 'eXngine::Renderers::eXrenderer::m_Cameras': 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::eXrenderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::eXcamera *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::eXcamera *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(98,45): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_pTextures': 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkTextureObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkTextureObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(99,37): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::m_vMeshes': 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Utils::Mesh,std::allocator<eXngine::Utils::Mesh>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(100,32): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::descriptorSets': 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorSet,std::allocator<VkDescriptorSet>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(101,38): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::imageInfos': 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkDescriptorImageInfo,std::allocator<VkDescriptorImageInfo>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(102,15): warning C4251: 'eXngine::Renderers::Vulkan::VkModelObject::pipeline': 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::VkModelObject'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\xstring(2337,7):
+      see declaration of 'std::basic_string<char,std::char_traits<char>,std::allocator<char>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(223,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Vertices': 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkVertex,std::allocator<eXngine::Renderers::Vulkan::VkVertex>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(224,25): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Indices': 'std::vector<unsigned int,std::allocator<unsigned int>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<unsigned int,std::allocator<unsigned int>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(225,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_Extensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(226,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ValidationLayers': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(227,29): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_DeviceExtensions': 'std::vector<const char *,std::allocator<const char *>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<const char *,std::allocator<const char *>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(228,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pFrameObjects': 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<eXngine::Renderers::Vulkan::VkFrameObject,std::allocator<eXngine::Renderers::Vulkan::VkFrameObject>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(229,24): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImages': 'std::vector<VkImage,std::allocator<VkImage>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImage,std::allocator<VkImage>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(230,28): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainImageViews': 'std::vector<VkImageView,std::allocator<VkImageView>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkImageView,std::allocator<VkImageView>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(231,30): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_swapChainFramebuffers': 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\vector(429,7):
+      see declaration of 'std::vector<VkFramebuffer,std::allocator<VkFramebuffer>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(232,50): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_ShaderModules': 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\map(72,7):
+      see declaration of 'std::map<const char *,eXngine::Renderers::Vulkan::VkShaderModuleObject *,std::less<const char *>,std::allocator<std::pair<const char *const ,eXngine::Renderers::Vulkan::VkShaderModuleObject *>>>'
+  
+C:\Users\ex\Desktop\GitHub\eXngine\includes\renderers\vulkan\renderer.h(275,57): warning C4251: 'eXngine::Renderers::Vulkan::Renderer::m_pGraphicPipelines': 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>' needs to have dll-interface to be used by clients of 'eXngine::Renderers::Vulkan::Renderer'
+  (compiling source file 'src/vulkan/texture.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\include\unordered_map(61,7):
+      see declaration of 'std::unordered_map<std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *,std::hash<std::string>,std::equal_to<std::string>,std::allocator<std::pair<const std::string,eXngine::Renderers::Vulkan::VkGraphicsPipeline *>>>'
+  
+  vertex.cpp
+  Generating Code...
+x64\Debug\renderer.obj : warning LNK4042: object specified more than once; extras ignored
+  renderer.vcxproj -> C:\Users\ex\Desktop\GitHub\eXngine\Output\x64\Debug\eXngine.renderer.lib

@@ -12,19 +12,19 @@
 #include <iostream>
 
 #include <gl/GL.h>
+#include <glm/glm.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_win32.h>
-#include <renderers/base.h>
-#include <renderers/vulkan/texture.h>
-#include <renderers/vulkan/vertex.h>
-#include <glm/glm.hpp>
 
 #include <eXngine.h>
 #include <utils/mesh.h>
-#include <renderers/vulkan/pipelines/graphics.h>
-
 #include <types/vector.h>
 #include <types/color.h>
+
+#include <renderers/renderer.h>
+#include <renderers/vulkan/texture.h>
+#include <renderers/vulkan/vertex.h>
+#include <renderers/vulkan/pipelines/graphics.h>
 
 #undef EXN_NULL_HANDLE
 #define EXN_NULL_HANDLE VK_NULL_HANDLE
@@ -33,13 +33,26 @@
 
 namespace eXngine::Renderers::Vulkan
 {
-	class Renderer;
+	enum PrimitiveTypes : std::underlying_type<eXngine::PrimitiveTypes>::type
+	{
+		Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+		PointList = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
 
-	typedef void (*OnUpdateUniformBuffersHandler)(void *, EXUINT32);
-	typedef void (*OnRenderHandler)(Renderer *, VkCommandBuffer);
+		Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+		LineStrip = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+		LineList = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+		LineListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+		LineStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
 
-	// template <typename T>
-	// concept HasToBeDerivedFromVertex = std::derived_from<T, VkVertex>;
+		Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		TriangleStrip = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+		TriangleFan = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+		TriangleListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
+		TriangleStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY,
+
+		PatchList = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+		MaxEnum = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM,
+	};
 
 	struct QueueFamilyIndices
 	{
@@ -63,14 +76,15 @@ namespace eXngine::Renderers::Vulkan
 
 	struct EXNEXPORT VkFrameObject
 	{
+	public:
+		VkBuffer uniformBuffer;
 		VkCommandBuffer commandBuffer;
 		VkSemaphore imageAvailableSemaphore;
 		VkSemaphore renderFinishedSemaphore;
 		VkFence inFlightFence;
-		VkBuffer uniformBuffer;
 		VkDeviceMemory uniformBuffersMemory;
 		VkDescriptorSet descriptorSet;
-		void *uniformBuffersMapped;
+		EXVOIDPTR uniformBuffersMapped;
 
 		void Release(VkDevice device)
 		{
@@ -161,49 +175,7 @@ namespace eXngine::Renderers::Vulkan
 		static VkPipelineShaderStageCreateInfo GetStageCreateInfo(VkShaderModule, const char *, VkShaderStageFlagBits);
 	};
 
-	enum PrimitiveTypes : std::underlying_type<eXngine::PrimitiveTypes>::type
-	{
-		Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
-		PointList = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
-
-		Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-		LineStrip = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-		LineList = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-		LineListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
-		LineStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
-
-		Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		TriangleStrip = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-		TriangleFan = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
-		TriangleListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
-		TriangleStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY,
-
-		PatchList = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
-		MaxEnum = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM,
-	};
-
-	/*enum ShaderTypes : std::underlying_type<eXngine::eXshader>::type
-	{
-		Points = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
-		PointList = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
-
-		Lines = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-		LineStrip = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-		LineList = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-		LineListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
-		LineStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
-
-		Triangles = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		TriangleStrip = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-		TriangleFan = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
-		TriangleListWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
-		TriangleStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY,
-
-		PatchList = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
-		MaxEnum = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM,
-	};*/
-
-	class EXNEXPORT Renderer : public BaseRenderer, public IRenderCommands<VkBuffer, EXUINT32>
+	class EXNEXPORT Renderer : public eXngine::Renderers::eXrenderer
 	{
 		friend class VkTexture;
 
@@ -216,9 +188,6 @@ namespace eXngine::Renderers::Vulkan
 
 		EXINT m_currentFrame = 0;
 		EXUINT32 m_queueRenderFamily = 0;
-		OnUpdateUniformBuffersHandler m_fOnUpdateUniformBuffers = EXN_NULL_HANDLE;
-		OnRenderHandler m_fOnRender = EXN_NULL_HANDLE;
-
 		VkFormat m_swapChainImageFormat = VK_FORMAT_UNDEFINED;
 		VkTexture *m_Depth = nullptr;
 		VkTexture *m_DefaultTexture = nullptr;
@@ -264,6 +233,7 @@ namespace eXngine::Renderers::Vulkan
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 		bool IsDeviceSuitable(VkPhysicalDevice device);
 
+		void UpdateUniformBuffers();
 		EXUINT32 FindMemoryType(EXUINT32 typeFilter, VkMemoryPropertyFlags properties);
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
@@ -275,11 +245,7 @@ namespace eXngine::Renderers::Vulkan
 	public:
 		const EXUINT32 MAX_FRAMES_IN_FLIGHT = 2;
 		const EXUINT32 MAX_TEXTURE_COUNT = 16;
-
-		void CreateInstance();
-		void CreateDebugPipeline();
-
-		// VkGraphicsPipeline* m_pDefaultGraphicsPipeline = EXN_NULL_HANDLE;
+		VkCommandBuffer m_pCommandBuffer = EXN_NULL_HANDLE;
 		std::unordered_map<std::string, VkGraphicsPipeline *> m_pGraphicPipelines;
 
 		VkExtent2D m_szSwapChainExtent;
@@ -298,9 +264,12 @@ namespace eXngine::Renderers::Vulkan
 		VkDeviceMemory m_pVertexBufferMemory = EXN_NULL_HANDLE;
 		VkBuffer m_pIndexBuffer = EXN_NULL_HANDLE;
 		VkDeviceMemory m_pIndexBufferMemory = EXN_NULL_HANDLE;
-
+		
 		Renderer(const EXCHAR *);
 		Renderer(const EXCHAR *, Size);
+		
+		void CreateInstance();
+		void CreateDebugPipeline();
 
 		void Initialize() override;
 		void OnRender() override;
@@ -310,20 +279,15 @@ namespace eXngine::Renderers::Vulkan
 		void UseShader(const char *) override;
 		void DestroyShader(const char *) override;
 
-		void PushRenderCommand(RenderCommand<VkBuffer, EXUINT32>) override;
-		void PopRenderCommand() override;
-
 		void SetSurface(VkSurfaceKHR);
 		void SetExtensions(std::vector<const char *>);
-		void SetUpdateUniformBuffersHandler(OnUpdateUniformBuffersHandler);
-		void SetOnRenderHandler(OnRenderHandler);
 
 		void AddExtension(const char *);
 		void AddValidationLayer(const char *);
 		void AddDeviceExtension(const char *);
 
 		void DrawLine(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
-		void DrawTriangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;	
+		void DrawTriangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
 		void DrawRectangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
 		void DrawCircle(eXvec<EXFLOAT, 2>, EXFLOAT, eXcolor) override;
 
@@ -336,7 +300,6 @@ namespace eXngine::Renderers::Vulkan
 		VkCommandBuffer BeginSingleTimeCommands();
 		VkInstance GetVulkanInstance();
 		VkFormat FindDepthFormat();
-
 		VkSurfaceKHR CreateSurface(EXVOIDPTR handle);
 
 		template <typename T>

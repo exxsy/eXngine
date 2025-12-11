@@ -19,7 +19,7 @@
         "_GLFW_WIN32",
         // "UNICODE",
         "NOMINMAX",
-        "EXN_TEXTURE_STRATEGY_STBI",
+        "EXN_IMAGE_STRATEGY_STBI",
         "GLFW_EXPOSE_NATIVE_WIN32",
         "VK_VERSION_1_0"
       ],

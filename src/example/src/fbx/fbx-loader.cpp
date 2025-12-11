@@ -5,27 +5,27 @@
 
 namespace eXngine::Utils
 {
-    FbxLoader::FbxLoader(const char* pathToFbxFile)
+    FbxLoader::FbxLoader(const char *pathToFbxFile)
     {
         // Initialize the SDK manager. This object handles memory management.
-        FbxManager* lSdkManager = FbxManager::Create();
+        FbxManager *lSdkManager = FbxManager::Create();
 
         // Create the IO settings object.
-        FbxIOSettings* ios = FbxIOSettings::Create(lSdkManager, IOSROOT);
+        FbxIOSettings *ios = FbxIOSettings::Create(lSdkManager, IOSROOT);
         lSdkManager->SetIOSettings(ios);
 
         // Create an importer using the SDK manager.
-        FbxImporter* lImporter = FbxImporter::Create(lSdkManager, "");
+        FbxImporter *lImporter = FbxImporter::Create(lSdkManager, "");
 
         // Use the first argument as the filename for the importer.
         if (!lImporter->Initialize(pathToFbxFile, -1, lSdkManager->GetIOSettings()))
         {
             assert(lImporter->GetStatus().GetErrorString());
-            //throw std::exception(lImporter->GetStatus().GetErrorString());
+            // throw std::exception(lImporter->GetStatus().GetErrorString());
         }
 
         // Create a new scene so that it can be populated by the imported file.
-        FbxScene* lScene = FbxScene::Create(lSdkManager, "myScene");
+        FbxScene *lScene = FbxScene::Create(lSdkManager, "myScene");
 
         // Import the contents of the file into the scene.
         lImporter->Import(lScene);
@@ -36,7 +36,7 @@ namespace eXngine::Utils
         // Print the nodes of the scene and their attributes recursively.
         // Note that we are not printing the root node because it should
         // not contain any attributes.
-        FbxNode* lRootNode = lScene->GetRootNode();
+        FbxNode *lRootNode = lScene->GetRootNode();
         if (lRootNode)
         {
             for (int i = 0; i < lRootNode->GetChildCount(); i++)
@@ -50,8 +50,8 @@ namespace eXngine::Utils
 
     struct Log
     {
-        template <typename ...Args>
-        static void Message(const char* format, Args ...args)
+        template <typename... Args>
+        static void Message(const char *format, Args... args)
         {
             char buffer[1000];
             sprintf_s(buffer, _countof(buffer), format, std::forward<Args>(args)...);
@@ -62,21 +62,20 @@ namespace eXngine::Utils
     /**
      * Print a node, its attributes, and all its children recursively.
      */
-    void FbxLoader::PrintNode(FbxNode* pNode)
+    void FbxLoader::PrintNode(FbxNode *pNode)
     {
         PrintTabs();
-        const char* nodeName = pNode->GetName();
+        const char *nodeName = pNode->GetName();
         FbxDouble3 translation = pNode->LclTranslation.Get();
         FbxDouble3 rotation = pNode->LclRotation.Get();
         FbxDouble3 scaling = pNode->LclScaling.Get();
 
         // Print the contents of the node.
         Log::Message("<node name='%s' translation='(%f, %f, %f)' rotation='(%f, %f, %f)' scaling='(%f, %f, %f)'>\n",
-            nodeName,
-            translation[0], translation[1], translation[2],
-            rotation[0], rotation[1], rotation[2],
-            scaling[0], scaling[1], scaling[2]
-        );
+                     nodeName,
+                     translation[0], translation[1], translation[2],
+                     rotation[0], rotation[1], rotation[2],
+                     scaling[0], scaling[1], scaling[2]);
 
         m_numTabs++;
 
@@ -99,9 +98,10 @@ namespace eXngine::Utils
             Log::Message("\t");
     }
 
-    void FbxLoader::PrintAttribute(FbxNodeAttribute* pAttribute)
+    void FbxLoader::PrintAttribute(FbxNodeAttribute *pAttribute)
     {
-        if (!pAttribute) return;
+        if (!pAttribute)
+            return;
 
         FbxString typeName = GetAttributeTypeName(pAttribute->GetAttributeType());
         FbxString attrName = pAttribute->GetName();
@@ -116,26 +116,26 @@ namespace eXngine::Utils
         }
     }
 
-    Mesh FbxLoader::ReadMesh(FbxNodeAttribute* pAttribute)
+    Mesh FbxLoader::ReadMesh(FbxNodeAttribute *pAttribute)
     {
         Mesh mesh;
 
-        if (FbxMesh* fbxMesh = pAttribute->GetNode()->GetMesh())
+        if (FbxMesh *fbxMesh = pAttribute->GetNode()->GetMesh())
         {
             {
-                const FbxVector4* vertexBuffer = fbxMesh->GetControlPoints();
+                const FbxVector4 *vertexBuffer = fbxMesh->GetControlPoints();
                 const int vertexCount = fbxMesh->GetControlPointsCount();
                 mesh.vertices.resize(vertexCount);
 
                 for (int vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
                 {
-                    const double* buffer = vertexBuffer[vertexIndex].Buffer();
+                    const double *buffer = vertexBuffer[vertexIndex].Buffer();
                     glm::vec3 vertex;
                     vertex.x = static_cast<float>(buffer[0]);
                     vertex.y = static_cast<float>(buffer[1]);
                     vertex.z = static_cast<float>(buffer[2]);
 
-                    mesh.vertices[vertexIndex].color = eXvec<EXUINT8, 3>{{vertex.x, vertex.y, vertex.z}}; // White color
+                    mesh.vertices[vertexIndex].color = eXvec3{vertex.x, vertex.y, vertex.z}; // White color
                 }
             }
 
@@ -150,7 +150,7 @@ namespace eXngine::Utils
             FbxStringList lUVNames;
             fbxMesh->GetUVSetNames(lUVNames);
             const auto uvCount = lUVNames.GetCount();
-            const char* uvName = lUVNames[0]; ///
+            const char *uvName = lUVNames[0]; ///
 
             const int polygonCount = fbxMesh->GetPolygonCount();
             mesh.indices.reserve(polygonCount);
@@ -168,11 +168,11 @@ namespace eXngine::Utils
                 bool unmapped;
                 FbxVector2 uv;
                 bool result = fbxMesh->GetPolygonVertexUV(polygonIndex, 0, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex0].coordinates = eXvec<EXFLOAT, 3> { {static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0} };
+                mesh.vertices[vertexIndex0].coordinates = eXvec3(static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0);
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 1, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex1].coordinates = eXvec<EXFLOAT, 3> { {static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0} };
+                mesh.vertices[vertexIndex1].coordinates = eXvec3(static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0);
                 result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 2, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex2].coordinates = eXvec<EXFLOAT, 3> { {static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0} };
+                mesh.vertices[vertexIndex2].coordinates = eXvec3(static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0);
                 /*FbxVector4 normal;
                 result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 0, normal );
                 mesh.m_vertices[vertexIndex0].m_normal = { static_cast<float>( normal.Buffer()[0] ), static_cast<float>( normal.Buffer()[1] ), static_cast<float>( normal.Buffer()[2] ) };
@@ -190,28 +190,50 @@ namespace eXngine::Utils
 
     FbxString FbxLoader::GetAttributeTypeName(FbxNodeAttribute::EType type)
     {
-        switch (type) {
-        case FbxNodeAttribute::eUnknown: return "unidentified";
-        case FbxNodeAttribute::eNull: return "null";
-        case FbxNodeAttribute::eMarker: return "marker";
-        case FbxNodeAttribute::eSkeleton: return "skeleton";
-        case FbxNodeAttribute::eMesh: return "mesh";
-        case FbxNodeAttribute::eNurbs: return "nurbs";
-        case FbxNodeAttribute::ePatch: return "patch";
-        case FbxNodeAttribute::eCamera: return "camera";
-        case FbxNodeAttribute::eCameraStereo: return "stereo";
-        case FbxNodeAttribute::eCameraSwitcher: return "camera switcher";
-        case FbxNodeAttribute::eLight: return "light";
-        case FbxNodeAttribute::eOpticalReference: return "optical reference";
-        case FbxNodeAttribute::eOpticalMarker: return "marker";
-        case FbxNodeAttribute::eNurbsCurve: return "nurbs curve";
-        case FbxNodeAttribute::eTrimNurbsSurface: return "trim nurbs surface";
-        case FbxNodeAttribute::eBoundary: return "boundary";
-        case FbxNodeAttribute::eNurbsSurface: return "nurbs surface";
-        case FbxNodeAttribute::eShape: return "shape";
-        case FbxNodeAttribute::eLODGroup: return "lodgroup";
-        case FbxNodeAttribute::eSubDiv: return "subdiv";
-        default: return "unknown";
+        switch (type)
+        {
+        case FbxNodeAttribute::eUnknown:
+            return "unidentified";
+        case FbxNodeAttribute::eNull:
+            return "null";
+        case FbxNodeAttribute::eMarker:
+            return "marker";
+        case FbxNodeAttribute::eSkeleton:
+            return "skeleton";
+        case FbxNodeAttribute::eMesh:
+            return "mesh";
+        case FbxNodeAttribute::eNurbs:
+            return "nurbs";
+        case FbxNodeAttribute::ePatch:
+            return "patch";
+        case FbxNodeAttribute::eCamera:
+            return "camera";
+        case FbxNodeAttribute::eCameraStereo:
+            return "stereo";
+        case FbxNodeAttribute::eCameraSwitcher:
+            return "camera switcher";
+        case FbxNodeAttribute::eLight:
+            return "light";
+        case FbxNodeAttribute::eOpticalReference:
+            return "optical reference";
+        case FbxNodeAttribute::eOpticalMarker:
+            return "marker";
+        case FbxNodeAttribute::eNurbsCurve:
+            return "nurbs curve";
+        case FbxNodeAttribute::eTrimNurbsSurface:
+            return "trim nurbs surface";
+        case FbxNodeAttribute::eBoundary:
+            return "boundary";
+        case FbxNodeAttribute::eNurbsSurface:
+            return "nurbs surface";
+        case FbxNodeAttribute::eShape:
+            return "shape";
+        case FbxNodeAttribute::eLODGroup:
+            return "lodgroup";
+        case FbxNodeAttribute::eSubDiv:
+            return "subdiv";
+        default:
+            return "unknown";
         }
     }
 }
