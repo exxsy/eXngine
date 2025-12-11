@@ -13,6 +13,7 @@
 #include <types/color.h>
 
 #include "cameras/ortographic.h"
+#include "cameras/perspective.h"
 
 using namespace eXngine;
 using namespace eXngine::Windows;
@@ -25,7 +26,7 @@ char className[256] = "eXngineWindowClass";
 eXviewport viewport;
 Size window_size = Size(1024, 768);
 Point window_position = Point(100, 100);
-OrtographicCamera camera;
+PerspectiveCamera camera;
 Renderer *renderer;
 eXwindow *app;
 float m_fRotationScale = 1.0f, m_fZoomFactor = 10.0f;
@@ -104,7 +105,20 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     // ImGui::Text("Vulkan average %.3f ms/frame (%.1f FPS)", 1000.0f / VulkanRenderer->GetFPS().m_fFPS, VulkanRenderer->GetFPS().m_fFPS);
     ImGui::Text("Swapchain Extent: %dw %dh", vulkan->m_szSwapChainExtent.width, vulkan->m_szSwapChainExtent.height);
     ImGui::SliderFloat("Rotation Speed", &m_fRotationScale, 0.0f, 50.0f);
+
+    ImGui::BeginGroup();
+    ImGui::Text("Camera Position:");
+    ImGui::Text("X: %.2f", camera.GetPosition().x);
+    ImGui::Text("Y: %.2f", camera.GetPosition().y);
+    ImGui::Text("Z: %.2f", camera.GetPosition().z);
+    ImGui::Text("FOV: %.2f", camera.GetFieldOfView());
+    ImGui::Text("Yaw: %.2f", camera.GetYaw());
+    ImGui::Text("Pitch: %.2f", camera.GetPitch());
+    ImGui::EndGroup();
+
     ImGui::End();
+
+    ImGui::ShowDemoWindow();
 
     ImGui::Render();
 
@@ -164,17 +178,36 @@ LRESULT WndProc(EXWND hwnd, EXUINT uMsg, WPARAM wParam, LPARAM lParam)
 
     switch (uMsg)
     {
-    case WM_MOUSEWHEEL:
-    {
-        short zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-        if (zDelta > 0)
-            m_fZoomFactor -= 1.0f;
-        else
-            m_fZoomFactor += 1.0f;
+    // case WM_MOUSEWHEEL:
+    // {
+    //     short zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+    //     if (zDelta > 0)
+    //         m_fZoomFactor -= 1.0f;
+    //     else
+    //         m_fZoomFactor += 1.0f;
 
-        m_fZoomFactor = glm::clamp(m_fZoomFactor, 5.0f, 100.0f);
-        camera.SetFieldOfView(camera.GetFieldOfView() + m_fZoomFactor);
-    }
+    //     m_fZoomFactor = glm::clamp(m_fZoomFactor, 5.0f, 100.0f);
+    //     camera.SetFieldOfView(camera.GetFieldOfView() + m_fZoomFactor);
+    // }
+    // case WM_KEYDOWN:
+    //     if (wParam == 'W')
+    //         camera.MoveForward(0.016f);
+    //     else if (wParam == 'S')
+    //         camera.MoveBackward(0.016f);
+    //     else if (wParam == 'A')
+    //         camera.MoveLeft(0.016f);
+    //     else if (wParam == 'D')
+    //         camera.MoveRight(0.016f);
+    //     break;
+    // case WM_MOUSEMOVE:
+    //     static int mouseLastX = LOWORD(lParam);
+    //     static int mouseLastY = HIWORD(lParam);
+
+    //     camera.Rotate((LOWORD(lParam) - mouseLastX), (HIWORD(lParam) - mouseLastY));    
+
+    //     mouseLastX = LOWORD(lParam);
+    //     mouseLastY = HIWORD(lParam);
+    //     break;
     case WM_SIZING:
     case WM_SIZE:
         EXINT width = LOWORD(lParam);
@@ -222,12 +255,14 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     app->SetInstance(hInstance);
     app->Initialize();
 
-    // renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
+    renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
 
     renderer->AddCamera("MainCamera", camera, true);
     renderer->LoadShader("default.vertex", vert, eXngine::eXshader_Vertex);
     renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
-
+    renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
+    renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
+    
     // renderer->DrawLine(eXvec<float, 2>{{0.0f, .2f}}, eXvec<float, 2>{{.3f, .2f}}, eXcolor(255, 0, 0, 255));
     // renderer->DrawTriangle(eXvec<float, 2>{{.3f, .2f}}, eXvec<float, 2>{{-.3f, .2f}}, eXvec<float, 2>{{.3f, .2f}}, eXcolor(0, 255, 0, 255));
     // renderer->DrawRectangle(eXvec<float, 2>{{-.3f, -.5f}}, eXvec<float, 2>{{.3f, -.5f}}, eXvec<float, 2>{{.3f, .5f}}, eXvec<float, 2>{{-.3f, .5f}}, eXcolor(0, 0, 255, 255));
@@ -245,10 +280,9 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->CreateSurface(app->GetHandle());
     renderer->Initialize();
 
-    // renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
-    // renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
 
-    // renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
+
+    renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);

@@ -229,7 +229,7 @@ namespace eXngine::Renderers::Vulkan
         }
 
         vkResetFences(m_pDevice, 1, &frameObject.inFlightFence);
-        UpdateUniformBuffers();
+        // UpdateUniformBuffers();
         // m_pCurrentCommandBuffer = frameObject.commandBuffer;
         // m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
         RecordCommandBuffer(frameObject.commandBuffer, imageIndex);

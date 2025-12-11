@@ -16,5 +16,15 @@ namespace eXngine::Types
             this->y = y;
             this->z = z;
         }
+        eXvec3(const EXMATH::vec3& other) 
+        {
+            this->x = other.x;
+            this->y = other.y;
+            this->z = other.z;
+        }
+        eXvec3 operator=(const EXMATH::vec3& other) const
+        {
+            return eXvec3(other.x, other.y, other.z);
+        }
     };
 }
