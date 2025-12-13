@@ -31,7 +31,7 @@ namespace eXngine::Windows
 		EXVOIDPTR m_pHandle = EXN_NULL_HANDLE;
 
 	public:
-		GLFWWindow(const EXCHAR *name, Point position, Size size, bool maximized = false);
+		GLFWWindow(const EXCHAR *name, eXvec2 position, eXvec2 size, bool maximized = false);
 
 		virtual bool Initialize() override;
 		virtual void ProcessInput(eXkey, bool) override;
@@ -39,7 +39,6 @@ namespace eXngine::Windows
 		virtual int Run() override;
 
 		GLFWwindow *GetWindow();
-		Size GetFrameBufferSize();
 		std::vector<const char *> GetExtensions();
 		void SetKeyboardHandler(GLFWKeyboardCallback handler);
 		void SetCharacterHandler(GLFWCharacterCallback handler);

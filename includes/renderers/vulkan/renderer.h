@@ -266,7 +266,7 @@ namespace eXngine::Renderers::Vulkan
 		VkDeviceMemory m_pIndexBufferMemory = EXN_NULL_HANDLE;
 		
 		Renderer(const EXCHAR *);
-		Renderer(const EXCHAR *, Size);
+		Renderer(const EXCHAR *, eXvec2);
 		
 		void CreateInstance();
 		void CreateDebugPipeline();
@@ -286,10 +286,10 @@ namespace eXngine::Renderers::Vulkan
 		void AddValidationLayer(const char *);
 		void AddDeviceExtension(const char *);
 
-		void DrawLine(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
-		void DrawTriangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
-		void DrawRectangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) override;
-		void DrawCircle(eXvec<EXFLOAT, 2>, EXFLOAT, eXcolor) override;
+		void DrawLine(eXvec2, eXvec2, eXcolor) override;
+		void DrawTriangle(eXvec2, eXvec2, eXvec2, eXcolor) override;
+		void DrawRectangle(eXvec2, eXvec2, eXvec2, eXvec2, eXcolor) override;
+		void DrawCircle(eXvec2, EXFLOAT, eXcolor) override;
 
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 		void CreateImage(uint32_t, uint32_t, VkFormat, VkImageTiling, VkImageUsageFlags, VkMemoryPropertyFlags, VkImage &, VkDeviceMemory &);

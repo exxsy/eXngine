@@ -1,7 +1,11 @@
 #pragma once
 
 #include <optional>
+
 #include <eXngine.h>
+#include <types/vector.h>
+
+using namespace eXngine::Types;
 
 namespace eXngine::Windows
 {
@@ -28,15 +32,14 @@ namespace eXngine::Windows
 		OnMousePressHandler m_fnOnMousePress = EXN_NULL_HANDLE;
 
 	protected:
-		EXN_PROPERTY(Point, Position, position, Point(0, 0));
-		EXN_PROPERTY(Size, Size, size, Size(0, 0));
+		EXN_PROPERTY(eXvec2, Position, position, eXvec2(0, 0));
+		EXN_PROPERTY(eXvec2, Size, size, eXvec2(0, 0));
 		EXN_PROPERTY(EXBOOL, IsMaximized, bIsMaximized, EXN_FALSE);
-		// EXN_PROPERTY_ARRAY(EXCHAR, Name, szName, 256);
 		EXN_PROPERTY(EXCHAR *, Name, szName, EXN_NULL_HANDLE);
 
 	public:
-		Window(const EXCHAR *name, Point position, Size size, EXBOOL maximized);
-		Window(const EXCHAR *name, Point position, Size size);
+		Window(const EXCHAR *name, eXvec2 position, eXvec2 size, EXBOOL maximized);
+		Window(const EXCHAR *name, eXvec2 position, eXvec2 size);
 		~Window();
 		void SetOnInitializeHandler(OnInitializeHandler handler);
 		void SetOnLoopHandler(OnLoopHandler handler);

@@ -58,7 +58,7 @@ IF /I "%CONFIG%"=="Debug" (
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib"
-SET "includeFlags=-Isrc -Iincludes -I3rdparty\glfw\include -II3rdparty\glfw\src"
+SET "includeFlags=-Isrc -Iincludes -I3rdparty\glfw\include -I3rdparty\glfw\src -I3rdparty\glm"
 
 IF NOT "%EXTRA_OPTS%"=="%EXTRA_OPTS:GLFW_INCLUDE_VULKAN=%" (
 @REM IF "%EXTRA_OPTS:*"-DGLFW_INCLUDE_VULKAN"=%" NEQ "%EXTRA_OPTS%" (

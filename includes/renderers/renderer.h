@@ -14,7 +14,14 @@
 #include <renderers/defines.h>
 #include <renderers/camera/camera.h>
 
+#include <entity/manager.h>
+#include <entity/entity.h>
+
 using namespace eXngine::Types;
+
+#ifndef EXN_ENTITY_TYPE
+#define EXN_ENTITY_TYPE eXngine::Entity::eXentity
+#endif
 
 namespace eXngine::Renderers
 {
@@ -46,32 +53,35 @@ namespace eXngine::Renderers
 		EXN_PROPERTY(EXVOIDPTR, Device, pDevice, EXN_NULL_HANDLE);
 		EXN_PROPERTY(EXCHAR *, Name, szName, EXN_NULL_HANDLE);
 		EXN_PROPERTY(EXBOOL, FrameBufferResized, bFrameBufferResized, false);
-		EXN_PROPERTY(Size, FrameBufferSize, szFrameBufferSize, Size(0, 0));
+		EXN_PROPERTY(eXvec2, FrameBufferSize, szFrameBufferSize, eXvec2(0, 0));
 		EXN_PROPERTY(eXcamera *, MainCamera, pMainCamera, EXN_NULL_HANDLE);
 		EXN_PROPERTY(OnRenderHandler, OnRenderHandler, fOnRender, EXN_NULL_HANDLE);
 		EXN_PROPERTY(OnCleanupHandler, OnCleanupHandler, fOnCleanup, EXN_NULL_HANDLE);
 
+		EXN_SINGLETON(Entity::Manager<EXN_ENTITY_TYPE>, EntityManager);
+		EXN_SINGLETON(Images::ImageManager, ImageManager);
+
 	protected:
-		FPSData m_sFpsData;
+		// FPSData m_sFpsData;
 		std::map<std::string, ShaderModule *> m_Shaders;
 		std::map<const char *, eXcamera *> m_Cameras;
-	public:
-		eXrenderer(const EXCHAR *, Size);
-		eXrenderer() = default;
-		void UpdateFPS();
-		void AddCamera(const char *, eXcamera &, EXBOOL);
 
-		FPSData GetFPS() const;
-		Images::ImageManager *GetImageManager();
+	public:
+		eXrenderer(const EXCHAR *, eXvec2);
+		eXrenderer() = default;
+		void AddCamera(const char *, eXcamera &, EXBOOL);
+		
+		// void UpdateFPS();
+		// FPSData GetFPS() const;
 
 		virtual bool LoadShader(const char *, const std::vector<char> &, ShaderTypes) = 0;
 		virtual void UseShader(const char *) = 0;
 		virtual void DestroyShader(const char *) = 0;
 
-		virtual void DrawLine(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) = 0;
-		virtual void DrawTriangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) = 0;
-		virtual void DrawRectangle(eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXvec<EXFLOAT, 2>, eXcolor) = 0;
-		virtual void DrawCircle(eXvec<EXFLOAT, 2>, EXFLOAT, eXcolor) = 0;
+		virtual void DrawLine(eXvec2, eXvec2, eXcolor) = 0;
+		virtual void DrawTriangle(eXvec2, eXvec2, eXvec2, eXcolor) = 0;
+		virtual void DrawRectangle(eXvec2, eXvec2, eXvec2, eXvec2, eXcolor) = 0;
+		virtual void DrawCircle(eXvec2, EXFLOAT, eXcolor) = 0;
 
 		virtual void Initialize() = 0;
 		virtual void OnRender() = 0;

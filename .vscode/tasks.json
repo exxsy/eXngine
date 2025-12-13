@@ -88,6 +88,18 @@
             ],
             "group": "build",
             "detail": "Build example project only"
+        },
+        {
+            "label": "Build Shaders",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.shaders.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.shaders.sh"
+            },
+            "group": "build",
+            "detail": "Build shaders"
         }
     ]
 }

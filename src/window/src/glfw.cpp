@@ -2,7 +2,7 @@
 
 namespace eXngine::Windows
 {
-	GLFWWindow::GLFWWindow(const EXCHAR *name, Point position, Size size, bool maximized) : Window(name, position, size, maximized), m_pWindow(nullptr)
+	GLFWWindow::GLFWWindow(const EXCHAR *name, eXvec2 position, eXvec2 size, bool maximized) : Window(name, position, size, maximized), m_pWindow(nullptr)
 	{
 	}
 
@@ -12,8 +12,8 @@ namespace eXngine::Windows
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_MAXIMIZED, (int)this->GetIsMaximized());
-		glfwWindowHint(GLFW_POSITION_X, (int)m_position.X);
-		glfwWindowHint(GLFW_POSITION_Y, (int)m_position.Y);
+		glfwWindowHint(GLFW_POSITION_X, (int)m_position.x);
+		glfwWindowHint(GLFW_POSITION_Y, (int)m_position.y);
 
 		int count;
 		GLFWmonitor **monitors = glfwGetMonitors(&count);
@@ -35,7 +35,7 @@ namespace eXngine::Windows
 		strncpy_s(name, this->m_szName, sizeof(name) - 1);
 #endif
 
-		m_pWindow = glfwCreateWindow(m_size.W, m_size.H, name,
+		m_pWindow = glfwCreateWindow(m_size.x, m_size.y, name,
 									 GetIsMaximized() ? m_pPrimaryMonitor : EXN_NULL_HANDLE, EXN_NULL_HANDLE);
 
 		EX_FATAL(m_pWindow != EXN_NULL_HANDLE, "Failed to create GLFW window.");
@@ -45,7 +45,7 @@ namespace eXngine::Windows
 		return true;
 	}
 
-	int GLFWWindow::Run()
+	EXINT GLFWWindow::Run()
 	{
 		if (m_fnOnInitialize != EXN_NULL_HANDLE)
 			m_fnOnInitialize(this->m_pHandle);
@@ -72,14 +72,6 @@ namespace eXngine::Windows
 	GLFWwindow *GLFWWindow::GetWindow()
 	{
 		return m_pWindow;
-	}
-
-	Size GLFWWindow::GetFrameBufferSize()
-	{
-		Size sz(0, 0);
-		glfwGetFramebufferSize(this->m_pWindow, &sz.W, &sz.H);
-
-		return sz;
 	}
 
 	std::vector<const char *> GLFWWindow::GetExtensions()

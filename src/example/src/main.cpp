@@ -24,8 +24,8 @@ char exePathBuf[MAX_PATH] = {0};
 char name[256] = "eXngine Window";
 char className[256] = "eXngineWindowClass";
 eXviewport viewport;
-Size window_size = Size(1024, 768);
-Point window_position = Point(100, 100);
+eXvec2 window_size = eXvec2(1024, 768);
+eXvec2 window_position = eXvec2(100, 100);
 PerspectiveCamera camera;
 Renderer *renderer;
 eXwindow *app;
@@ -139,28 +139,14 @@ void ImGui_OnExit()
 }
 #endif
 
-// void KeyboardHandler(GLFWwindow *window, int key, int, int, int)
-// {
-// }
+void OnRender(eXngine::Renderers::eXrenderer *renderer)
+{
+    
 
-// void ScrollHandler(GLFWwindow *window, double xoffset, double yoffset)
-// {
-//     if (yoffset > 0)
-//         m_fZoomFactor -= 1.0f;
-//     else
-//         m_fZoomFactor += 1.0f;
-
-//     m_fZoomFactor = glm::clamp(m_fZoomFactor, 5.0f, 100.0f);
-// }
-
-// void ResizeHandler(GLFWwindow *window, int width, int height)
-// {
-//     if (BaseRenderer *renderer = reinterpret_cast<BaseRenderer *>(glfwGetWindowUserPointer(window)))
-//     {
-//         renderer->SetFrameBufferSize(Size(width, height));
-//         renderer->SetFrameBufferResized(true);
-//     }
-// }
+#ifndef IMGUI_DISABLE
+    ImGui_OnRender(renderer);
+#endif
+}
 
 void App_OnLoop(void *unused)
 {
@@ -203,7 +189,7 @@ LRESULT WndProc(EXWND hwnd, EXUINT uMsg, WPARAM wParam, LPARAM lParam)
     //     static int mouseLastX = LOWORD(lParam);
     //     static int mouseLastY = HIWORD(lParam);
 
-    //     camera.Rotate((LOWORD(lParam) - mouseLastX), (HIWORD(lParam) - mouseLastY));    
+    //     camera.Rotate((LOWORD(lParam) - mouseLastX), (HIWORD(lParam) - mouseLastY));
 
     //     mouseLastX = LOWORD(lParam);
     //     mouseLastY = HIWORD(lParam);
@@ -212,7 +198,7 @@ LRESULT WndProc(EXWND hwnd, EXUINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SIZE:
         EXINT width = LOWORD(lParam);
         EXINT height = HIWORD(lParam);
-        renderer->SetFrameBufferSize(Size(width, height));
+        renderer->SetFrameBufferSize(eXvec2(width, height));
         renderer->SetFrameBufferResized(true);
         break;
     }
@@ -241,8 +227,8 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     auto vert = eXngine::Utils::File::Read((shadersDir / "shader.vert.spv").string());
     auto frag = eXngine::Utils::File::Read((shadersDir / "shader.frag.spv").string());
 
-    viewport.SetWidth(window_size.W);
-    viewport.SetHeight(window_size.H);
+    viewport.SetWidth(window_size.x);
+    viewport.SetHeight(window_size.y);
 
     camera.SetViewport(&viewport);
     camera.SetPosition(eXvec3(50.0f, 50.0f, 50.0f));
@@ -262,7 +248,7 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->LoadShader("default.fragment", frag, eXngine::eXshader_Fragment);
     renderer->LoadShader("triangle_pipeline.vertex", tri_vert, eXngine::eXshader_Vertex);
     renderer->LoadShader("triangle_pipeline.fragment", tri_frag, eXngine::eXshader_Fragment);
-    
+
     // renderer->DrawLine(eXvec<float, 2>{{0.0f, .2f}}, eXvec<float, 2>{{.3f, .2f}}, eXcolor(255, 0, 0, 255));
     // renderer->DrawTriangle(eXvec<float, 2>{{.3f, .2f}}, eXvec<float, 2>{{-.3f, .2f}}, eXvec<float, 2>{{.3f, .2f}}, eXcolor(0, 255, 0, 255));
     // renderer->DrawRectangle(eXvec<float, 2>{{-.3f, -.5f}}, eXvec<float, 2>{{.3f, -.5f}}, eXvec<float, 2>{{.3f, .5f}}, eXvec<float, 2>{{-.3f, .5f}}, eXcolor(0, 0, 255, 255));
@@ -280,14 +266,12 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->CreateSurface(app->GetHandle());
     renderer->Initialize();
 
-
-
     renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);
 
-    renderer->SetOnRenderHandler(ImGui_OnRender);
+    renderer->SetOnRenderHandler(OnRender);
     renderer->SetOnCleanupHandler(ImGui_OnExit);
 #endif
 

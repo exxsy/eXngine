@@ -2,7 +2,7 @@
 
 namespace eXngine::Windows
 {
-    eXwindow::eXwindow(const EXCHAR *name, Point position, Size size, EXBOOL maximized) : Window(name, position, size, maximized)
+    eXwindow::eXwindow(const EXCHAR *name, eXvec2 position, eXvec2 size, EXBOOL maximized) : Window(name, position, size, maximized)
     {
         SetInstance(GetModuleHandle(NULL));
     }
@@ -136,7 +136,7 @@ namespace eXngine::Windows
             this->GetClassNameA(),
             this->GetName(),
             this->GetWindowStyle(),
-            m_position.X, m_position.Y, m_size.W, m_size.H,
+            m_position.x, m_position.y, m_size.x, m_size.y,
             this->GetParentWindow(),
             this->GetMenu(),
             this->GetInstance(),

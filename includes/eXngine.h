@@ -51,7 +51,7 @@
 
 #define EXN_SINGLETON(type, name, ...)           \
 public:                                          \
-	static type *GetInstance()                   \
+	inline static type *Get##name()                     \
 	{                                            \
 		static type *s_##name = EXN_NULL_HANDLE; \
 		if (s_##name == EXN_NULL_HANDLE)         \

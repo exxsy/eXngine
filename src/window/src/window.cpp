@@ -2,15 +2,18 @@
 #include <string.h>
 
 #include <windows/window.h>
+#include <types/vector.h>
+
+using namespace eXngine::Types;
 
 namespace eXngine::Windows
 {
-	Window::Window(const EXCHAR *name, Point position, Size size, bool maximized) : m_position(position), m_size(size), m_bIsMaximized(maximized)
+	Window::Window(const EXCHAR *name, eXvec2 position, eXvec2 size, bool maximized) : m_position(position), m_size(size), m_bIsMaximized(maximized)
 	{
 		this->SetName(const_cast<EXCHAR *>(name));
 	}
 
-	Window::Window(const EXCHAR *name, Point position, Size size) : m_position(position), m_size(size), m_bIsMaximized(false)
+	Window::Window(const EXCHAR *name, eXvec2 position, eXvec2 size) : m_position(position), m_size(size), m_bIsMaximized(false)
 	{
 		this->SetName(const_cast<EXCHAR *>(name));
 	}

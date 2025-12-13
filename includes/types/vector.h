@@ -27,4 +27,46 @@ namespace eXngine::Types
             return eXvec3(other.x, other.y, other.z);
         }
     };
+
+    struct EXNEXPORT eXvec2 : public eXvec<float, 2>
+    {
+        eXvec2() : eXvec<float, 2>() {}
+        eXvec2(float x, float y) 
+        {
+            this->x = x;
+            this->y = y;
+        }
+        eXvec2(const EXMATH::vec2& other) 
+        {
+            this->x = other.x;
+            this->y = other.y;
+        }
+        eXvec2 operator=(const EXMATH::vec2& other) const
+        {
+            return eXvec2(other.x, other.y);
+        }
+    };
+
+    struct EXNEXPORT eXvec4 : public eXvec<float, 4>
+    {
+        eXvec4() : eXvec<float, 4>() {}
+        eXvec4(float x, float y, float z, float w) 
+        {
+            this->x = x;
+            this->y = y;
+            this->z = z;
+            this->w = w;
+        }
+        eXvec4(const EXMATH::vec4& other) 
+        {
+            this->x = other.x;
+            this->y = other.y;
+            this->z = other.z;
+            this->w = other.w;
+        }
+        eXvec4 operator=(const EXMATH::vec4& other) const
+        {
+            return eXvec4(other.x, other.y, other.z, other.w);
+        }
+    };
 }

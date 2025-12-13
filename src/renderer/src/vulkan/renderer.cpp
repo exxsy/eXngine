@@ -1256,8 +1256,8 @@ namespace eXngine::Renderers::Vulkan
         {
             VkExtent2D actualExtent =
                 {
-                    static_cast<EXUINT32>(this->m_szFrameBufferSize.W),
-                    static_cast<EXUINT32>(this->m_szFrameBufferSize.H)};
+                    static_cast<EXUINT32>(this->m_szFrameBufferSize.x),
+                    static_cast<EXUINT32>(this->m_szFrameBufferSize.y)};
 
             actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
             actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -1349,7 +1349,7 @@ namespace eXngine::Renderers::Vulkan
         m_DeviceExtensions.push_back(extension);
     }
 
-    void Renderer::DrawLine(eXvec<float, 2> start, eXvec<float, 2> end, eXcolor color)
+    void Renderer::DrawLine(eXvec2 start, eXvec2 end, eXcolor color)
     {
         m_Indices.push_back(static_cast<EXUINT32>(m_Indices.size()));
 
@@ -1362,7 +1362,7 @@ namespace eXngine::Renderers::Vulkan
         m_Indices.push_back(static_cast<EXUINT32>(m_Indices.size()));
     }
 
-    void Renderer::DrawTriangle(eXvec<float, 2> pos1, eXvec<float, 2> pos2, eXvec<float, 2> pos3, eXcolor color)
+    void Renderer::DrawTriangle(eXvec2 pos1, eXvec2 pos2, eXvec2 pos3, eXcolor color)
     {
         const auto indexStart = static_cast<EXUINT32>(m_Indices.size());
 
@@ -1374,7 +1374,7 @@ namespace eXngine::Renderers::Vulkan
         m_Indices.push_back(indexStart);
     }
 
-    void Renderer::DrawRectangle(eXvec<float, 2> pos1, eXvec<float, 2> pos2, eXvec<float, 2> pos3, eXvec<float, 2> pos4, eXcolor color)
+    void Renderer::DrawRectangle(eXvec2 pos1, eXvec2 pos2, eXvec2 pos3, eXvec2 pos4, eXcolor color)
     {
         const auto indexStart = static_cast<EXUINT32>(m_Indices.size());
 
@@ -1387,7 +1387,7 @@ namespace eXngine::Renderers::Vulkan
         m_Indices.push_back(indexStart);
     }
 
-    void Renderer::DrawCircle(eXvec<float, 2> center, EXFLOAT radius, eXcolor color)
+    void Renderer::DrawCircle(eXvec2 center, EXFLOAT radius, eXcolor color)
     {
         // const int segments = 36;
         // const EXFLOAT increment = 2.0f * 3.14159265f / static_cast<EXFLOAT>(segments);
@@ -1540,12 +1540,12 @@ namespace eXngine::Renderers::Vulkan
         return m_pSurface;
     };
 
-    Renderer::Renderer(const EXCHAR *name) : eXrenderer(name, Size(0, 0)), m_Depth()
+    Renderer::Renderer(const EXCHAR *name) : eXrenderer(name, eXvec2(0, 0)), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }
 
-    Renderer::Renderer(const EXCHAR *name, Size sz) : eXrenderer(name, sz), m_Depth()
+    Renderer::Renderer(const EXCHAR *name, eXvec2 sz) : eXrenderer(name, sz), m_Depth()
     {
         CreateDefaultGraphicsPipeline();
     }

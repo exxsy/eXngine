@@ -19,7 +19,7 @@ namespace eXngine::Windows
     class EXNEXPORT eXwindow : public Window
     {
     public:
-        eXwindow(const EXCHAR *name, Point position, Size size, bool maximized);
+        eXwindow(const EXCHAR *name, eXvec2 position, eXvec2 size, bool maximized);
         ~eXwindow();
 
         virtual EXBOOL Initialize() override;
