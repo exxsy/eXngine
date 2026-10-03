@@ -1,7 +1,10 @@
 # eXngine
 #
-#   cmake -S . -B build
-#   cmake --build build --config Debug
+#   cmake --preset default            (or: cmake --preset clang)
+#   cmake --build --preset debug      (or: release, clang-debug, clang-release)
+#
+# Everything CMake generates stays inside output/: build files in output/cmake/<preset>
+# (see CMakePresets.json), binaries in output/<arch>/<config>, shaders in output/shaders.
 #
 # Everything else happens automatically:
 #   - GLFW is built from 3rdparty/glfw, glm / stb / imgui come from 3rdparty/
@@ -14,6 +17,25 @@
 # example loads its shaders from <exe dir>/../../shaders.
 
 cmake_minimum_required(VERSION 3.24)
+
+# Generated files must not spread over the source tree: accept a build folder inside
+# output/ or outside the repository, refuse the repository root, build/, out/, ...
+# Checked before project() so a refused configure does not run compiler detection.
+file(REAL_PATH "${CMAKE_SOURCE_DIR}" EXN_SOURCE_DIR_REAL)
+file(REAL_PATH "${CMAKE_BINARY_DIR}" EXN_BINARY_DIR_REAL)
+string(TOLOWER "${EXN_SOURCE_DIR_REAL}/" EXN_SOURCE_PREFIX)
+string(TOLOWER "${EXN_BINARY_DIR_REAL}/" EXN_BINARY_PREFIX)
+string(FIND "${EXN_BINARY_PREFIX}" "${EXN_SOURCE_PREFIX}" EXN_IN_SOURCE_TREE)
+string(FIND "${EXN_BINARY_PREFIX}" "${EXN_SOURCE_PREFIX}output/" EXN_IN_OUTPUT_DIR)
+
+if(EXN_IN_SOURCE_TREE EQUAL 0 AND NOT EXN_IN_OUTPUT_DIR EQUAL 0)
+    message(FATAL_ERROR
+        "Build files would be written to '${CMAKE_BINARY_DIR}', outside output/.\n"
+        "Configure with a preset instead:\n"
+        "    cmake --preset default\n"
+        "    cmake --build --preset debug\n"
+        "Then delete the CMakeCache.txt and CMakeFiles/ this attempt left in '${CMAKE_BINARY_DIR}'.")
+endif()
 
 project(eXngine VERSION 1.0.0 LANGUAGES C CXX)
 

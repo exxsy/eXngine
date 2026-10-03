@@ -1,0 +1,50 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 24,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Visual Studio (MSVC)",
+            "description": "Build files in output/cmake/default, binaries in output/x64/<config>.",
+            "binaryDir": "${sourceDir}/output/cmake/${presetName}"
+        },
+        {
+            "name": "clang",
+            "inherits": "default",
+            "displayName": "Ninja + clang",
+            "description": "Build files in output/cmake/clang. Ninja comes from VISUAL_STUDIO_PATH (set by setup-env.ps1).",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_MAKE_PROGRAM": "$env{VISUAL_STUDIO_PATH}/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "default",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release",
+            "configurePreset": "default",
+            "configuration": "Release"
+        },
+        {
+            "name": "clang-debug",
+            "configurePreset": "clang",
+            "configuration": "Debug"
+        },
+        {
+            "name": "clang-release",
+            "configurePreset": "clang",
+            "configuration": "Release"
+        }
+    ]
+}
