@@ -8,6 +8,7 @@
 #include <eXtypes.h>
 #include <eXdebug.h>
 #include <windows/window.h>
+#include <input/input.h>
 
 namespace eXngine::Windows
 {
@@ -27,6 +28,15 @@ namespace eXngine::Windows
         virtual EXVOIDPTR GetHandle() override;
         virtual void ProcessInput(eXkey, bool) override;
 
+        // Feeds the window's keyboard and mouse messages to `input` (null = none).
+        void SetInput(Input::eXinput *input) { m_pInput = input; }
+        Input::eXinput *GetInput() const { return m_pInput; }
+        // Size of the area inside the frame, in pixels.
+        eXvec2 GetClientSize() const;
+        void SetTitle(const EXCHAR *title);
+        // Asks the window to close: Run() returns after the current frame.
+        void Close();
+
     private:
         EXN_PROPERTY(HINSTANCE, Instance, hInstance, EXN_NULL_HANDLE);
         EXN_PROPERTY(EXWND, ParentWindow, pParentWindowHandle, EXN_NULL_HANDLE);
@@ -39,6 +49,7 @@ namespace eXngine::Windows
     private:
         EXVOIDPTR m_pApplicationData = EXN_NULL_HANDLE;
         EXWND m_pHandle = EXN_NULL_HANDLE;
+        Input::eXinput *m_pInput = EXN_NULL_HANDLE;
 
         void Register();
     };

@@ -224,6 +224,9 @@ namespace eXngine::Renderers::Vulkan
                                0, sizeof(constants), &constants);
             vkCmdDrawIndexed(commandBuffer, draw.mesh->GetIndexCount(), 1, 0, 0, 0);
         }
+
+        if (m_fnRecord)
+            m_fnRecord(commandBuffer, frameIndex);
     }
 
     void VkRenderPassObject::End(VkCommandBuffer commandBuffer)

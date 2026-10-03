@@ -26,6 +26,13 @@ namespace eXngine::Renderers::Vulkan
         VkDeviceMemory m_pDeviceMemory = EXN_NULL_HANDLE;
         VkImageView m_pView = EXN_NULL_HANDLE;
 
+        // Size in pixels (0 for depth images).
+        EXINT32 GetWidth() const { return m_nWidth; }
+        EXINT32 GetHeight() const { return m_nHeight; }
+
+    private:
+        EXINT32 m_nWidth = 0, m_nHeight = 0;
+
     private:
         VkImageView CreateImageView(VkFormat, VkImageAspectFlags);
     };

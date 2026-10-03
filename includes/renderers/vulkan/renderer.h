@@ -187,6 +187,7 @@ namespace eXngine::Renderers::Vulkan
 		friend class VkTexture;
 		friend class VkMaterial;
 		friend class VkRenderPassObject;
+		friend class VkCanvas;
 
 	private:
 #ifdef NDEBUG

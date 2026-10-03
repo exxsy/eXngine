@@ -1,6 +1,7 @@
 #pragma once
 
 #ifndef EXN_DISABLE_VULKAN
+#include <functional>
 #include <list>
 #include <string>
 #include <vector>
@@ -62,6 +63,11 @@ namespace eXngine::Renderers::Vulkan
         void Remove(VkDrawCommand *);
         void ClearDraws();
 
+        // Records extra commands after the draw list, inside the pass, every frame (e.g. a
+        // VkCanvas recording its batches). Gets the command buffer and the frame in flight.
+        using RecordHandler = std::function<void(VkCommandBuffer, EXUINT32 frameIndex)>;
+        void SetRecordHandler(RecordHandler handler) { m_fnRecord = std::move(handler); }
+
         VkRenderPass GetHandle() const { return m_pRenderPass; }
         const std::string &GetName() const { return m_Name; }
         const VkRenderPassDescription &GetDescription() const { return m_Description; }
@@ -74,6 +80,7 @@ namespace eXngine::Renderers::Vulkan
         std::vector<VkFramebuffer> m_Framebuffers;
         // std::list keeps the VkDrawCommand pointers handed out by Draw() stable.
         std::list<VkDrawCommand> m_DrawCommands;
+        RecordHandler m_fnRecord;
     };
 }
 #endif

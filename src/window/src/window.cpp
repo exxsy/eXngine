@@ -37,4 +37,9 @@ namespace eXngine::Windows
 	{
 		this->m_fnOnCleanup = handler;
 	}
+
+	void Window::SetOnResizeHandler(OnResizeHandler handler)
+	{
+		this->m_fnOnResize = handler;
+	}
 }

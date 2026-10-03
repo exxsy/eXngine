@@ -19,7 +19,9 @@ namespace eXngine::Renderers::Vulkan
 
     void VkTexture::CreateFromImageData(const unsigned char *imageData, int width, int height)
     {
-        const VkDeviceSize imageSize = width * height * 4;
+        const VkDeviceSize imageSize = static_cast<VkDeviceSize>(width) * height * 4;
+        m_nWidth = width;
+        m_nHeight = height;
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;

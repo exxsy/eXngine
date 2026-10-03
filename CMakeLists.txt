@@ -21,6 +21,12 @@ cmake_minimum_required(VERSION 3.24)
 # Generated files must not spread over the source tree: accept a build folder inside
 # output/ or outside the repository, refuse the repository root, build/, out/, ...
 # Checked before project() so a refused configure does not run compiler detection.
+# Only when eXngine is the top-level project: a game that pulls it in with
+#   set(EXN_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+#   set(EXN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/eXngine" CACHE PATH "" FORCE)  # optional
+#   add_subdirectory(<path to eXngine> eXngine)
+# builds it inside its own build folder.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 file(REAL_PATH "${CMAKE_SOURCE_DIR}" EXN_SOURCE_DIR_REAL)
 file(REAL_PATH "${CMAKE_BINARY_DIR}" EXN_BINARY_DIR_REAL)
 string(TOLOWER "${EXN_SOURCE_DIR_REAL}/" EXN_SOURCE_PREFIX)
@@ -35,6 +41,7 @@ if(EXN_IN_SOURCE_TREE EQUAL 0 AND NOT EXN_IN_OUTPUT_DIR EQUAL 0)
         "    cmake --preset default\n"
         "    cmake --build --preset debug\n"
         "Then delete the CMakeCache.txt and CMakeFiles/ this attempt left in '${CMAKE_BINARY_DIR}'.")
+endif()
 endif()
 
 project(eXngine VERSION 1.0.0 LANGUAGES C CXX)

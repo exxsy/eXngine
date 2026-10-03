@@ -44,6 +44,8 @@ namespace eXngine::Windows
 		void SetOnInitializeHandler(OnInitializeHandler handler);
 		void SetOnLoopHandler(OnLoopHandler handler);
 		void SetOnCleanupHandler(OnCleanupHandler handler);
+		// Called with the new client size whenever the window is resized.
+		void SetOnResizeHandler(OnResizeHandler handler);
 
 		virtual void ProcessInput(eXkey, EXBOOL) = 0;
 		virtual EXBOOL Initialize() = 0;

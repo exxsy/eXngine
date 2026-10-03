@@ -9,12 +9,14 @@ namespace eXngine::Windows
 
     eXwindow::~eXwindow()
     {
-        EX_FREE(m_szName);
-        EX_FREE(m_szClassName);
-
+        EX_INFO("Windows eXwindow '%s' destroyed.", GetName());
         DestroyWindow((HWND)GetHandle());
         UnregisterClass(GetClassNameA(), GetInstance());
-        EX_INFO("Windows eXwindow '%s' destroyed.", GetName());
+
+        // The class name is only needed until here; the name is freed by ~Window()
+        // (freeing it here too was a double free).
+        EX_FREE(m_szClassName);
+        m_szClassName = EXN_NULL_HANDLE;
     }
 
     EXBOOL eXwindow::Initialize()
@@ -62,9 +64,29 @@ namespace eXngine::Windows
 
     void eXwindow::ProcessInput(eXkey key, bool pressed)
     {
-        // m_bKeys[key] = pressed;
+        // Polled input lives in Input::eXinput (SetInput); this only keeps the raw state.
+        if (key >= 0 && key < static_cast<EXINT>(sizeof(m_bKeys)))
+            m_bKeys[key] = pressed;
+    }
 
-        EX_INFO("Key %c %s", key, pressed ? "pressed" : "released");
+    eXvec2 eXwindow::GetClientSize() const
+    {
+        RECT rect{};
+        if (m_pHandle == EXN_NULL_HANDLE || !GetClientRect(m_pHandle, &rect))
+            return eXvec2(0, 0);
+        return eXvec2(static_cast<float>(rect.right - rect.left), static_cast<float>(rect.bottom - rect.top));
+    }
+
+    void eXwindow::SetTitle(const EXCHAR *title)
+    {
+        if (m_pHandle != EXN_NULL_HANDLE)
+            SetWindowText(m_pHandle, title);
+    }
+
+    void eXwindow::Close()
+    {
+        if (m_pHandle != EXN_NULL_HANDLE)
+            PostMessage(m_pHandle, WM_CLOSE, 0, 0);
     }
 
     void eXwindow::Register()
@@ -84,8 +106,17 @@ namespace eXngine::Windows
             if (!window)
                 window = reinterpret_cast<eXwindow *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
+            if (window && window->GetInput() &&
+                window->GetInput()->HandleMessage(hwnd, uMsg, static_cast<EXUINT64>(wParam), static_cast<EXINT64>(lParam)) &&
+                (uMsg == WM_SETCURSOR || uMsg == WM_SYSKEYDOWN || uMsg == WM_SYSKEYUP))
+                return TRUE;  // cursor set / system menu suppressed
+
             switch (uMsg)
             {
+            case WM_SIZE:
+                if (window && window->m_fnOnResize && wParam != SIZE_MINIMIZED)
+                    window->m_fnOnResize(LOWORD(lParam), HIWORD(lParam));
+                break;
             case WM_NCCREATE:
                 static LPCREATESTRUCT createStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
                 SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)createStruct->lpCreateParams);
@@ -125,6 +156,7 @@ namespace eXngine::Windows
         WNDCLASS wc = {
             .lpfnWndProc = wndProc,
             .hInstance = this->GetInstance(),
+            .hCursor = LoadCursor(nullptr, IDC_ARROW),
             .lpszClassName = this->GetClassNameA(),
         };
 
