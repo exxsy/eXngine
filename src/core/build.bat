@@ -58,7 +58,7 @@ IF /I "%CONFIG%"=="Debug" (
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib\%ARCH%\%CONFIG%"
-SET "includeFlags=-Isrc -Iincludes"
+SET "includeFlags=-Isrc -Iincludes -I3rdparty\glm"
 SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR% -lshell32 -lgdi32 -luser32"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
 IF NOT EXIST "%OUT_DIR%" (
