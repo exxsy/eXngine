@@ -11,6 +11,7 @@
 #include <backends/imgui_impl_vulkan.h>
 
 #include <types/color.h>
+#include <component/transform.h>
 
 #include "cameras/ortographic.h"
 #include "cameras/perspective.h"
@@ -37,6 +38,12 @@ const char *textureNames[] = {"checker", "stripes"};
 int selectedMaterials[2] = {0, 1};
 int checkerMaterialTexture = 0;
 VkDrawCommand *quads[2] = {};
+
+// Component demo: each quad is an entity whose Transform component drives its model matrix.
+Entity::eXentity *quadEntities[2] = {};
+// Euler angles in degrees, as edited in the UI. Kept here instead of being read back from
+// the quaternion, which would flip the values once yaw passes +-90 degrees.
+eXvec3 quadRotations[2] = {};
 
 // Procedural RGBA texture, so the demo does not depend on image files.
 std::vector<unsigned char> MakePatternTexture(int size, int cell, bool stripes, eXcolor first, eXcolor second)
@@ -88,8 +95,23 @@ void CreateDemoScene()
 
     for (int i = 0; i < 2; ++i)
     {
-        const EXMATH::mat4 model = EXMATH::translate(EXMATH::mat4(1.0f), EXMATH::vec3(i == 0 ? -0.6f : 0.6f, 0.0f, 0.0f));
-        quads[i] = scene->Draw(quad, renderer->GetMaterial(materialNames[selectedMaterials[i]]), model);
+        quadEntities[i] = renderer->GetEntityManager()->AddEntity();
+
+        auto *transform = quadEntities[i]->AddComponent<Component::eXtransformComponent>();
+        transform->Position = eXvec3(i == 0 ? -0.6f : 0.6f, 0.0f, 0.0f);
+
+        quads[i] = scene->Draw(quad, renderer->GetMaterial(materialNames[selectedMaterials[i]]), transform->GetMatrix());
+    }
+}
+
+// A minimal "system": copies each quad's Transform component into its draw command
+// before the frame is recorded.
+void UpdateQuadTransforms()
+{
+    for (int i = 0; i < 2; ++i)
+    {
+        if (const auto *transform = quadEntities[i]->GetComponent<Component::eXtransformComponent>())
+            quads[i]->model = transform->GetMatrix();
     }
 }
 
@@ -189,6 +211,23 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     if (ImGui::Combo("'checker' texture", &checkerMaterialTexture, textureNames, IM_ARRAYSIZE(textureNames)))
         vulkan->GetMaterial("checker")->SetTexture(0, vulkan->GetTexture(textureNames[checkerMaterialTexture]));
 
+    ImGui::SeparatorText("Transform components");
+
+    for (int i = 0; i < 2; ++i)
+    {
+        auto *transform = quadEntities[i]->GetComponent<Component::eXtransformComponent>();
+
+        ImGui::PushID(i);
+        ImGui::Text("%s (entity %u)", i == 0 ? "Left quad" : "Right quad", quadEntities[i]->GetID());
+        ImGui::DragFloat3("Position", &transform->Position.x, 0.01f);
+
+        if (ImGui::DragFloat3("Rotation", &quadRotations[i].x, 1.0f))
+            transform->SetEulerAngles(EXMATH::radians(EXMATH::vec3(quadRotations[i])));
+
+        ImGui::DragFloat3("Scale", &transform->Scale.x, 0.01f);
+        ImGui::PopID();
+    }
+
     ImGui::End();
 
     ImGui::ShowDemoWindow();
@@ -223,6 +262,7 @@ void OnRender(eXngine::Renderers::eXrenderer *renderer)
 
 void App_OnLoop(void *unused)
 {
+    UpdateQuadTransforms();
     renderer->OnRender();
 }
 

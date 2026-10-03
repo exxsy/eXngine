@@ -12,7 +12,7 @@ namespace eXngine::Types
         eXquat<float> Rotation;
         eXvec3 Scale;
 
-        eXtransform() : Position(0.0f, 0.0f, 0.0f), Rotation(0.0f, 0.0f, 0.0f, 0.0f), Scale(1.0f, 1.0f, 1.0f)
+        eXtransform() : Position(0.0f, 0.0f, 0.0f), Rotation(0.0f, 0.0f, 0.0f, 1.0f), Scale(1.0f, 1.0f, 1.0f)
         {}
 
         eXtransform(const eXvec3& position, const eXquat<float>& rotation, const eXvec3& scale)
