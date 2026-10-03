@@ -21,6 +21,7 @@ if /I "%CMD%"=="assets" goto :do_assets
 if /I "%CMD%"=="example" goto :do_example
 if /I "%CMD%"=="renderer" goto :do_renderer
 if /I "%CMD%"=="core" goto :do_core
+if /I "%CMD%"=="physics" goto :do_physics
 if /I "%CMD%"=="clean" goto :do_clean
 if /I "%CMD%"=="all" goto :do_all
 
@@ -36,6 +37,10 @@ goto :success
 
 :do_core
 call :core_build || goto :fail
+goto :success
+
+:do_physics
+call :physics_build || goto :fail
 goto :success
 
 :do_window
@@ -64,6 +69,7 @@ call :core_build || goto :fail
 call :window_build || goto :fail
 call :assets_build || goto :fail
 call :renderer_build || goto :fail
+call :physics_build || goto :fail
 call :example_build || goto :fail
 goto :success
 
@@ -125,6 +131,20 @@ if exist "%CD%\src\core\build.bat" (
 )
 exit /b 0
 
+:physics_build
+powershell -Command "Write-Host '[physics] Checking for physics\build.bat' -ForegroundColor Cyan"
+if exist "%CD%\src\physics\build.bat" (
+	powershell -Command "Write-Host '[physics] Running physics\build.bat' -ForegroundColor Cyan"
+	call "%CD%\src\physics\build.bat"
+	if errorlevel 1 (
+		echo [physics] Sub-build failed.
+		exit /b 1
+	)
+) else (
+	echo [physics] No physics\build.bat found. Skipping.
+)
+exit /b 0
+
 :example_build
 powershell -Command "Write-Host '[example] Checking for example\build.bat' -ForegroundColor Cyan"
 if exist "%CD%\src\example\build.bat" (
@@ -177,6 +197,7 @@ echo   assets      Run assets\build.bat (if present).
 echo   core        Run core\build.bat (if present).
 echo   example     Run example\build.bat (if present).
 echo   renderer    Run renderer\build.bat (if present).
+echo   physics     Run physics\build.bat (if present).
 echo   clean       Delete the output directory.
 echo   all         shaders + window  ^(default^)
 echo.

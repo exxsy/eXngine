@@ -75,6 +75,21 @@
             "detail": "Build assets project only"
         },
         {
+            "label": "Build Physics",
+            "type": "shell",
+            "windows" : {
+                "command": "${workspaceFolder}/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build.sh"
+            },
+            "args": [
+                "physics"
+            ],
+            "group": "build",
+            "detail": "Build physics project only"
+        },
+        {
             "label": "Build Example",
             "type": "shell",
             "windows" : {

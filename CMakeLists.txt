@@ -302,6 +302,9 @@ target_link_libraries(eXngine.assets PUBLIC eXngine.core PRIVATE stb_image)
 exn_add_module(renderer)
 target_link_libraries(eXngine.renderer PUBLIC eXngine.core eXngine.assets Vulkan::Vulkan)
 
+exn_add_module(physics)
+target_link_libraries(eXngine.physics PUBLIC eXngine.core)
+
 # ---------------------------------------------------------------------------
 # Example application
 # ---------------------------------------------------------------------------
@@ -320,6 +323,7 @@ if(EXN_BUILD_EXAMPLE)
         "${EXN_3RDPARTY_DIR}/imgui")
     target_link_libraries(eXngine.example PRIVATE
         eXngine.renderer
+        eXngine.physics
         eXngine.window
         eXngine.assets
         eXngine.core
