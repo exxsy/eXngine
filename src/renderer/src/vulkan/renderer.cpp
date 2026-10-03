@@ -46,6 +46,16 @@ namespace eXngine::Renderers::Vulkan
 
         CreatePipeline<VkVertex>(EXN_DEFAULT_PIPELINE);
 
+        // Without "transparent.vertex"/"transparent.fragment" shaders of its own, the
+        // transparent pipeline uses the default ones: their output alpha is the texture's.
+        VkGraphicsPipeline *transparent = m_pGraphicPipelines[EXN_TRANSPARENT_PIPELINE];
+
+        if (transparent->m_ShaderStages.empty())
+            transparent->m_ShaderStages = m_pGraphicPipelines[EXN_DEFAULT_PIPELINE]->m_ShaderStages;
+
+        if (!transparent->m_ShaderStages.empty())
+            CreatePipeline<VkVertex>(EXN_TRANSPARENT_PIPELINE);
+
         EX_INFO("Vulkan renderer initialized.");
     }
 
@@ -338,6 +348,10 @@ namespace eXngine::Renderers::Vulkan
         for (auto &[name, material] : m_Materials)
             delete material;
 
+        // Their texture and material are deleted with the others.
+        for (auto &[name, font] : m_Fonts)
+            delete font;
+
         for (auto *mesh : m_Meshes)
             delete mesh;
 
@@ -348,6 +362,7 @@ namespace eXngine::Renderers::Vulkan
             delete pass;
 
         m_Materials.clear();
+        m_Fonts.clear();
         m_Meshes.clear();
         m_Textures.clear();
         m_RenderPasses.clear();
@@ -363,10 +378,14 @@ namespace eXngine::Renderers::Vulkan
         m_Depth->Release(m_pDevice);
         m_DefaultTexture->Release(m_pDevice);
 
+        // Deleting through ShaderModule * runs ~VkShaderModuleObject (virtual
+        // destructor), which destroys the VkShaderModule while the device is alive.
         for (auto &shader : m_Shaders)
         {
             delete shader.second;
         }
+
+        m_Shaders.clear();
 
         for (auto &frame : m_pFrameObjects)
         {
@@ -383,6 +402,12 @@ namespace eXngine::Renderers::Vulkan
     {
         if (data.empty())
             return false;
+
+        if (this->m_Shaders.find(name) != this->m_Shaders.end())
+        {
+            std::cout << "[WARNING] Shader with name '" << name << "' already exists. Skipping creation." << "\n";
+            return false;
+        }
 
         std::string pipeline = "default";
         std::string entrypoint = name;
@@ -426,15 +451,22 @@ namespace eXngine::Renderers::Vulkan
     {
         const auto shader_module = this->m_Shaders.find(name);
 
-        if (this->m_Shaders.find(name) == this->m_Shaders.end())
+        if (shader_module == this->m_Shaders.end())
             return;
 
-        const auto shader = reinterpret_cast<VkShaderModuleObject *>(shader_module->second);
+        const auto shader = static_cast<VkShaderModuleObject *>(shader_module->second);
 
-        vkDestroyShaderModule(this->m_pDevice, shader->m_pShader, nullptr);
+        // A pipeline does not need its shader modules once it is created, so the
+        // VkPipeline stays alive (it is owned by m_pGraphicPipelines and destroyed
+        // in OnExit). Only drop the stage so a rebuilt pipeline won't use this module.
+        if (shader->m_pPipeline != EXN_NULL_HANDLE && shader->m_pShader != EXN_NULL_HANDLE)
+        {
+            std::erase_if(shader->m_pPipeline->m_ShaderStages, [shader](const VkPipelineShaderStageCreateInfo &stage)
+                          { return stage.module == shader->m_pShader; });
+        }
 
-        if (shader->m_pPipeline != EXN_NULL_HANDLE)
-            vkDestroyPipeline(this->m_pDevice, shader->m_pPipeline->m_pPipeline, nullptr);
+        delete shader; // ~VkShaderModuleObject destroys the VkShaderModule
+        this->m_Shaders.erase(shader_module);
     }
 
     void Renderer::UseShader(const char *name)
@@ -447,7 +479,7 @@ namespace eXngine::Renderers::Vulkan
         if (this->m_Shaders.find(name) == this->m_Shaders.end())
             return;
 
-        const auto shader = reinterpret_cast<VkShaderModuleObject *>(shader_module->second);
+        const auto shader = static_cast<VkShaderModuleObject *>(shader_module->second);
         const auto pipeline = shader->m_pPipeline->m_pPipeline;
 
         vkCmdBindPipeline(m_pCurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -651,6 +683,7 @@ namespace eXngine::Renderers::Vulkan
     void Renderer::CreateDefaultGraphicsPipeline()
     {
         this->m_pGraphicPipelines.emplace(EXN_DEFAULT_PIPELINE, new VkGraphicsPipeline(&m_pDevice, &m_pDescriptorPool, &m_szSwapChainExtent));
+        this->m_pGraphicPipelines.emplace(EXN_TRANSPARENT_PIPELINE, new VkTransparentPipeline(&m_pDevice, &m_pDescriptorPool, &m_szSwapChainExtent));
     }
 
     void Renderer::CreateSyncObjects()
@@ -1054,6 +1087,65 @@ namespace eXngine::Renderers::Vulkan
         return CreateMesh(mesh.vertices, indices);
     }
 
+    VkMesh *Renderer::CreateDynamicMesh()
+    {
+        if (m_pDevice == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("CreateDynamicMesh: the renderer is not initialized.");
+            return EXN_NULL_HANDLE;
+        }
+
+        auto *mesh = new VkMesh(this, true);
+        m_Meshes.push_back(mesh);
+
+        return mesh;
+    }
+
+    VkFont *Renderer::LoadFont(const std::string &name, const std::string &path, const Assets::FontSettings &settings)
+    {
+        if (VkFont *font = GetFont(name))
+            return font;
+
+        if (m_pDevice == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("LoadFont: the renderer is not initialized.");
+            return EXN_NULL_HANDLE;
+        }
+
+        Assets::Font font;
+
+        if (!font.LoadFromFile(path, settings))
+            return EXN_NULL_HANDLE;
+
+        const std::string resourceName = "font:" + name;
+        const Assets::TextureAtlas &atlas = font.GetAtlas();
+
+        VkTexture *texture = CreateTexture(resourceName.c_str(), atlas.GetPixels().data(), atlas.GetWidth(), atlas.GetHeight());
+        VkMaterial *material = texture != EXN_NULL_HANDLE ? CreateMaterial(resourceName, EXN_TRANSPARENT_PIPELINE) : EXN_NULL_HANDLE;
+
+        if (material == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("LoadFont: cannot create the texture or material of font '%s'.", name.c_str());
+            return EXN_NULL_HANDLE;
+        }
+
+        material->SetTexture(0, texture);
+
+        EX_INFO("Font '%s': %lld glyphs in a %dx%d atlas (%.0f%% used).", name.c_str(), static_cast<EXSIZE>(font.GetGlyphs().size()),
+                atlas.GetWidth(), atlas.GetHeight(), atlas.GetOccupancy() * 100.0f);
+
+        auto *added = new VkFont(name, std::move(font), texture, material);
+        m_Fonts.emplace(name, added);
+
+        return added;
+    }
+
+    VkFont *Renderer::GetFont(const std::string &name)
+    {
+        const auto it = m_Fonts.find(name);
+        return it != m_Fonts.end() ? it->second : EXN_NULL_HANDLE;
+    }
+
     bool Renderer::DestroyTexture(const char *name)
     {
         const auto it = name != EXN_NULL_HANDLE ? m_Textures.find(name) : m_Textures.end();
@@ -1099,7 +1191,7 @@ namespace eXngine::Renderers::Vulkan
         for (const auto &shader : m_Shaders)
         {
             const auto &[name, data] = shader;
-            const auto shaderModuleObject = reinterpret_cast<VkShaderModuleObject *>(data);
+            const auto shaderModuleObject = static_cast<VkShaderModuleObject *>(data);
 
             VkShaderModule shaderModule = EXN_NULL_HANDLE;
 

@@ -211,7 +211,7 @@ namespace eXngine::Renderers::Vulkan
 
             if (draw.mesh != boundMesh)
             {
-                draw.mesh->Bind(commandBuffer);
+                draw.mesh->Bind(commandBuffer, frameIndex);
                 boundMesh = draw.mesh;
             }
 

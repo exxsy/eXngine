@@ -28,11 +28,15 @@
 #include <renderers/vulkan/material.h>
 #include <renderers/vulkan/renderpass.h>
 #include <renderers/vulkan/pipelines/graphics.h>
+#include <renderers/vulkan/pipelines/transparent.h>
+#include <renderers/vulkan/font.h>
 
 #undef EXN_NULL_HANDLE
 #define EXN_NULL_HANDLE VK_NULL_HANDLE
 #define EXN_DEFAULT_PIPELINE "default"
 #define EXN_SHAPE_PIPELINE "shapes"
+// Alpha blended, no depth writes (VkTransparentPipeline): text, see-through sprites.
+#define EXN_TRANSPARENT_PIPELINE "transparent"
 
 namespace eXngine::Renderers::Vulkan
 {
@@ -207,7 +211,6 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkFrameObject> m_pFrameObjects;
 		std::vector<VkImage> m_swapChainImages;
 		std::vector<VkImageView> m_swapChainImageViews;
-		std::map<const char *, VkShaderModuleObject *> m_ShaderModules;
 		// std::map<const char*, VkModelObject> m_Models;
 
 		VkDescriptorSetLayout m_pGlobalSetLayout = EXN_NULL_HANDLE;	  // set 0: per-frame UBO
@@ -215,6 +218,7 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkRenderPassObject *> m_RenderPasses;			  // recorded in this order
 		std::unordered_map<std::string, VkTexture *> m_Textures;
 		std::unordered_map<std::string, VkMaterial *> m_Materials;
+		std::unordered_map<std::string, VkFont *> m_Fonts;
 		std::vector<VkMesh *> m_Meshes;
 
 	private:
@@ -325,6 +329,15 @@ namespace eXngine::Renderers::Vulkan
 		VkMaterial *GetMaterial(const std::string &name);
 		VkMesh *CreateMesh(const std::vector<eXngine::Utils::Vertex> &, const std::vector<EXUINT32> &);
 		VkMesh *CreateMesh(const eXngine::Utils::Mesh &);
+		// Empty at first: fill it with VkMesh::Update, as often as needed (see VkMesh).
+		VkMesh *CreateDynamicMesh();
+
+		// Bakes the glyphs of a TrueType/OpenType file into an atlas texture and makes a
+		// transparent material for it. A known name returns the loaded font.
+		//   renderer->LoadFont("ui", "C:/Windows/Fonts/segoeui.ttf", {.PixelHeight = 32.0f});
+		VkFont *LoadFont(const std::string &name, const std::string &path, const Assets::FontSettings & = {});
+		VkFont *GetFont(const std::string &name);
+		const std::unordered_map<std::string, VkFont *> &GetFonts() const { return m_Fonts; }
 
 		// Destroying waits until the GPU is idle, so do it between frames, never from the
 		// render handler (e.g. ImGui) while the frame is being recorded. Materials that use

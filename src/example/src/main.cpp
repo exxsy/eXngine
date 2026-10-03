@@ -1,11 +1,7 @@
-#include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <cstdio>
 #include <filesystem>
-#include <random>
 #include <unordered_map>
-#include <vector>
 
 #include "../headers/file.h"
 
@@ -17,7 +13,6 @@
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_vulkan.h>
 
-#include <glm/gtc/constants.hpp>
 #include <types/color.h>
 #include <component/name.h>
 #include <component/transform.h>
@@ -25,8 +20,10 @@
 #include <renderers/vulkan/components/mesh.h>
 #include <renderers/vulkan/components/model.h>
 #include <renderers/vulkan/systems/render.h>
+#include <renderers/vulkan/components/text.h>
+#include <renderers/vulkan/systems/text.h>
 #include <renderers/vulkan/assets.h>
-#include <physics/system.h>
+#include <assets/atlas.h>
 #include <utils/fbx-loader.h>
 
 #include "cameras/ortographic.h"
@@ -55,20 +52,25 @@ World::eXworld *world;
 VkAssetManager *assets;
 AssetPanel *assetPanel;
 VkModel *quadModel;
-VkModel *cubeModel;
-VkModel *sphereModel;
 EXUINT selectedEntity = 0;
 EXUINT quadCount = 0;
-
-// Moves every entity with a rigid body and collides the ones with a collider.
-Physics::eXphysicsSystem *physics;
-EXUINT dropCount = 0;
-std::mt19937 dropRandom(7);
 std::chrono::steady_clock::time_point lastFrameTime;
 
 // Material demo: the 'checker' material can switch between the procedural textures.
 const char *textureNames[] = {"checker", "stripes"};
 int checkerMaterialTexture = 0;
+
+// Font & atlas demo: a font baked from a system font, a sprite atlas packed from several
+// images, a text in the world and a HUD text showing the frame rate.
+VkFont *demoFont = EXN_NULL_HANDLE;
+Assets::TextureAtlas spriteAtlas;
+EXUINT hudEntity = 0;
+EXUINT textCount = 0;
+const char *alignNames[] = {"Left", "Center", "Right"};
+const char *spaceNames[] = {"World", "Screen"};
+// The atlas textures as ImGui images, for the "Font & Atlas" window.
+VkDescriptorSet fontAtlasImage = EXN_NULL_HANDLE;
+VkDescriptorSet spriteAtlasImage = EXN_NULL_HANDLE;
 
 // Euler angles in degrees per entity, as edited in the UI. Kept here instead of being read
 // back from the quaternion, which would flip the values once yaw passes +-90 degrees.
@@ -132,115 +134,98 @@ Entity::eXentity *CreateQuad(const std::string &name, const eXvec3 &position, co
     return quad;
 }
 
-// The shaders have no lights: a brightness per vertex, from its normal, tells the faces apart.
-eXvec3 Shade(const EXMATH::vec3 &normal)
+// A font that comes with Windows, so the demo needs no font file of its own.
+std::string FindSystemFont()
 {
-    const EXMATH::vec3 light = EXMATH::normalize(EXMATH::vec3(0.4f, 1.0f, 0.6f));
-    return eXvec3(EXMATH::vec3(0.45f + 0.55f * std::max(EXMATH::dot(normal, light), 0.0f)));
+    char windows[MAX_PATH] = {0};
+
+    if (GetWindowsDirectoryA(windows, MAX_PATH) == 0)
+        return {};
+
+    for (const char *file : {"segoeui.ttf", "arial.ttf", "tahoma.ttf"})
+    {
+        const std::filesystem::path path = std::filesystem::path(windows) / "Fonts" / file;
+
+        if (std::filesystem::exists(path))
+            return path.string();
+    }
+
+    return {};
 }
 
-// Unit cube (-0.5..0.5) with the whole texture on each face: matches a Box collider of half extents 0.5.
-void CreateCubeModel()
+Entity::eXentity *CreateText(const std::string &name, const std::string &text, const eXvec3 &position)
 {
-    std::vector<eXngine::Utils::Vertex> vertices;
-    std::vector<EXUINT32> indices;
+    Entity::eXentity *entity = world->CreateEntity(name);
 
-    for (int axis = 0; axis < 3; ++axis)
+    entity->AddComponent<Component::eXtransformComponent>()->Position = position;
+    entity->AddComponent<VkTextComponent>(demoFont, text);
+
+    return entity;
+}
+
+void CreateFontAndAtlasDemo()
+{
+    // Sprite atlas: four images packed into one texture, drawn with one material.
+    const auto dotPixels = MakePatternTexture(32, 4, false, eXcolor(250, 210, 60, 255), eXcolor(200, 60, 90, 255));
+    const auto barPixels = MakePatternTexture(48, 6, true, eXcolor(90, 200, 120, 255), eXcolor(30, 60, 40, 255));
+
+    spriteAtlas.AddImage("pattern", dotPixels.data(), 32, 32, 4);
+    spriteAtlas.AddImage("bars", barPixels.data(), 48, 48, 4);
+    spriteAtlas.AddImageFile("crate", "assets/textures/crate.png");
+    spriteAtlas.AddImageFile("uv-grid", "assets/textures/uv-grid.png");
+
+    if (spriteAtlas.Build())
     {
-        for (const float side : {1.0f, -1.0f})
+        VkTexture *texture = renderer->CreateTexture("sprite-atlas", spriteAtlas.GetPixels().data(), spriteAtlas.GetWidth(), spriteAtlas.GetHeight());
+        VkMaterial *material = renderer->CreateMaterial("sprite-atlas");
+        material->SetTexture(0, texture);
+
+        // One sprite per region: the same texture and material, other texture coordinates.
+        EXFLOAT x = -0.9f;
+
+        for (const auto &[regionName, region] : spriteAtlas.GetRegions())
         {
-            EXMATH::vec3 normal(0.0f), u(0.0f), v(0.0f);
-            normal[axis] = side;
-            u[(axis + 1) % 3] = 1.0f;
-            v[(axis + 2) % 3] = 1.0f;
+            std::vector<eXngine::Utils::Vertex> vertices;
+            std::vector<EXUINT32> indices;
 
-            const EXUINT32 first = static_cast<EXUINT32>(vertices.size());
-            const EXMATH::vec2 corners[] = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
+            // As many pixels per unit as the image is tall: every sprite is one unit high.
+            Assets::BuildSpriteQuad(region, static_cast<EXFLOAT>(region.Height), vertices, indices);
 
-            for (const auto &corner : corners)
-            {
-                const EXMATH::vec3 position = 0.5f * (normal + corner.x * u + corner.y * v);
-                vertices.push_back({.color = Shade(normal), .coordinates = position, .uv = eXvec2(0.5f + 0.5f * corner.x, 0.5f - 0.5f * corner.y)});
-            }
+            Entity::eXentity *sprite = world->CreateEntity("Sprite " + regionName);
+            auto *transform = sprite->AddComponent<Component::eXtransformComponent>();
+            transform->Position = eXvec3(x, -0.75f, 0.0f);
+            transform->Scale = eXvec3(0.35f, 0.35f, 0.35f);
+            sprite->AddComponent<VkMeshComponent>(renderer->CreateMesh(vertices, indices), material);
 
-            for (const EXUINT32 index : {0u, 1u, 2u, 2u, 3u, 0u})
-                indices.push_back(first + index);
+            x += 0.6f;
         }
     }
 
-    cubeModel = assets->CreateModel("builtin:cube", vertices, indices, renderer->GetMaterial("checker"));
-}
+    const std::string fontPath = FindSystemFont();
+    demoFont = fontPath.empty() ? EXN_NULL_HANDLE : renderer->LoadFont("default", fontPath, {.PixelHeight = 48.0f});
 
-// Sphere of radius 0.5: matches a Sphere collider of radius 0.5.
-void CreateSphereModel()
-{
-    constexpr int rings = 12, segments = 24;
-    std::vector<eXngine::Utils::Vertex> vertices;
-    std::vector<EXUINT32> indices;
-
-    for (int ring = 0; ring <= rings; ++ring)
+    if (demoFont == EXN_NULL_HANDLE)
     {
-        const float latitude = EXMATH::pi<float>() * ring / rings;
-
-        for (int segment = 0; segment <= segments; ++segment)
-        {
-            const float longitude = 2.0f * EXMATH::pi<float>() * segment / segments;
-            const EXMATH::vec3 normal(std::sin(latitude) * std::cos(longitude), std::cos(latitude), std::sin(latitude) * std::sin(longitude));
-
-            vertices.push_back({.color = Shade(normal), .coordinates = 0.5f * normal, .uv = eXvec2(2.0f * segment / segments, static_cast<float>(ring) / rings)});
-        }
+        EX_WARNING("No system font found: the text demo is disabled.");
+        return;
     }
 
-    for (int ring = 0; ring < rings; ++ring)
-    {
-        for (int segment = 0; segment < segments; ++segment)
-        {
-            const EXUINT32 current = ring * (segments + 1) + segment;
-            const EXUINT32 below = current + segments + 1;
+    // Draws after the scene pass, so the blended text covers the objects behind it.
+    world->AddSystem<VkTextSystem>(renderer, "transparent");
 
-            for (const EXUINT32 index : {current, below, current + 1, current + 1, below, below + 1})
-                indices.push_back(index);
-        }
-    }
+    auto *title = CreateText("Title text", "Merhaba eXngine!\nFont & Atlas: çğıöşü ÇĞİÖŞÜ", eXvec3(0.0f, 0.72f, 0.0f))->GetComponent<VkTextComponent>();
+    title->Size = 0.12f;
+    title->Align = Assets::TextAlign::Center;
+    title->Color = eXvec3(1.0f, 0.85f, 0.3f);
 
-    sphereModel = assets->CreateModel("builtin:sphere", vertices, indices, renderer->GetMaterial("stripes"));
-}
-
-// An object that takes part in the physics: a model, a collider of the model's size and,
-// unless it is static, a rigid body.
-Entity::eXentity *CreateBody(const std::string &name, VkModel *model, const Physics::eXcolliderComponent &collider,
-                             const eXvec3 &position, const eXvec3 &scale, bool dynamic)
-{
-    Entity::eXentity *body = world->CreateEntity(name);
-
-    auto *transform = body->AddComponent<Component::eXtransformComponent>();
-    transform->Position = position;
-    transform->Scale = scale;
-
-    body->AddComponent<VkModelComponent>(model);
-    body->AddComponent<Physics::eXcolliderComponent>(collider);
-
-    if (dynamic)
-        body->AddComponent<Physics::eXrigidBodyComponent>();
-
-    return body;
-}
-
-// Drops a box or a ball with a random spin above the ground.
-EXUINT DropBody(bool ball)
-{
-    std::uniform_real_distribution<float> random(-1.0f, 1.0f);
-    const eXvec3 position(0.7f * random(dropRandom), 0.8f, 0.5f + 0.25f * random(dropRandom));
-    const std::string name = (ball ? "Ball " : "Box ") + std::to_string(++dropCount);
-
-    Entity::eXentity *body = ball
-                                 ? CreateBody(name, sphereModel, Physics::eXcolliderComponent::Sphere(), position, eXvec3(0.2f, 0.2f, 0.2f), true)
-                                 : CreateBody(name, cubeModel, Physics::eXcolliderComponent::Box(), position, eXvec3(0.2f, 0.2f, 0.2f), true);
-
-    body->GetComponent<Component::eXtransformComponent>()->Rotation = EXMATH::quat(EXMATH::vec3(random(dropRandom), random(dropRandom), random(dropRandom)) * 3.0f);
-    body->GetComponent<Physics::eXrigidBodyComponent>()->AngularVelocity = eXvec3(random(dropRandom), random(dropRandom), random(dropRandom));
-
-    return body->GetID();
+    // HUD: Size and position in pixels; App_OnLoop keeps it in the bottom-right corner.
+    auto *hud = CreateText("HUD text", "", eXvec3(0.0f, 0.0f, 0.0f));
+    auto *hudText = hud->GetComponent<VkTextComponent>();
+    hudText->Space = VkTextSpace::Screen;
+    hudText->Size = 22.0f;
+    hudText->Align = Assets::TextAlign::Right;
+    hudText->Pivot = eXvec2(1.0f, 1.0f);
+    hudEntity = hud->GetID();
 }
 
 void CreateDemoScene()
@@ -266,24 +251,15 @@ void CreateDemoScene()
     const std::vector<EXUINT32> indices{0, 1, 2, 2, 3, 0};
 
     quadModel = assets->CreateModel("builtin:quad", vertices, indices, renderer->GetMaterial("checker"));
-    CreateCubeModel();
-    CreateSphereModel();
 
     // Gameplay systems first, so the render system draws their result in the same frame.
     world->AddSystem<SpinSystem>();
-    physics = world->AddSystem<Physics::eXphysicsSystem>();
     world->AddSystem<VkRenderSystem>(renderer);
 
     CreateQuad("Left quad", eXvec3(-0.6f, 0.0f, 0.0f), "checker");
     CreateQuad("Right quad", eXvec3(0.6f, 0.0f, 0.0f), "stripes");
 
-    // A static ground (collider, no rigid body) in front of the quads, and a small stack on it.
-    CreateBody("Ground", cubeModel, Physics::eXcolliderComponent::Box(), eXvec3(0.0f, -0.6f, 0.4f), eXvec3(2.4f, 0.1f, 1.2f), false)
-        ->GetComponent<VkModelComponent>()
-        ->Material = renderer->GetMaterial("stripes");
-
-    for (int i = 0; i < 3; ++i)
-        CreateBody("Stack " + std::to_string(i + 1), cubeModel, Physics::eXcolliderComponent::Box(), eXvec3(0.0f, -0.45f + 0.2f * i, 0.5f), eXvec3(0.2f, 0.2f, 0.2f), true);
+    CreateFontAndAtlasDemo();
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -335,6 +311,13 @@ void ImGui_OnInit(eXwindow *app, Renderer *renderer)
     // init_info.CheckVkResultFn = ImGui_CheckVkResult;
     ImGui_ImplVulkan_Init(&init_info);
 
+    // The atlases as ImGui images (a descriptor set each), shown in the "Font & Atlas" window.
+    if (demoFont != EXN_NULL_HANDLE)
+        fontAtlasImage = ImGui_ImplVulkan_AddTexture(renderer->m_pTextureSampler, demoFont->GetTexture()->m_pView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    if (VkTexture *texture = renderer->GetTexture("sprite-atlas"))
+        spriteAtlasImage = ImGui_ImplVulkan_AddTexture(renderer->m_pTextureSampler, texture->m_pView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
     {
         const VkCommandBuffer commandBuffer = renderer->BeginSingleTimeCommands();
 
@@ -344,6 +327,128 @@ void ImGui_OnInit(eXwindow *app, Renderer *renderer)
 
         // ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
+}
+
+// An atlas texture, scaled down to the width of the window.
+void AtlasImage(VkDescriptorSet image, EXINT32 width, EXINT32 height)
+{
+    if (image == EXN_NULL_HANDLE || width <= 0 || height <= 0)
+        return;
+
+    const float scale = std::min(1.0f, ImGui::GetContentRegionAvail().x / static_cast<float>(width));
+    ImGui::Image(reinterpret_cast<ImTextureID>(image), ImVec2(width * scale, height * scale));
+}
+
+void FontAndAtlasWindow()
+{
+    ImGui::SetNextWindowPos(ImVec2(10.0f, 340.0f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(380.0f, 400.0f), ImGuiCond_FirstUseEver);
+
+    if (!ImGui::Begin("Font & Atlas"))
+    {
+        ImGui::End();
+        return;
+    }
+
+    if (demoFont != EXN_NULL_HANDLE)
+    {
+        const Assets::Font &font = demoFont->GetFont();
+        const Assets::TextureAtlas &atlas = font.GetAtlas();
+
+        ImGui::SeparatorText("Font");
+        ImGui::Text("'%s': %.0f px, %d glyphs", demoFont->GetName().c_str(), font.GetSettings().PixelHeight, static_cast<int>(font.GetGlyphs().size()));
+        ImGui::Text("Ascent %.1f, descent %.1f, line height %.1f px", font.GetAscent(), font.GetDescent(), font.GetLineHeight());
+        ImGui::Text("Atlas %dx%d, %.0f%% used", atlas.GetWidth(), atlas.GetHeight(), atlas.GetOccupancy() * 100.0f);
+        AtlasImage(fontAtlasImage, atlas.GetWidth(), atlas.GetHeight());
+    }
+    else
+    {
+        ImGui::TextDisabled("No font loaded.");
+    }
+
+    ImGui::SeparatorText("Sprite atlas");
+    ImGui::Text("%lld images in %dx%d, %.0f%% used", spriteAtlas.GetImageCount(), spriteAtlas.GetWidth(), spriteAtlas.GetHeight(), spriteAtlas.GetOccupancy() * 100.0f);
+    AtlasImage(spriteAtlasImage, spriteAtlas.GetWidth(), spriteAtlas.GetHeight());
+
+    if (ImGui::BeginTable("##regions", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV))
+    {
+        ImGui::TableSetupColumn("Region");
+        ImGui::TableSetupColumn("Pixels");
+        ImGui::TableSetupColumn("UV");
+        ImGui::TableHeadersRow();
+
+        for (const auto &[regionName, region] : spriteAtlas.GetRegions())
+        {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(regionName.c_str());
+            ImGui::TableNextColumn();
+            ImGui::Text("%d,%d %dx%d", region.X, region.Y, region.Width, region.Height);
+            ImGui::TableNextColumn();
+            ImGui::Text("%.2f,%.2f - %.2f,%.2f", region.U0, region.V0, region.U1, region.V1);
+        }
+
+        ImGui::EndTable();
+    }
+
+    ImGui::End();
+}
+
+// Edits the VkTextComponent of the selected entity.
+void TextInspector(Renderer *vulkan, Entity::eXentity *selected)
+{
+    auto *text = selected->GetComponent<VkTextComponent>();
+
+    if (text == EXN_NULL_HANDLE)
+    {
+        if (demoFont != EXN_NULL_HANDLE && ImGui::Button("Add text"))
+            selected->AddComponent<VkTextComponent>(demoFont, "Text");
+
+        return;
+    }
+
+    ImGui::SeparatorText("Text");
+
+    // ImGui edits its own copy while the field is active, so a fresh buffer per frame is fine.
+    char buffer[1024];
+    strncpy_s(buffer, text->Text.c_str(), _TRUNCATE);
+
+    if (ImGui::InputTextMultiline("##text", buffer, sizeof(buffer), ImVec2(-FLT_MIN, 3.5f * ImGui::GetTextLineHeightWithSpacing())))
+        text->Text = buffer;
+
+    if (ImGui::BeginCombo("Font", text->Font != EXN_NULL_HANDLE ? text->Font->GetName().c_str() : "(none)"))
+    {
+        for (const auto &[fontName, font] : vulkan->GetFonts())
+        {
+            if (ImGui::Selectable(fontName.c_str(), font == text->Font))
+                text->Font = font;
+        }
+
+        ImGui::EndCombo();
+    }
+
+    const bool screen = text->Space == VkTextSpace::Screen;
+    int space = static_cast<int>(text->Space);
+    int align = static_cast<int>(text->Align);
+
+    ImGui::ColorEdit3("Color", &text->Color.x);
+    ImGui::DragFloat(screen ? "Size (px)" : "Size", &text->Size, screen ? 0.5f : 0.005f, 0.0f, 1000.0f);
+
+    if (ImGui::Combo("Align", &align, alignNames, IM_ARRAYSIZE(alignNames)))
+        text->Align = static_cast<Assets::TextAlign>(align);
+
+    ImGui::DragFloat("Max width", &text->MaxWidth, screen ? 1.0f : 0.01f, 0.0f, 10000.0f, text->MaxWidth > 0.0f ? "%.2f" : "no wrapping");
+    ImGui::DragFloat("Line spacing", &text->LineSpacing, 0.01f, 0.1f, 5.0f);
+    ImGui::DragFloat2("Pivot", &text->Pivot.x, 0.01f, 0.0f, 1.0f);
+
+    if (ImGui::Combo("Space", &space, spaceNames, IM_ARRAYSIZE(spaceNames)))
+        text->Space = static_cast<VkTextSpace>(space);
+
+    ImGui::Checkbox("Visible##text", &text->Visible);
+    ImGui::SameLine();
+
+    if (ImGui::Button("Remove text"))
+        selected->RemoveComponent<VkTextComponent>();
 }
 
 void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
@@ -376,56 +481,6 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     if (ImGui::Combo("'checker' texture", &checkerMaterialTexture, textureNames, IM_ARRAYSIZE(textureNames)))
         vulkan->GetMaterial("checker")->SetTexture(0, vulkan->GetTexture(textureNames[checkerMaterialTexture]));
 
-    ImGui::SeparatorText("Physics");
-
-    bool simulate = !physics->IsPaused();
-
-    if (ImGui::Checkbox("Simulate", &simulate))
-        physics->SetPaused(!simulate);
-
-    ImGui::SameLine();
-    ImGui::BeginDisabled(simulate);
-
-    if (ImGui::Button("Step"))
-        physics->Step(*world, physics->GetFixedTimeStep());
-
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    ImGui::Text("%zu contacts", physics->GetContacts().size());
-
-    float gravity = physics->GetGravity().y;
-
-    if (ImGui::SliderFloat("Gravity", &gravity, -20.0f, 5.0f))
-        physics->SetGravity(eXvec3(0.0f, gravity, 0.0f));
-
-    if (ImGui::Button("Drop box"))
-        selectedEntity = DropBody(false);
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Drop ball"))
-        selectedEntity = DropBody(true);
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Remove bodies"))
-    {
-        // Collected first: destroying entities while looping over their components is not allowed.
-        std::vector<EXUINT> dynamicBodies;
-
-        for (auto &[id, body] : world->GetComponents<Physics::eXrigidBodyComponent>())
-        {
-            if (body.Type == Physics::eXbodyType::Dynamic)
-                dynamicBodies.push_back(id);
-        }
-
-        for (const EXUINT id : dynamicBodies)
-        {
-            world->DestroyEntity(id);
-            editorRotations.erase(id);
-        }
-    }
-
     ImGui::SeparatorText("World");
     ImGui::Text("%lld entities", world->GetEntityCount());
 
@@ -433,6 +488,18 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     {
         const std::string name = "Quad " + std::to_string(++quadCount);
         selectedEntity = CreateQuad(name, eXvec3(0.0f, 0.0f, 0.0f), "checker")->GetID();
+    }
+
+    if (demoFont != EXN_NULL_HANDLE)
+    {
+        ImGui::SameLine();
+
+        if (ImGui::Button("Add text"))
+        {
+            auto *text = CreateText("Text " + std::to_string(++textCount), "Text", eXvec3(0.0f, 0.0f, 0.1f));
+            text->GetComponent<VkTextComponent>()->Size = 0.1f;
+            selectedEntity = text->GetID();
+        }
     }
 
     Entity::eXentity *selected = world->GetEntity(selectedEntity);
@@ -472,9 +539,6 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
         ImGui::Text("%s (entity %u)", name != EXN_NULL_HANDLE ? name->Name.c_str() : "Entity", selected->GetID());
 
         auto *spin = selected->GetComponent<SpinComponent>();
-        auto *body = selected->GetComponent<Physics::eXrigidBodyComponent>();
-        // The spin or the physics system owns the rotation while it runs.
-        const bool driven = spin != EXN_NULL_HANDLE || (body != EXN_NULL_HANDLE && body->Type != Physics::eXbodyType::Static);
 
         if (auto *transform = selected->GetComponent<Component::eXtransformComponent>())
         {
@@ -482,11 +546,11 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
 
             eXvec3 &rotation = editorRotations.try_emplace(selected->GetID(), EXMATH::degrees(EXMATH::vec3(transform->GetEulerAngles()))).first->second;
 
-            // Show the rotation of the system that drives it; editing continues from there later.
-            if (driven)
+            // The spin system owns the rotation while it runs: show it, continue from it later.
+            if (spin != EXN_NULL_HANDLE)
                 rotation = EXMATH::degrees(EXMATH::vec3(transform->GetEulerAngles()));
 
-            ImGui::BeginDisabled(driven);
+            ImGui::BeginDisabled(spin != EXN_NULL_HANDLE);
 
             if (ImGui::DragFloat3("Rotation", &rotation.x, 1.0f))
                 transform->SetEulerAngles(EXMATH::radians(EXMATH::vec3(rotation)));
@@ -516,6 +580,8 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
             selected->AddComponent<VkModelComponent>(quadModel);
         }
 
+        TextInspector(vulkan, selected);
+
         bool spinning = spin != EXN_NULL_HANDLE;
 
         if (ImGui::Checkbox("Spin", &spinning))
@@ -529,70 +595,12 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
         {
             ImGui::DragFloat("Degrees per second", &spin->DegreesPerSecond, 1.0f);
         }
-
-        if (ImGui::TreeNodeEx("Physics", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            if (body != EXN_NULL_HANDLE)
-            {
-                const char *bodyTypes[] = {"Static", "Kinematic", "Dynamic"};
-                int bodyType = static_cast<int>(body->Type);
-
-                if (ImGui::Combo("Body type", &bodyType, bodyTypes, IM_ARRAYSIZE(bodyTypes)))
-                    body->Type = static_cast<Physics::eXbodyType>(bodyType);
-
-                ImGui::DragFloat("Mass", &body->Mass, 0.01f, 0.01f, 1000.0f);
-                ImGui::DragFloat3("Velocity", &body->LinearVelocity.x, 0.01f);
-                ImGui::DragFloat3("Angular velocity", &body->AngularVelocity.x, 0.01f);
-                ImGui::DragFloat("Gravity scale", &body->GravityScale, 0.01f);
-
-                // An impulse of mass * 3 changes the velocity by 3 units per second.
-                if (ImGui::Button("Kick up"))
-                    body->AddImpulse(eXvec3(0.0f, 3.0f * body->Mass, 0.0f));
-
-                ImGui::SameLine();
-
-                if (ImGui::Button("Remove rigid body"))
-                    selected->RemoveComponent<Physics::eXrigidBodyComponent>();
-            }
-            else if (ImGui::Button("Add rigid body"))
-            {
-                selected->AddComponent<Physics::eXrigidBodyComponent>();
-            }
-
-            if (auto *collider = selected->GetComponent<Physics::eXcolliderComponent>())
-            {
-                const char *shapes[] = {"Sphere", "Box", "Plane"};
-                int shape = static_cast<int>(collider->Shape);
-
-                if (ImGui::Combo("Collider", &shape, shapes, IM_ARRAYSIZE(shapes)))
-                    collider->Shape = static_cast<Physics::eXcolliderShape>(shape);
-
-                if (collider->Shape == Physics::eXcolliderShape::Sphere)
-                    ImGui::DragFloat("Radius", &collider->Radius, 0.01f, 0.0f, 100.0f);
-                else if (collider->Shape == Physics::eXcolliderShape::Box)
-                    ImGui::DragFloat3("Half extents", &collider->HalfExtents.x, 0.01f, 0.0f, 100.0f);
-                else
-                    ImGui::DragFloat3("Normal", &collider->Normal.x, 0.01f);
-
-                ImGui::DragFloat3("Offset", &collider->Offset.x, 0.01f);
-                ImGui::SliderFloat("Friction", &collider->Friction, 0.0f, 1.5f);
-                ImGui::SliderFloat("Restitution", &collider->Restitution, 0.0f, 1.0f);
-
-                if (ImGui::Button("Remove collider"))
-                    selected->RemoveComponent<Physics::eXcolliderComponent>();
-            }
-            else if (ImGui::Button("Add collider"))
-            {
-                selected->AddComponent<Physics::eXcolliderComponent>();
-            }
-
-            ImGui::TreePop();
-        }
     }
 
     ImGui::End();
 
     assetPanel->Draw(selectedEntity);
+    FontAndAtlasWindow();
 
     ImGui::ShowDemoWindow();
 
@@ -629,6 +637,29 @@ void App_OnLoop(void *unused)
     const auto now = std::chrono::steady_clock::now();
     const EXFLOAT deltaTime = std::chrono::duration<EXFLOAT>(now - lastFrameTime).count();
     lastFrameTime = now;
+
+    // The HUD text changes every frame: VkTextSystem rebuilds its (dynamic) mesh.
+    if (Entity::eXentity *hud = world->GetEntity(hudEntity))
+    {
+        auto *text = hud->GetComponent<VkTextComponent>();
+        auto *transform = hud->GetComponent<Component::eXtransformComponent>();
+
+        if (text != EXN_NULL_HANDLE && transform != EXN_NULL_HANDLE)
+        {
+            static EXFLOAT framesPerSecond = 0.0f;
+
+            if (deltaTime > 0.0f)
+                framesPerSecond += (1.0f / deltaTime - framesPerSecond) * 0.05f;
+
+            char buffer[128];
+            snprintf(buffer, sizeof(buffer), "%.0f FPS\n%lld entities", framesPerSecond, world->GetEntityCount());
+            text->Text = buffer;
+
+            // Bottom-right corner, also after the window was resized.
+            const VkExtent2D extent = renderer->m_szSwapChainExtent;
+            transform->Position = eXvec3(extent.width - 16.0f, extent.height - 12.0f, 0.0f);
+        }
+    }
 
     // Uploads finished loads and unloads between frames, before the systems use the models.
     assets->Update(*world);
@@ -763,7 +794,9 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
 
     renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
 
-    // Second pass: keeps the scene (LOAD) and draws ImGui on top, without depth.
+    // Second pass: keeps color and depth of the scene (LOAD) and blends text on top of it.
+    renderer->CreateRenderPass("transparent", {.colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD, .depthLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD});
+    // Last pass: keeps the image (LOAD) and draws ImGui on top, without depth.
     renderer->CreateRenderPass("ui", {.colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD, .useDepth = false});
 
     world = new World::eXworld();

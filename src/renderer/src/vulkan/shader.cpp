@@ -6,7 +6,10 @@ namespace eXngine::Renderers::Vulkan
     VkShaderModuleObject::VkShaderModuleObject(VkDevice device, VkShaderModule shader) : m_pDevice(device), m_pShader(shader) {}
     VkShaderModuleObject::~VkShaderModuleObject()
     {
-        vkDestroyShaderModule(m_pDevice, m_pShader, nullptr);
+        // The module is only created in Renderer::CreateShaders(); before that
+        // (or if creation failed) there is neither a module nor a device.
+        if (m_pShader != EXN_NULL_HANDLE)
+            vkDestroyShaderModule(m_pDevice, m_pShader, nullptr);
     }
 
     VkPipelineShaderStageCreateInfo VkShaderModuleObject::GetStageCreateInfo(VkShaderModule module, const char* name, VkShaderStageFlagBits stage)

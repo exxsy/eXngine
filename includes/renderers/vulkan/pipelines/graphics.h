@@ -34,6 +34,8 @@ namespace eXngine::Renderers::Vulkan
         std::vector<VkViewport> m_Viewports;
         std::vector<VkRect2D> m_Scissors;
         std::vector<VkDynamicState> m_DynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        // Pointed to by GetColorBlendStateInfo(), so it must outlive the call.
+        VkPipelineColorBlendAttachmentState m_ColorBlendAttachment{};
 
         // VkGraphicsPipeline(VkDevice *, VkDescriptorPool *, VkExtent2D *);
         // ~VkGraphicsPipeline();
@@ -143,14 +145,16 @@ namespace eXngine::Renderers::Vulkan
 
         VkPipelineColorBlendStateCreateInfo virtual GetColorBlendStateInfo()
         {
-            static VkPipelineColorBlendAttachmentState colorBlendAttachment = GetColorBlendAttachmentState();
+            // A member, not a function-local static: that one would be shared by every
+            // pipeline, so the first pipeline created would decide the blending of all.
+            m_ColorBlendAttachment = GetColorBlendAttachmentState();
 
             return {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
                 .logicOpEnable = VK_FALSE,
                 .logicOp = VK_LOGIC_OP_COPY,
                 .attachmentCount = 1,
-                .pAttachments = &colorBlendAttachment,
+                .pAttachments = &m_ColorBlendAttachment,
                 .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
             };
         }

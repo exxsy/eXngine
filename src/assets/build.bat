@@ -58,7 +58,7 @@ IF /I "%CONFIG%"=="Debug" (
 )
 
 SET "THIRDPARTY_LIB_DIR=%CD%\3rdparty\lib"
-SET "includeFlags=-Isrc -Iincludes -I3rdparty -I3rdparty\stb_image -I3rdparty\glm -I3rdparty\vulkan"
+SET "includeFlags=-Isrc -Iincludes -I3rdparty -I3rdparty\stb_image -I3rdparty\imgui -I3rdparty\glm -I3rdparty\vulkan"
 SET "linkerFlags=%linkerFlags% -L%THIRDPARTY_LIB_DIR%\%ARCH%\%CONFIG% -L%CD%\output\%ARCH%\%CONFIG% -leXngine.core -lshell32 -lgdi32 -luser32"
 SET "OUT_DIR=%CD%\output\%ARCH%\%CONFIG%"
 IF NOT EXIST "%OUT_DIR%" (

@@ -38,6 +38,10 @@ namespace eXngine::Renderers
 	public:
 		std::vector<char> code;
 		ShaderTypes type;
+
+		// Shaders are owned and deleted through this base (eXrenderer::m_Shaders):
+		// without a virtual destructor the backend's destructor never runs.
+		virtual ~ShaderModule() = default;
 	};
 
 	class EXNEXPORT eXrenderer

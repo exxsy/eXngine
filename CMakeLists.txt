@@ -100,6 +100,10 @@ target_include_directories(glm SYSTEM INTERFACE "${EXN_3RDPARTY_DIR}/glm")
 add_library(stb_image INTERFACE)
 target_include_directories(stb_image SYSTEM INTERFACE "${EXN_3RDPARTY_DIR}/stb_image")
 
+# The copy of stb_truetype that comes with Dear ImGui (imstb_truetype.h).
+add_library(stb_truetype INTERFACE)
+target_include_directories(stb_truetype SYSTEM INTERFACE "${EXN_3RDPARTY_DIR}/imgui")
+
 # ---------------------------------------------------------------------------
 # GLFW (built from 3rdparty/glfw/src, Win32 backend)
 # ---------------------------------------------------------------------------
@@ -268,7 +272,8 @@ target_link_libraries(eXngine.config INTERFACE glm Vulkan::Headers)
 function(exn_configure_target target)
     if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
         # C4251: STL members in exported classes - harmless, every module shares one CRT.
-        target_compile_options(${target} PRIVATE /W3 /wd4251 $<$<CXX_COMPILER_ID:MSVC>:/MP>)
+        # /utf-8: sources are UTF-8 (e.g. Turkish text literals), not the ANSI code page.
+        target_compile_options(${target} PRIVATE /W3 /wd4251 /utf-8 $<$<CXX_COMPILER_ID:MSVC>:/MP>)
     else()
         target_compile_options(${target} PRIVATE -Wall -Wvarargs)
     endif()
@@ -297,7 +302,7 @@ exn_add_module(window)
 target_link_libraries(eXngine.window PUBLIC eXngine.core glfw)
 
 exn_add_module(assets)
-target_link_libraries(eXngine.assets PUBLIC eXngine.core PRIVATE stb_image)
+target_link_libraries(eXngine.assets PUBLIC eXngine.core PRIVATE stb_image stb_truetype)
 
 exn_add_module(renderer)
 target_link_libraries(eXngine.renderer PUBLIC eXngine.core eXngine.assets Vulkan::Vulkan)
