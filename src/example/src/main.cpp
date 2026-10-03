@@ -1,4 +1,7 @@
+#include <chrono>
+#include <cstdio>
 #include <filesystem>
+#include <unordered_map>
 
 #include "../headers/file.h"
 
@@ -11,7 +14,11 @@
 #include <backends/imgui_impl_vulkan.h>
 
 #include <types/color.h>
+#include <component/name.h>
 #include <component/transform.h>
+#include <world/world.h>
+#include <renderers/vulkan/components/mesh.h>
+#include <renderers/vulkan/systems/render.h>
 
 #include "cameras/ortographic.h"
 #include "cameras/perspective.h"
@@ -32,18 +39,44 @@ Renderer *renderer;
 eXwindow *app;
 float m_fRotationScale = 1.0f, m_fZoomFactor = 10.0f;
 
-// Material demo: two quads in the scene pass, each switchable to any material at runtime.
+// Every object of the demo lives in this world; VkRenderSystem draws the ones with a mesh.
+World::eXworld *world;
+VkMesh *quadMesh;
+EXUINT selectedEntity = 0;
+EXUINT quadCount = 0;
+std::chrono::steady_clock::time_point lastFrameTime;
+
+// Material demo: every quad can switch to any material at runtime.
 const char *materialNames[] = {"checker", "stripes", "triangle"};
 const char *textureNames[] = {"checker", "stripes"};
-int selectedMaterials[2] = {0, 1};
 int checkerMaterialTexture = 0;
-VkDrawCommand *quads[2] = {};
 
-// Component demo: each quad is an entity whose Transform component drives its model matrix.
-Entity::eXentity *quadEntities[2] = {};
-// Euler angles in degrees, as edited in the UI. Kept here instead of being read back from
-// the quaternion, which would flip the values once yaw passes +-90 degrees.
-eXvec3 quadRotations[2] = {};
+// Euler angles in degrees per entity, as edited in the UI. Kept here instead of being read
+// back from the quaternion, which would flip the values once yaw passes +-90 degrees.
+std::unordered_map<EXUINT, eXvec3> editorRotations;
+
+// A game-side component and the system that drives it: entities with a SpinComponent
+// rotate around Axis, scaled by the "Rotation Speed" slider.
+struct SpinComponent : public Component::eXcomponent
+{
+    eXvec3 Axis = eXvec3(0.0f, 0.0f, 1.0f);
+    EXFLOAT DegreesPerSecond = 90.0f;
+};
+
+class SpinSystem : public World::eXsystem
+{
+public:
+    void OnUpdate(World::eXworld &world, EXFLOAT deltaTime) override
+    {
+        world.Each<SpinComponent, Component::eXtransformComponent>([&](auto &, SpinComponent &spin, Component::eXtransformComponent &transform)
+        {
+            const EXFLOAT angle = EXMATH::radians(spin.DegreesPerSecond * m_fRotationScale) * deltaTime;
+            const EXMATH::quat step = EXMATH::angleAxis(angle, EXMATH::normalize(EXMATH::vec3(spin.Axis)));
+
+            transform.Rotation = EXMATH::normalize(step * EXMATH::quat(transform.Rotation));
+        });
+    }
+};
 
 // Procedural RGBA texture, so the demo does not depend on image files.
 std::vector<unsigned char> MakePatternTexture(int size, int cell, bool stripes, eXcolor first, eXcolor second)
@@ -68,6 +101,17 @@ std::vector<unsigned char> MakePatternTexture(int size, int cell, bool stripes, 
     return pixels;
 }
 
+// An object of the world: a named entity with a transform and a mesh to draw.
+Entity::eXentity *CreateQuad(const std::string &name, const eXvec3 &position, const char *material)
+{
+    Entity::eXentity *quad = world->CreateEntity(name);
+
+    quad->AddComponent<Component::eXtransformComponent>()->Position = position;
+    quad->AddComponent<VkMeshComponent>(quadMesh, renderer->GetMaterial(material));
+
+    return quad;
+}
+
 void CreateDemoScene()
 {
     const auto checkerPixels = MakePatternTexture(64, 8, false, eXcolor(230, 120, 30, 255), eXcolor(40, 40, 40, 255));
@@ -90,29 +134,14 @@ void CreateDemoScene()
     };
     const std::vector<EXUINT32> indices{0, 1, 2, 2, 3, 0};
 
-    VkMesh *quad = renderer->CreateMesh(vertices, indices);
-    VkRenderPassObject *scene = renderer->GetRenderPass(EXN_SCENE_RENDERPASS);
+    quadMesh = renderer->CreateMesh(vertices, indices);
 
-    for (int i = 0; i < 2; ++i)
-    {
-        quadEntities[i] = renderer->GetEntityManager()->AddEntity();
+    // Gameplay systems first, so the render system draws their result in the same frame.
+    world->AddSystem<SpinSystem>();
+    world->AddSystem<VkRenderSystem>(renderer);
 
-        auto *transform = quadEntities[i]->AddComponent<Component::eXtransformComponent>();
-        transform->Position = eXvec3(i == 0 ? -0.6f : 0.6f, 0.0f, 0.0f);
-
-        quads[i] = scene->Draw(quad, renderer->GetMaterial(materialNames[selectedMaterials[i]]), transform->GetMatrix());
-    }
-}
-
-// A minimal "system": copies each quad's Transform component into its draw command
-// before the frame is recorded.
-void UpdateQuadTransforms()
-{
-    for (int i = 0; i < 2; ++i)
-    {
-        if (const auto *transform = quadEntities[i]->GetComponent<Component::eXtransformComponent>())
-            quads[i]->model = transform->GetMatrix();
-    }
+    CreateQuad("Left quad", eXvec3(-0.6f, 0.0f, 0.0f), "checker");
+    CreateQuad("Right quad", eXvec3(0.6f, 0.0f, 0.0f), "stripes");
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -202,30 +231,104 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
 
     ImGui::SeparatorText("Materials");
 
-    for (int i = 0; i < 2; ++i)
-    {
-        if (ImGui::Combo(i == 0 ? "Left quad" : "Right quad", &selectedMaterials[i], materialNames, IM_ARRAYSIZE(materialNames)))
-            quads[i]->material = vulkan->GetMaterial(materialNames[selectedMaterials[i]]);
-    }
-
     if (ImGui::Combo("'checker' texture", &checkerMaterialTexture, textureNames, IM_ARRAYSIZE(textureNames)))
         vulkan->GetMaterial("checker")->SetTexture(0, vulkan->GetTexture(textureNames[checkerMaterialTexture]));
 
-    ImGui::SeparatorText("Transform components");
+    ImGui::SeparatorText("World");
+    ImGui::Text("%lld entities", world->GetEntityCount());
 
-    for (int i = 0; i < 2; ++i)
+    if (ImGui::Button("Add quad"))
     {
-        auto *transform = quadEntities[i]->GetComponent<Component::eXtransformComponent>();
+        const std::string name = "Quad " + std::to_string(++quadCount);
+        selectedEntity = CreateQuad(name, eXvec3(0.0f, 0.0f, 0.0f), "checker")->GetID();
+    }
 
-        ImGui::PushID(i);
-        ImGui::Text("%s (entity %u)", i == 0 ? "Left quad" : "Right quad", quadEntities[i]->GetID());
-        ImGui::DragFloat3("Position", &transform->Position.x, 0.01f);
+    Entity::eXentity *selected = world->GetEntity(selectedEntity);
 
-        if (ImGui::DragFloat3("Rotation", &quadRotations[i].x, 1.0f))
-            transform->SetEulerAngles(EXMATH::radians(EXMATH::vec3(quadRotations[i])));
+    ImGui::SameLine();
+    ImGui::BeginDisabled(selected == EXN_NULL_HANDLE);
 
-        ImGui::DragFloat3("Scale", &transform->Scale.x, 0.01f);
-        ImGui::PopID();
+    if (ImGui::Button("Destroy"))
+    {
+        world->DestroyEntity(selectedEntity);
+        editorRotations.erase(selectedEntity);
+        selected = EXN_NULL_HANDLE;
+    }
+
+    ImGui::EndDisabled();
+
+    // Outliner: every object of the world.
+    if (ImGui::BeginListBox("##entities", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
+    {
+        for (auto &[id, entity] : *world)
+        {
+            const auto *name = entity.GetComponent<Component::eXnameComponent>();
+            char label[128];
+            snprintf(label, sizeof(label), "%s##%u", name != EXN_NULL_HANDLE ? name->Name.c_str() : "Entity", id);
+
+            if (ImGui::Selectable(label, id == selectedEntity))
+                selectedEntity = id;
+        }
+
+        ImGui::EndListBox();
+    }
+
+    // Inspector: the components of the selected entity.
+    if (selected != EXN_NULL_HANDLE)
+    {
+        const auto *name = selected->GetComponent<Component::eXnameComponent>();
+        ImGui::Text("%s (entity %u)", name != EXN_NULL_HANDLE ? name->Name.c_str() : "Entity", selected->GetID());
+
+        auto *spin = selected->GetComponent<SpinComponent>();
+
+        if (auto *transform = selected->GetComponent<Component::eXtransformComponent>())
+        {
+            ImGui::DragFloat3("Position", &transform->Position.x, 0.01f);
+
+            eXvec3 &rotation = editorRotations.try_emplace(selected->GetID(), EXMATH::degrees(EXMATH::vec3(transform->GetEulerAngles()))).first->second;
+
+            // The spin system owns the rotation while it runs: show it, continue from it later.
+            if (spin != EXN_NULL_HANDLE)
+                rotation = EXMATH::degrees(EXMATH::vec3(transform->GetEulerAngles()));
+
+            ImGui::BeginDisabled(spin != EXN_NULL_HANDLE);
+
+            if (ImGui::DragFloat3("Rotation", &rotation.x, 1.0f))
+                transform->SetEulerAngles(EXMATH::radians(EXMATH::vec3(rotation)));
+
+            ImGui::EndDisabled();
+            ImGui::DragFloat3("Scale", &transform->Scale.x, 0.01f);
+        }
+
+        if (auto *mesh = selected->GetComponent<VkMeshComponent>())
+        {
+            int material = 0;
+
+            for (int m = 0; m < IM_ARRAYSIZE(materialNames); ++m)
+            {
+                if (mesh->Material == vulkan->GetMaterial(materialNames[m]))
+                    material = m;
+            }
+
+            if (ImGui::Combo("Material", &material, materialNames, IM_ARRAYSIZE(materialNames)))
+                mesh->Material = vulkan->GetMaterial(materialNames[material]);
+
+            ImGui::Checkbox("Visible", &mesh->Visible);
+        }
+
+        bool spinning = spin != EXN_NULL_HANDLE;
+
+        if (ImGui::Checkbox("Spin", &spinning))
+        {
+            if (spinning)
+                selected->AddComponent<SpinComponent>();
+            else
+                selected->RemoveComponent<SpinComponent>();
+        }
+        else if (spin != EXN_NULL_HANDLE)
+        {
+            ImGui::DragFloat("Degrees per second", &spin->DegreesPerSecond, 1.0f);
+        }
     }
 
     ImGui::End();
@@ -262,12 +365,21 @@ void OnRender(eXngine::Renderers::eXrenderer *renderer)
 
 void App_OnLoop(void *unused)
 {
-    UpdateQuadTransforms();
+    const auto now = std::chrono::steady_clock::now();
+    const EXFLOAT deltaTime = std::chrono::duration<EXFLOAT>(now - lastFrameTime).count();
+    lastFrameTime = now;
+
+    world->Update(deltaTime);
     renderer->OnRender();
 }
 
 void App_OnCleanup(void *unused)
 {
+    // The world goes first: its render system removes its draw commands from the passes
+    // that renderer->OnExit() deletes.
+    delete world;
+    world = EXN_NULL_HANDLE;
+
     renderer->OnExit();
 }
 
@@ -385,6 +497,7 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     // Second pass: keeps the scene (LOAD) and draws ImGui on top, without depth.
     renderer->CreateRenderPass("ui", {.colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD, .useDepth = false});
 
+    world = new World::eXworld();
     CreateDemoScene();
 
 #ifndef IMGUI_DISABLE
@@ -398,5 +511,6 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     app->SetOnLoopHandler(App_OnLoop);
     app->SetOnCleanupHandler(App_OnCleanup);
 
+    lastFrameTime = std::chrono::steady_clock::now();
     return app->Run();
 }

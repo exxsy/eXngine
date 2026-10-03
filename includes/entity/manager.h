@@ -38,6 +38,14 @@ namespace eXngine::Entity
         T *GetEntity(EXUINT id);
         void Truncate();
 
+        EXSIZE GetCount() const { return static_cast<EXSIZE>(m_Entities.size()); }
+
+        // Range-for yields (id, entity) pairs:
+        //   for (auto &[id, entity] : *manager) ...
+        // Do not add or remove entities while iterating.
+        auto begin() { return m_Entities.begin(); }
+        auto end() { return m_Entities.end(); }
+
         // Every component of type C, e.g. for a system that updates them all:
         //   for (auto &[id, transform] : manager->GetComponents<eXtransformComponent>()) ...
         template <std::derived_from<Component::eXcomponent> C>

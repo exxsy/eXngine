@@ -14,14 +14,7 @@
 #include <renderers/defines.h>
 #include <renderers/camera/camera.h>
 
-#include <entity/manager.h>
-#include <entity/entity.h>
-
 using namespace eXngine::Types;
-
-#ifndef EXN_ENTITY_TYPE
-#define EXN_ENTITY_TYPE eXngine::Entity::eXentity
-#endif
 
 namespace eXngine::Renderers
 {
@@ -58,7 +51,6 @@ namespace eXngine::Renderers
 		EXN_PROPERTY(OnRenderHandler, OnRenderHandler, fOnRender, EXN_NULL_HANDLE);
 		EXN_PROPERTY(OnCleanupHandler, OnCleanupHandler, fOnCleanup, EXN_NULL_HANDLE);
 
-		EXN_SINGLETON(Entity::Manager<EXN_ENTITY_TYPE>, EntityManager);
 		EXN_SINGLETON(Images::ImageManager, ImageManager);
 
 	protected:
