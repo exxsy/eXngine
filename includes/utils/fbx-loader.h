@@ -1,30 +1,12 @@
 #pragma once
 
-#include <fbxsdk.h>
-#include <vector>
-#include <renderers/defines.h>
-#include <utils/vertex.h>
-#include <utils/mesh.h>
+#include <string>
+#include <assets/model.h>
 
 namespace eXngine::Utils
 {
-    class FbxLoader
-    {
-    public:
-        explicit FbxLoader( const char* pathToFbxFile );
-
-        [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return m_meshes; }
-
-    private:
-        std::vector<Mesh> m_meshes;
-        Mesh ReadMesh( FbxNodeAttribute* pAttribute );
-
-        /* Tab character ("\t") counter */
-        int m_numTabs = 0;
-
-        void PrintNode(FbxNode* pNode );
-        void PrintTabs();
-        void PrintAttribute(FbxNodeAttribute* pAttribute );
-        FbxString GetAttributeTypeName( FbxNodeAttribute::EType type );
-    };
+    // Autodesk FBX through the FBX SDK, which only the example links. An Assets::ModelLoader:
+    //   assets->RegisterModelLoader(".fbx", eXngine::Utils::LoadFbxModel);
+    // Every mesh node becomes one part per material, in world space, Y-up.
+    bool LoadFbxModel(const std::string &path, Assets::ModelData &data, std::string &error);
 }

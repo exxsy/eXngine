@@ -54,6 +54,10 @@ namespace eXngine::Renderers::Vulkan
         {
             const auto image = this->m_pRenderer->GetImageManager()->GetImage(hash(key));
             CreateFromImageData(image->data, image->width, image->height);
+
+            // The pixels live on the GPU now. Keeping them would also make loading the
+            // same file again (after DestroyTexture) fail, as the key is still taken.
+            this->m_pRenderer->GetImageManager()->DeleteImage(hash(key));
         }
     }
 

@@ -1,0 +1,4 @@
+# Material of crate.obj
+newmtl crate
+Kd 1.0 1.0 1.0
+map_Kd ../textures/crate.png

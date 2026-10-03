@@ -1054,6 +1054,46 @@ namespace eXngine::Renderers::Vulkan
         return CreateMesh(mesh.vertices, indices);
     }
 
+    bool Renderer::DestroyTexture(const char *name)
+    {
+        const auto it = name != EXN_NULL_HANDLE ? m_Textures.find(name) : m_Textures.end();
+
+        if (it == m_Textures.end())
+            return false;
+
+        VkTexture *texture = it->second;
+
+        // Frames in flight may still sample it.
+        vkDeviceWaitIdle(m_pDevice);
+
+        for (auto &[materialName, material] : m_Materials)
+        {
+            for (EXUINT32 slot = 0; slot < MAX_TEXTURE_COUNT; ++slot)
+            {
+                if (material->GetTexture(slot) == texture)
+                    material->SetTexture(slot, static_cast<VkTexture *>(EXN_NULL_HANDLE));
+            }
+        }
+
+        delete texture;
+        m_Textures.erase(it);
+
+        return true;
+    }
+
+    void Renderer::DestroyMesh(VkMesh *mesh)
+    {
+        const auto it = std::find(m_Meshes.begin(), m_Meshes.end(), mesh);
+
+        if (it == m_Meshes.end())
+            return;
+
+        vkDeviceWaitIdle(m_pDevice);
+
+        delete mesh;
+        m_Meshes.erase(it);
+    }
+
     void Renderer::CreateShaders()
     {
         for (const auto &shader : m_Shaders)

@@ -326,6 +326,16 @@ namespace eXngine::Renderers::Vulkan
 		VkMesh *CreateMesh(const std::vector<eXngine::Utils::Vertex> &, const std::vector<EXUINT32> &);
 		VkMesh *CreateMesh(const eXngine::Utils::Mesh &);
 
+		// Destroying waits until the GPU is idle, so do it between frames, never from the
+		// render handler (e.g. ImGui) while the frame is being recorded. Materials that use
+		// a destroyed texture fall back to the default texture; draw commands and
+		// components that use a destroyed mesh must be removed by the caller.
+		bool DestroyTexture(const char *name);
+		void DestroyMesh(VkMesh *);
+
+		const std::unordered_map<std::string, VkTexture *> &GetTextures() const { return m_Textures; }
+		const std::unordered_map<std::string, VkMaterial *> &GetMaterials() const { return m_Materials; }
+
 		template <typename T>
 		inline void AllocatePipeline(std::string name)
 		{

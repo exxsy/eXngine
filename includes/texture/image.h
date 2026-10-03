@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 #include <eXngine.h>
 #include <functional>
 #include <cassert>
@@ -28,6 +29,10 @@ namespace eXngine::Images
 
         ~Image();
     };
+
+    // Decodes an image file (png, jpg, bmp, tga, ...) to tightly packed RGBA8 pixels.
+    // Touches no shared state, so it may run on a worker thread.
+    EXNEXPORT bool DecodeImageFile(const char *path, std::vector<EXUINT8> &rgba, EXINT32 &width, EXINT32 &height);
 
     class EXNEXPORT ImageManager
     {

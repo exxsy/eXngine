@@ -17,42 +17,62 @@ namespace eXngine::Renderers::Vulkan
         if (pass == EXN_NULL_HANDLE)
             return;
 
-        std::unordered_map<EXUINT, VkDrawCommand *> drawn;
+        std::unordered_map<EXUINT, std::vector<VkDrawCommand *>> drawn;
         drawn.reserve(m_DrawCommands.size());
 
-        for (auto &[id, mesh] : world.GetComponents<VkMeshComponent>())
+        // Reuses the entity's draw commands from the last frame, or creates new ones.
+        const auto draw = [&](EXUINT id, VkMesh *mesh, VkMaterial *material, EXUINT32 textureIndex)
         {
-            if (!mesh.Visible)
-                continue;
+            if (mesh == EXN_NULL_HANDLE || material == EXN_NULL_HANDLE)
+                return;
 
-            // Reuse the entity's draw command from the last frame, or create its first one.
-            VkDrawCommand *draw = EXN_NULL_HANDLE;
+            VkDrawCommand *command = EXN_NULL_HANDLE;
             const auto it = m_DrawCommands.find(id);
 
-            if (it != m_DrawCommands.end())
+            if (it != m_DrawCommands.end() && !it->second.empty())
             {
-                draw = it->second;
-                m_DrawCommands.erase(it);
+                command = it->second.back();
+                it->second.pop_back();
             }
             else
             {
-                draw = pass->Draw(mesh.Mesh, mesh.Material);
+                command = pass->Draw(mesh, material);
             }
 
             const auto *entity = world.GetEntity(id);
             const auto *transform = entity != EXN_NULL_HANDLE ? entity->GetComponent<Component::eXtransformComponent>() : EXN_NULL_HANDLE;
 
-            draw->mesh = mesh.Mesh;
-            draw->material = mesh.Material;
-            draw->textureIndex = mesh.TextureIndex;
-            draw->model = transform != EXN_NULL_HANDLE ? transform->GetMatrix() : EXMAT4(1.0f);
+            command->mesh = mesh;
+            command->material = material;
+            command->textureIndex = textureIndex;
+            command->model = transform != EXN_NULL_HANDLE ? transform->GetMatrix() : EXMAT4(1.0f);
 
-            drawn.emplace(id, draw);
+            drawn[id].push_back(command);
+        };
+
+        for (auto &[id, mesh] : world.GetComponents<VkMeshComponent>())
+        {
+            if (mesh.Visible)
+                draw(id, mesh.Mesh, mesh.Material, mesh.TextureIndex);
         }
 
-        // What is left belongs to entities that were destroyed, hidden or lost their mesh.
-        for (auto &[id, draw] : m_DrawCommands)
-            pass->Remove(draw);
+        // A model that is still loading has no parts yet and draws nothing.
+        for (auto &[id, model] : world.GetComponents<VkModelComponent>())
+        {
+            if (!model.Visible || model.Model == EXN_NULL_HANDLE)
+                continue;
+
+            for (const auto &part : model.Model->Parts)
+                draw(id, part.Mesh, model.Material != EXN_NULL_HANDLE ? model.Material : part.Material, model.TextureIndex);
+        }
+
+        // What is left belongs to entities that were destroyed, hidden, lost their mesh or
+        // now have a model with fewer parts.
+        for (auto &[id, commands] : m_DrawCommands)
+        {
+            for (auto *command : commands)
+                pass->Remove(command);
+        }
 
         m_DrawCommands = std::move(drawn);
     }
@@ -62,8 +82,11 @@ namespace eXngine::Renderers::Vulkan
         // After Renderer::OnExit the pass, and with it every draw command, is already gone.
         if (VkRenderPassObject *pass = m_pRenderer->GetRenderPass(m_RenderPass))
         {
-            for (auto &[id, draw] : m_DrawCommands)
-                pass->Remove(draw);
+            for (auto &[id, commands] : m_DrawCommands)
+            {
+                for (auto *command : commands)
+                    pass->Remove(command);
+            }
         }
 
         m_DrawCommands.clear();

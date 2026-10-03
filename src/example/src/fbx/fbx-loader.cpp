@@ -1,239 +1,183 @@
+#include <filesystem>
+#include <map>
 
+#include <fbxsdk.h>
 #include <utils/fbx-loader.h>
-
-#include <WinString.h>
 
 namespace eXngine::Utils
 {
-    FbxLoader::FbxLoader(const char *pathToFbxFile)
+    namespace
     {
-        // Initialize the SDK manager. This object handles memory management.
-        FbxManager *lSdkManager = FbxManager::Create();
-
-        // Create the IO settings object.
-        FbxIOSettings *ios = FbxIOSettings::Create(lSdkManager, IOSROOT);
-        lSdkManager->SetIOSettings(ios);
-
-        // Create an importer using the SDK manager.
-        FbxImporter *lImporter = FbxImporter::Create(lSdkManager, "");
-
-        // Use the first argument as the filename for the importer.
-        if (!lImporter->Initialize(pathToFbxFile, -1, lSdkManager->GetIOSettings()))
+        // Exporters store absolute paths of the machine the file was made on: fall back to
+        // the relative path, then to the file name next to the model.
+        std::string FindTextureFile(FbxFileTexture *texture, const std::filesystem::path &directory)
         {
-            assert(lImporter->GetStatus().GetErrorString());
-            // throw std::exception(lImporter->GetStatus().GetErrorString());
+            const std::filesystem::path candidates[] = {
+                texture->GetFileName(),
+                directory / texture->GetRelativeFileName(),
+                directory / std::filesystem::path(texture->GetFileName()).filename(),
+            };
+
+            for (const auto &candidate : candidates)
+            {
+                std::error_code ignored;
+
+                if (!candidate.empty() && std::filesystem::is_regular_file(candidate, ignored))
+                    return candidate.lexically_normal().generic_string();
+            }
+
+            return {};
         }
 
-        // Create a new scene so that it can be populated by the imported file.
-        FbxScene *lScene = FbxScene::Create(lSdkManager, "myScene");
-
-        // Import the contents of the file into the scene.
-        lImporter->Import(lScene);
-
-        // The file is imported, so get rid of the importer.
-        lImporter->Destroy();
-
-        // Print the nodes of the scene and their attributes recursively.
-        // Note that we are not printing the root node because it should
-        // not contain any attributes.
-        FbxNode *lRootNode = lScene->GetRootNode();
-        if (lRootNode)
+        void ReadMaterial(FbxSurfaceMaterial *material, const std::filesystem::path &directory, Assets::ModelPart &part)
         {
-            for (int i = 0; i < lRootNode->GetChildCount(); i++)
+            if (material == EXN_NULL_HANDLE)
+                return;
+
+            const FbxProperty diffuse = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+
+            if (!diffuse.IsValid())
+                return;
+
+            const FbxDouble3 color = diffuse.Get<FbxDouble3>();
+            part.DiffuseColor = eXvec3(static_cast<float>(color[0]), static_cast<float>(color[1]), static_cast<float>(color[2]));
+
+            if (FbxFileTexture *texture = diffuse.GetSrcObject<FbxFileTexture>(0))
             {
-                PrintNode(lRootNode->GetChild(i));
+                part.DiffuseTexture = FindTextureFile(texture, directory);
+
+                // The texture carries the color; many exporters leave the factor at black.
+                if (!part.DiffuseTexture.empty())
+                    part.DiffuseColor = eXvec3(1.0f, 1.0f, 1.0f);
             }
         }
-        // Destroy the SDK manager and all the other objects it was handling.
-        lSdkManager->Destroy();
-    }
 
-    struct Log
-    {
-        template <typename... Args>
-        static void Message(const char *format, Args... args)
+        void ReadMesh(FbxNode *node, const std::filesystem::path &directory, Assets::ModelData &data)
         {
-            char buffer[1000];
-            sprintf_s(buffer, _countof(buffer), format, std::forward<Args>(args)...);
-            OutputDebugStringA(buffer);
-        }
-    };
+            FbxMesh *mesh = node->GetMesh();
 
-    /**
-     * Print a node, its attributes, and all its children recursively.
-     */
-    void FbxLoader::PrintNode(FbxNode *pNode)
-    {
-        PrintTabs();
-        const char *nodeName = pNode->GetName();
-        FbxDouble3 translation = pNode->LclTranslation.Get();
-        FbxDouble3 rotation = pNode->LclRotation.Get();
-        FbxDouble3 scaling = pNode->LclScaling.Get();
+            if (mesh == EXN_NULL_HANDLE)
+                return;
 
-        // Print the contents of the node.
-        Log::Message("<node name='%s' translation='(%f, %f, %f)' rotation='(%f, %f, %f)' scaling='(%f, %f, %f)'>\n",
-                     nodeName,
-                     translation[0], translation[1], translation[2],
-                     rotation[0], rotation[1], rotation[2],
-                     scaling[0], scaling[1], scaling[2]);
+            // Node transform plus the geometric offset that applies to this node only.
+            FbxAMatrix geometry;
+            geometry.SetT(node->GetGeometricTranslation(FbxNode::eSourcePivot));
+            geometry.SetR(node->GetGeometricRotation(FbxNode::eSourcePivot));
+            geometry.SetS(node->GetGeometricScaling(FbxNode::eSourcePivot));
 
-        m_numTabs++;
+            const FbxAMatrix transform = node->EvaluateGlobalTransform() * geometry;
+            FbxAMatrix normalTransform = transform;
+            normalTransform.SetT(FbxVector4(0.0, 0.0, 0.0, 0.0));
+            normalTransform = normalTransform.Inverse().Transpose();
 
-        // Print the node's attributes.
-        for (int i = 0; i < pNode->GetNodeAttributeCount(); i++)
-            PrintAttribute(pNode->GetNodeAttributeByIndex(i));
+            FbxStringList uvSets;
+            mesh->GetUVSetNames(uvSets);
+            const char *uvSet = uvSets.GetCount() > 0 ? uvSets[0].Buffer() : EXN_NULL_HANDLE;
 
-        // Recursively print the children.
-        for (int j = 0; j < pNode->GetChildCount(); j++)
-            PrintNode(pNode->GetChild(j));
+            const FbxGeometryElementMaterial *materials = mesh->GetElementMaterial();
+            const bool materialPerPolygon = materials != EXN_NULL_HANDLE && materials->GetMappingMode() == FbxGeometryElement::eByPolygon;
+            const FbxVector4 *controlPoints = mesh->GetControlPoints();
 
-        m_numTabs--;
-        PrintTabs();
-        Log::Message("</node>\n");
-    }
+            // One part per material of this node.
+            std::map<int, size_t> parts;
 
-    void FbxLoader::PrintTabs()
-    {
-        for (int i = 0; i < m_numTabs; i++)
-            Log::Message("\t");
-    }
-
-    void FbxLoader::PrintAttribute(FbxNodeAttribute *pAttribute)
-    {
-        if (!pAttribute)
-            return;
-
-        FbxString typeName = GetAttributeTypeName(pAttribute->GetAttributeType());
-        FbxString attrName = pAttribute->GetName();
-        PrintTabs();
-
-        // Note: to retrieve the character array of a FbxString, use its Buffer() method.
-        Log::Message("<attribute type='%s' name='%s'/>\n", typeName.Buffer(), attrName.Buffer());
-
-        if (pAttribute->GetAttributeType() == FbxNodeAttribute::eMesh)
-        {
-            m_meshes.push_back(ReadMesh(pAttribute));
-        }
-    }
-
-    Mesh FbxLoader::ReadMesh(FbxNodeAttribute *pAttribute)
-    {
-        Mesh mesh;
-
-        if (FbxMesh *fbxMesh = pAttribute->GetNode()->GetMesh())
-        {
+            for (int polygon = 0; polygon < mesh->GetPolygonCount(); ++polygon)
             {
-                const FbxVector4 *vertexBuffer = fbxMesh->GetControlPoints();
-                const int vertexCount = fbxMesh->GetControlPointsCount();
-                mesh.vertices.resize(vertexCount);
+                const int material = materialPerPolygon ? materials->GetIndexArray().GetAt(polygon) : 0;
+                auto [it, inserted] = parts.try_emplace(material, data.Parts.size());
 
-                for (int vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
+                if (inserted)
                 {
-                    const double *buffer = vertexBuffer[vertexIndex].Buffer();
-                    glm::vec3 vertex;
-                    vertex.x = static_cast<float>(buffer[0]);
-                    vertex.y = static_cast<float>(buffer[1]);
-                    vertex.z = static_cast<float>(buffer[2]);
+                    Assets::ModelPart &part = data.Parts.emplace_back();
+                    FbxSurfaceMaterial *surface = node->GetMaterial(material);
 
-                    mesh.vertices[vertexIndex].color = eXvec3{vertex.x, vertex.y, vertex.z}; // White color
+                    part.Name = node->GetName();
+
+                    if (surface != EXN_NULL_HANDLE)
+                        part.Name += std::string(" (") + surface->GetName() + ")";
+
+                    ReadMaterial(surface, directory, part);
+                }
+
+                Assets::ModelPart &part = data.Parts[it->second];
+                const EXUINT32 first = static_cast<EXUINT32>(part.Vertices.size());
+                const int size = mesh->GetPolygonSize(polygon);
+
+                for (int corner = 0; corner < size; ++corner)
+                {
+                    const FbxVector4 position = transform.MultT(controlPoints[mesh->GetPolygonVertex(polygon, corner)]);
+
+                    FbxVector4 normal(0.0, 0.0, 0.0, 0.0);
+                    if (mesh->GetPolygonVertexNormal(polygon, corner, normal))
+                        normal = normalTransform.MultT(normal);
+
+                    FbxVector2 uv(0.0, 0.0);
+                    bool unmapped = true;
+                    if (uvSet != EXN_NULL_HANDLE)
+                        mesh->GetPolygonVertexUV(polygon, corner, uvSet, uv, unmapped);
+
+                    Vertex vertex;
+                    vertex.coordinates = eXvec3(static_cast<float>(position[0]), static_cast<float>(position[1]), static_cast<float>(position[2]));
+                    vertex.color = eXvec3(1.0f, 1.0f, 1.0f);
+                    vertex.uv = eXvec2(static_cast<float>(uv[0]), static_cast<float>(uv[1]));
+
+                    part.Vertices.push_back(vertex);
+                    part.Normals.push_back(eXvec3(static_cast<float>(normal[0]), static_cast<float>(normal[1]), static_cast<float>(normal[2])));
+                }
+
+                // Polygons are already triangles unless triangulation failed: fan the rest.
+                for (int corner = 2; corner < size; ++corner)
+                {
+                    part.Indices.push_back(first);
+                    part.Indices.push_back(first + corner - 1);
+                    part.Indices.push_back(first + corner);
                 }
             }
-
-            const bool check = fbxMesh->IsTriangleMesh();
-            if (check == false)
-            {
-                throw std::exception("Only supported triangles in fbx mesh!");
-            }
-
-            const bool hasUV = fbxMesh->GetElementUVCount() > 0;
-
-            FbxStringList lUVNames;
-            fbxMesh->GetUVSetNames(lUVNames);
-            const auto uvCount = lUVNames.GetCount();
-            const char *uvName = lUVNames[0]; ///
-
-            const int polygonCount = fbxMesh->GetPolygonCount();
-            mesh.indices.reserve(polygonCount);
-
-            for (int polygonIndex = 0; polygonIndex < polygonCount; ++polygonIndex)
-            {
-                const int vertexIndex0 = fbxMesh->GetPolygonVertex(polygonIndex, 0);
-                const int vertexIndex1 = fbxMesh->GetPolygonVertex(polygonIndex, 1);
-                const int vertexIndex2 = fbxMesh->GetPolygonVertex(polygonIndex, 2);
-
-                mesh.indices.push_back(vertexIndex0);
-                mesh.indices.push_back(vertexIndex1);
-                mesh.indices.push_back(vertexIndex2);
-
-                bool unmapped;
-                FbxVector2 uv;
-                bool result = fbxMesh->GetPolygonVertexUV(polygonIndex, 0, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex0].coordinates = eXvec3(static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0);
-                result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 1, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex1].coordinates = eXvec3(static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0);
-                result |= fbxMesh->GetPolygonVertexUV(polygonIndex, 2, uvName, uv, unmapped);
-                mesh.vertices[vertexIndex2].coordinates = eXvec3(static_cast<float>(uv.Buffer()[0]), static_cast<float>(uv.Buffer()[1]), 0);
-                /*FbxVector4 normal;
-                result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 0, normal );
-                mesh.m_vertices[vertexIndex0].m_normal = { static_cast<float>( normal.Buffer()[0] ), static_cast<float>( normal.Buffer()[1] ), static_cast<float>( normal.Buffer()[2] ) };
-                result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 1, normal );
-                mesh.m_vertices[vertexIndex1].m_normal = { static_cast<float>( normal.Buffer()[0] ), static_cast<float>( normal.Buffer()[1] ), static_cast<float>( normal.Buffer()[2] ) };
-                result = fbxMesh->GetPolygonVertexNormal( polygonIndex, 2, normal );
-                mesh.m_vertices[vertexIndex2].m_normal = { static_cast<float>( normal.Buffer()[0] ), static_cast<float>( normal.Buffer()[1] ), static_cast<float>( normal.Buffer()[2] ) };*/
-
-                assert(result);
-            }
         }
 
-        return mesh;
+        void ReadNode(FbxNode *node, const std::filesystem::path &directory, Assets::ModelData &data)
+        {
+            ReadMesh(node, directory, data);
+
+            for (int child = 0; child < node->GetChildCount(); ++child)
+                ReadNode(node->GetChild(child), directory, data);
+        }
     }
 
-    FbxString FbxLoader::GetAttributeTypeName(FbxNodeAttribute::EType type)
+    bool LoadFbxModel(const std::string &path, Assets::ModelData &data, std::string &error)
     {
-        switch (type)
+        // The manager owns every SDK object created below; destroying it frees them all.
+        FbxManager *manager = FbxManager::Create();
+        manager->SetIOSettings(FbxIOSettings::Create(manager, IOSROOT));
+
+        FbxImporter *importer = FbxImporter::Create(manager, "");
+        FbxScene *scene = FbxScene::Create(manager, "scene");
+
+        const bool imported = importer->Initialize(path.c_str(), -1, manager->GetIOSettings()) && importer->Import(scene);
+
+        if (!imported)
         {
-        case FbxNodeAttribute::eUnknown:
-            return "unidentified";
-        case FbxNodeAttribute::eNull:
-            return "null";
-        case FbxNodeAttribute::eMarker:
-            return "marker";
-        case FbxNodeAttribute::eSkeleton:
-            return "skeleton";
-        case FbxNodeAttribute::eMesh:
-            return "mesh";
-        case FbxNodeAttribute::eNurbs:
-            return "nurbs";
-        case FbxNodeAttribute::ePatch:
-            return "patch";
-        case FbxNodeAttribute::eCamera:
-            return "camera";
-        case FbxNodeAttribute::eCameraStereo:
-            return "stereo";
-        case FbxNodeAttribute::eCameraSwitcher:
-            return "camera switcher";
-        case FbxNodeAttribute::eLight:
-            return "light";
-        case FbxNodeAttribute::eOpticalReference:
-            return "optical reference";
-        case FbxNodeAttribute::eOpticalMarker:
-            return "marker";
-        case FbxNodeAttribute::eNurbsCurve:
-            return "nurbs curve";
-        case FbxNodeAttribute::eTrimNurbsSurface:
-            return "trim nurbs surface";
-        case FbxNodeAttribute::eBoundary:
-            return "boundary";
-        case FbxNodeAttribute::eNurbsSurface:
-            return "nurbs surface";
-        case FbxNodeAttribute::eShape:
-            return "shape";
-        case FbxNodeAttribute::eLODGroup:
-            return "lodgroup";
-        case FbxNodeAttribute::eSubDiv:
-            return "subdiv";
-        default:
-            return "unknown";
+            error = importer->GetStatus().GetErrorString();
+            manager->Destroy();
+            return false;
         }
+
+        // Y-up, right-handed like the engine; quads and n-gons become triangles.
+        FbxAxisSystem::OpenGL.ConvertScene(scene);
+        FbxGeometryConverter(manager).Triangulate(scene, true);
+
+        ReadNode(scene->GetRootNode(), std::filesystem::path(path).parent_path(), data);
+        manager->Destroy();
+
+        std::erase_if(data.Parts, [](const Assets::ModelPart &part)
+                      { return part.Indices.empty(); });
+
+        if (data.Parts.empty())
+        {
+            error = "the file has no meshes";
+            return false;
+        }
+
+        return true;
     }
 }

@@ -31,7 +31,11 @@ namespace eXngine::Images
         data = EXN_LOAD_IMAGE(path, &width, &height, &channels, bytes);
 #endif
 
-        assert(data);
+        if (data == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("Failed to load image '%s': %s", path, stbi_failure_reason());
+            return false;
+        }
 
         const bool result = CreateImage(key, data, width, height, bytes);
 
@@ -68,6 +72,20 @@ namespace eXngine::Images
         return true;
     }
 
+    bool DecodeImageFile(const char *path, std::vector<EXUINT8> &rgba, EXINT32 &width, EXINT32 &height)
+    {
+        EXINT32 channels = 0;
+        EXUINT8 *data = path != EXN_NULL_HANDLE ? EXN_LOAD_IMAGE(path, &width, &height, &channels, STBI_rgb_alpha) : EXN_NULL_HANDLE;
+
+        if (data == EXN_NULL_HANDLE)
+            return false;
+
+        rgba.assign(data, data + static_cast<size_t>(width) * height * 4);
+        EXN_FREE_IMAGE(data);
+
+        return true;
+    }
+
     void ImageManager::DeleteImage(EXUINT32 textureId)
     {
         auto it = m_sImages.find(textureId);
@@ -100,14 +118,8 @@ namespace eXngine::Images
 
     Image::~Image()
     {
-        if (data)
-        {
-#ifdef EXN_IMAGE_STRATEGY_STBI
-            EXN_FREE_IMAGE(data);
-#endif
-
-            delete data;
-            data = EXN_NULL_HANDLE;
-        }
+        // CreateImage copies the pixels into new[]: stb_image's buffer is already freed.
+        delete[] data;
+        data = EXN_NULL_HANDLE;
     }
 }

@@ -18,10 +18,14 @@
 #include <component/transform.h>
 #include <world/world.h>
 #include <renderers/vulkan/components/mesh.h>
+#include <renderers/vulkan/components/model.h>
 #include <renderers/vulkan/systems/render.h>
+#include <renderers/vulkan/assets.h>
+#include <utils/fbx-loader.h>
 
 #include "cameras/ortographic.h"
 #include "cameras/perspective.h"
+#include "editor/asset-panel.h"
 
 using namespace eXngine;
 using namespace eXngine::Windows;
@@ -41,13 +45,15 @@ float m_fRotationScale = 1.0f, m_fZoomFactor = 10.0f;
 
 // Every object of the demo lives in this world; VkRenderSystem draws the ones with a mesh.
 World::eXworld *world;
-VkMesh *quadMesh;
+// Loads textures and models at runtime; the "Assets" window shows its settings.
+VkAssetManager *assets;
+AssetPanel *assetPanel;
+VkModel *quadModel;
 EXUINT selectedEntity = 0;
 EXUINT quadCount = 0;
 std::chrono::steady_clock::time_point lastFrameTime;
 
-// Material demo: every quad can switch to any material at runtime.
-const char *materialNames[] = {"checker", "stripes", "triangle"};
+// Material demo: the 'checker' material can switch between the procedural textures.
 const char *textureNames[] = {"checker", "stripes"};
 int checkerMaterialTexture = 0;
 
@@ -101,13 +107,14 @@ std::vector<unsigned char> MakePatternTexture(int size, int cell, bool stripes, 
     return pixels;
 }
 
-// An object of the world: a named entity with a transform and a mesh to draw.
+// An object of the world: a named entity with a transform and a model to draw. The quad
+// is a built-in model of the asset manager, so scene files can refer to it.
 Entity::eXentity *CreateQuad(const std::string &name, const eXvec3 &position, const char *material)
 {
     Entity::eXentity *quad = world->CreateEntity(name);
 
     quad->AddComponent<Component::eXtransformComponent>()->Position = position;
-    quad->AddComponent<VkMeshComponent>(quadMesh, renderer->GetMaterial(material));
+    quad->AddComponent<VkModelComponent>(quadModel, renderer->GetMaterial(material));
 
     return quad;
 }
@@ -134,7 +141,7 @@ void CreateDemoScene()
     };
     const std::vector<EXUINT32> indices{0, 1, 2, 2, 3, 0};
 
-    quadMesh = renderer->CreateMesh(vertices, indices);
+    quadModel = assets->CreateModel("builtin:quad", vertices, indices, renderer->GetMaterial("checker"));
 
     // Gameplay systems first, so the render system draws their result in the same frame.
     world->AddSystem<SpinSystem>();
@@ -302,18 +309,23 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
 
         if (auto *mesh = selected->GetComponent<VkMeshComponent>())
         {
-            int material = 0;
-
-            for (int m = 0; m < IM_ARRAYSIZE(materialNames); ++m)
-            {
-                if (mesh->Material == vulkan->GetMaterial(materialNames[m]))
-                    material = m;
-            }
-
-            if (ImGui::Combo("Material", &material, materialNames, IM_ARRAYSIZE(materialNames)))
-                mesh->Material = vulkan->GetMaterial(materialNames[material]);
-
+            MaterialCombo("Material", vulkan, mesh->Material);
             ImGui::Checkbox("Visible", &mesh->Visible);
+        }
+
+        if (auto *model = selected->GetComponent<VkModelComponent>())
+        {
+            ModelCombo("Model", assets, model->Model);
+
+            if (const VkAsset *asset = model->Model != EXN_NULL_HANDLE ? assets->GetAsset(model->Model->Path) : EXN_NULL_HANDLE; asset != EXN_NULL_HANDLE && asset->State != VkAssetState::Ready)
+                ImGui::TextDisabled(asset->State == VkAssetState::Loading ? "(loading...)" : "(failed: %s)", asset->Error.c_str());
+
+            MaterialCombo("Material", vulkan, model->Material, "(model materials)");
+            ImGui::Checkbox("Visible", &model->Visible);
+        }
+        else if (ImGui::Button("Add model"))
+        {
+            selected->AddComponent<VkModelComponent>(quadModel);
         }
 
         bool spinning = spin != EXN_NULL_HANDLE;
@@ -332,6 +344,8 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     }
 
     ImGui::End();
+
+    assetPanel->Draw(selectedEntity);
 
     ImGui::ShowDemoWindow();
 
@@ -369,6 +383,8 @@ void App_OnLoop(void *unused)
     const EXFLOAT deltaTime = std::chrono::duration<EXFLOAT>(now - lastFrameTime).count();
     lastFrameTime = now;
 
+    // Uploads finished loads and unloads between frames, before the systems use the models.
+    assets->Update(*world);
     world->Update(deltaTime);
     renderer->OnRender();
 }
@@ -379,6 +395,12 @@ void App_OnCleanup(void *unused)
     // that renderer->OnExit() deletes.
     delete world;
     world = EXN_NULL_HANDLE;
+
+    // Stops the loader thread; the GPU resources it created go with renderer->OnExit().
+    delete assetPanel;
+    delete assets;
+    assetPanel = EXN_NULL_HANDLE;
+    assets = EXN_NULL_HANDLE;
 
     renderer->OnExit();
 }
@@ -498,7 +520,18 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->CreateRenderPass("ui", {.colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD, .useDepth = false});
 
     world = new World::eXworld();
+
+    assets = new VkAssetManager(renderer);
+    assets->RegisterModelLoader(".fbx", eXngine::Utils::LoadFbxModel);
+
     CreateDemoScene();
+
+    assetPanel = new AssetPanel(renderer, assets, world);
+    assetPanel->OnWorldCleared = []
+    {
+        editorRotations.clear();
+        selectedEntity = 0;
+    };
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);
