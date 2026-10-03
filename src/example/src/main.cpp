@@ -31,6 +31,68 @@ Renderer *renderer;
 eXwindow *app;
 float m_fRotationScale = 1.0f, m_fZoomFactor = 10.0f;
 
+// Material demo: two quads in the scene pass, each switchable to any material at runtime.
+const char *materialNames[] = {"checker", "stripes", "triangle"};
+const char *textureNames[] = {"checker", "stripes"};
+int selectedMaterials[2] = {0, 1};
+int checkerMaterialTexture = 0;
+VkDrawCommand *quads[2] = {};
+
+// Procedural RGBA texture, so the demo does not depend on image files.
+std::vector<unsigned char> MakePatternTexture(int size, int cell, bool stripes, eXcolor first, eXcolor second)
+{
+    std::vector<unsigned char> pixels(static_cast<size_t>(size) * size * 4);
+
+    for (int y = 0; y < size; ++y)
+    {
+        for (int x = 0; x < size; ++x)
+        {
+            const bool isFirst = stripes ? (x / cell) % 2 == 0 : ((x / cell) + (y / cell)) % 2 == 0;
+            const eXcolor &color = isFirst ? first : second;
+            unsigned char *pixel = &pixels[(static_cast<size_t>(y) * size + x) * 4];
+
+            pixel[0] = color.r;
+            pixel[1] = color.g;
+            pixel[2] = color.b;
+            pixel[3] = color.a;
+        }
+    }
+
+    return pixels;
+}
+
+void CreateDemoScene()
+{
+    const auto checkerPixels = MakePatternTexture(64, 8, false, eXcolor(230, 120, 30, 255), eXcolor(40, 40, 40, 255));
+    const auto stripePixels = MakePatternTexture(64, 8, true, eXcolor(40, 160, 220, 255), eXcolor(240, 240, 240, 255));
+
+    renderer->CreateTexture("checker", checkerPixels.data(), 64, 64);
+    renderer->CreateTexture("stripes", stripePixels.data(), 64, 64);
+
+    // Same pipeline, different textures...
+    renderer->CreateMaterial("checker")->SetTexture(0, renderer->GetTexture("checker"));
+    renderer->CreateMaterial("stripes")->SetTexture(0, renderer->GetTexture("stripes"));
+    // ...and a different pipeline (shaders).
+    renderer->CreateMaterial("triangle", "triangle_pipeline");
+
+    const std::vector<eXngine::Utils::Vertex> vertices{
+        {.color = {1.0f, 1.0f, 1.0f}, .coordinates = {-0.5f, -0.5f, 0.0f}, .uv = {0.0f, 1.0f}},
+        {.color = {1.0f, 1.0f, 1.0f}, .coordinates = {0.5f, -0.5f, 0.0f}, .uv = {1.0f, 1.0f}},
+        {.color = {1.0f, 1.0f, 1.0f}, .coordinates = {0.5f, 0.5f, 0.0f}, .uv = {1.0f, 0.0f}},
+        {.color = {1.0f, 1.0f, 1.0f}, .coordinates = {-0.5f, 0.5f, 0.0f}, .uv = {0.0f, 0.0f}},
+    };
+    const std::vector<EXUINT32> indices{0, 1, 2, 2, 3, 0};
+
+    VkMesh *quad = renderer->CreateMesh(vertices, indices);
+    VkRenderPassObject *scene = renderer->GetRenderPass(EXN_SCENE_RENDERPASS);
+
+    for (int i = 0; i < 2; ++i)
+    {
+        const EXMATH::mat4 model = EXMATH::translate(EXMATH::mat4(1.0f), EXMATH::vec3(i == 0 ? -0.6f : 0.6f, 0.0f, 0.0f));
+        quads[i] = scene->Draw(quad, renderer->GetMaterial(materialNames[selectedMaterials[i]]), model);
+    }
+}
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #ifndef IMGUI_DISABLE
@@ -73,7 +135,7 @@ void ImGui_OnInit(eXwindow *app, Renderer *renderer)
     init_info.MinImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
     init_info.ImageCount = renderer->MAX_FRAMES_IN_FLIGHT;
     init_info.Allocator = nullptr;
-    init_info.PipelineInfoMain.RenderPass = renderer->m_pRenderPass;
+    init_info.PipelineInfoMain.RenderPass = renderer->GetRenderPass("ui")->GetHandle();
     init_info.PipelineInfoMain.Subpass = 0;
     init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -115,6 +177,17 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     ImGui::Text("Yaw: %.2f", camera.GetYaw());
     ImGui::Text("Pitch: %.2f", camera.GetPitch());
     ImGui::EndGroup();
+
+    ImGui::SeparatorText("Materials");
+
+    for (int i = 0; i < 2; ++i)
+    {
+        if (ImGui::Combo(i == 0 ? "Left quad" : "Right quad", &selectedMaterials[i], materialNames, IM_ARRAYSIZE(materialNames)))
+            quads[i]->material = vulkan->GetMaterial(materialNames[selectedMaterials[i]]);
+    }
+
+    if (ImGui::Combo("'checker' texture", &checkerMaterialTexture, textureNames, IM_ARRAYSIZE(textureNames)))
+        vulkan->GetMaterial("checker")->SetTexture(0, vulkan->GetTexture(textureNames[checkerMaterialTexture]));
 
     ImGui::End();
 
@@ -231,9 +304,10 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     viewport.SetHeight(window_size.y);
 
     camera.SetViewport(&viewport);
-    camera.SetPosition(eXvec3(50.0f, 50.0f, 50.0f));
+    camera.SetPosition(eXvec3(0.0f, 0.0f, 2.0f));
     camera.SetFront(eXvec3(0.0f, 0.0f, -1.0f));
     camera.SetUp(eXvec3(0.0f, 1.0f, 0.0f));
+    camera.SetFieldOfView(EXMATH::radians(60.0f));
 
     renderer = new eXngine::Renderers::Vulkan::Renderer(name, window_size);
     app = new eXngine::Windows::eXwindow(name, window_position, window_size, false);
@@ -267,6 +341,11 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     renderer->Initialize();
 
     renderer->CreatePipeline<eXngine::Renderers::Vulkan::VkVertex>("triangle_pipeline");
+
+    // Second pass: keeps the scene (LOAD) and draws ImGui on top, without depth.
+    renderer->CreateRenderPass("ui", {.colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD, .useDepth = false});
+
+    CreateDemoScene();
 
 #ifndef IMGUI_DISABLE
     ImGui_OnInit(app, renderer);

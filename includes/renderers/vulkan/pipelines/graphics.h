@@ -8,30 +8,29 @@
 #include <vulkan/vulkan.h>
 #include <renderers/vulkan/vertex.h>
 #include <renderers/vulkan/texture.h>
+#include <types/matrix.h>
 
 namespace eXngine::Renderers::Vulkan
 {
+    // Per-draw data, pushed before every draw call (see shaders/shader.vert / shader.frag).
     struct VkModelPushConstants
     {
     public:
+        alignas(16) EXMAT4 model = EXMAT4(1.0f);
         alignas(4) EXUINT32 textureIndex = 0;
-        alignas(4) EXUINT32 numTextures = 1;
     };
 
     struct VkGraphicsPipeline
     {
     public:
-        const EXUINT32 MAX_FRAMES_IN_FLIGHT = 2;
-        const EXUINT32 MAX_TEXTURE_COUNT = 16;
-
         VkDevice *m_pDevice = EXN_NULL_HANDLE;
         VkDescriptorPool *m_pDescriptorPool = EXN_NULL_HANDLE;
         VkExtent2D *m_pExtent = EXN_NULL_HANDLE;
         VkPipelineLayout m_pLayout = EXN_NULL_HANDLE;
         VkPipeline m_pPipeline = EXN_NULL_HANDLE;
-        VkDescriptorSetLayout m_pDescriptorSetLayout = EXN_NULL_HANDLE;
+        // Shared by every pipeline: set 0 = per-frame globals (UBO), set 1 = material textures.
+        std::vector<VkDescriptorSetLayout> m_SetLayouts;
         std::vector<VkPipelineShaderStageCreateInfo> m_ShaderStages;
-        std::vector<VkDescriptorSet> m_DescriptorSets;
         std::vector<VkViewport> m_Viewports;
         std::vector<VkRect2D> m_Scissors;
         std::vector<VkDynamicState> m_DynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
@@ -51,16 +50,12 @@ namespace eXngine::Renderers::Vulkan
         {
             vkDestroyPipelineLayout(*m_pDevice, m_pLayout, nullptr);
             vkDestroyPipeline(*m_pDevice, m_pPipeline, nullptr);
-            vkDestroyDescriptorSetLayout(*m_pDevice, m_pDescriptorSetLayout, nullptr);
         }
 
         void SetExtent(VkExtent2D);
         void SetDynamicStates(std::vector<VkDynamicState>);
         void AddViewport(VkViewport);
         void AddScissor(VkRect2D);
-
-        void CreateDescriptorSetLayout();
-        void CreateDescriptorSets(VkSampler, VkTexture *, VkBuffer);
 
         // virtual VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyInfo();
         // virtual VkPipelineDynamicStateCreateInfo GetDynamicStateInfo();
@@ -185,7 +180,7 @@ namespace eXngine::Renderers::Vulkan
                 //    .size = sizeof(float) * 4,
                 //},
                 {
-                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                     .offset = 0,
                     .size = sizeof(VkModelPushConstants),
                 }};
@@ -211,8 +206,8 @@ namespace eXngine::Renderers::Vulkan
 
             return {
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-                .setLayoutCount = 1,
-                .pSetLayouts = &m_pDescriptorSetLayout,
+                .setLayoutCount = static_cast<EXUINT32>(m_SetLayouts.size()),
+                .pSetLayouts = m_SetLayouts.data(),
                 .pushConstantRangeCount = pushContantsSize,
                 .pPushConstantRanges = pushConstants,
             };
@@ -234,8 +229,10 @@ namespace eXngine::Renderers::Vulkan
         }
 
         template <typename T>
-        inline void CreatePipeline(VkRenderPass renderPass)
+        inline void CreatePipeline(VkRenderPass renderPass, const std::vector<VkDescriptorSetLayout> &setLayouts)
         {
+            m_SetLayouts = setLayouts;
+
             VkPipelineRasterizationStateCreateInfo rasterizer = GetRasterizationStateInfo();
             VkPipelineMultisampleStateCreateInfo multisampling = GetMultisampleStateInfo();
             VkPipelineColorBlendStateCreateInfo colorBlending = GetColorBlendStateInfo();
@@ -246,7 +243,9 @@ namespace eXngine::Renderers::Vulkan
             VkPipelineDynamicStateCreateInfo dynamicState = GetDynamicStateInfo();
             VkPipelineLayoutCreateInfo layoutInfo = GetLayoutInfo();
 
-            assert(vkCreatePipelineLayout(*m_pDevice, &layoutInfo, nullptr, &this->m_pLayout) == VK_SUCCESS);
+            // Not inside assert(): the call would be compiled out in Release builds.
+            const VkResult layoutResult = vkCreatePipelineLayout(*m_pDevice, &layoutInfo, nullptr, &this->m_pLayout);
+            EX_FATAL(layoutResult == VK_SUCCESS, "Failed to create pipeline layout.");
 
             VkGraphicsPipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -266,7 +265,8 @@ namespace eXngine::Renderers::Vulkan
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
             pipelineInfo.basePipelineIndex = -1;
 
-            assert(vkCreateGraphicsPipelines(*m_pDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &this->m_pPipeline) == VK_SUCCESS);
+            const VkResult pipelineResult = vkCreateGraphicsPipelines(*m_pDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &this->m_pPipeline);
+            EX_FATAL(pipelineResult == VK_SUCCESS, "Failed to create graphics pipeline.");
         }
     };
 

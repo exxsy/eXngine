@@ -62,6 +62,9 @@ namespace eXngine::Renderers::Vulkan
         vkDestroyImageView(device, m_pView, nullptr);
         vkDestroyImage(device, m_pImage, nullptr);
         vkFreeMemory(device, m_pDeviceMemory, nullptr);
+        m_pView = EXN_NULL_HANDLE;
+        m_pImage = EXN_NULL_HANDLE;
+        m_pDeviceMemory = EXN_NULL_HANDLE;
         m_pRenderer = EXN_NULL_HANDLE;
     }
 
@@ -78,8 +81,9 @@ namespace eXngine::Renderers::Vulkan
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        VkImageView imageView;
-        assert(vkCreateImageView(m_pRenderer->m_pDevice, &viewInfo, nullptr, &imageView) == VK_SUCCESS);
+        VkImageView imageView = EXN_NULL_HANDLE;
+        const VkResult result = vkCreateImageView(m_pRenderer->m_pDevice, &viewInfo, nullptr, &imageView);
+        EX_FATAL(result == VK_SUCCESS, "Failed to create texture image view.");
 
         return imageView;
     }
@@ -91,8 +95,9 @@ namespace eXngine::Renderers::Vulkan
 
     VkTexture::~VkTexture()
     {
-        vkDestroyImageView(m_pRenderer->m_pDevice, m_pView, nullptr);
-        vkDestroyImage(m_pRenderer->m_pDevice, m_pImage, nullptr);
+        // Release() clears m_pRenderer, so an already released texture is not destroyed twice.
+        if (m_pRenderer != EXN_NULL_HANDLE)
+            Release(m_pRenderer->m_pDevice);
     }
 }
 #endif

@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 #include <ranges>
+#include <filesystem>
 
 #include <eXngine.h>
 #include <glm/glm.hpp>
@@ -31,20 +32,19 @@ namespace eXngine::Renderers::Vulkan
         CreateSwapChain();
         CreateCommandPool();
         CreateImageViews();
-        CreateRenderPass();
         CreateDepthResources();
-        CreateFramebuffers();
+        CreateRenderPasses();
         CreateShaders();
         CreateTextureSampler();
-        CreateVertexBuffer();
-        CreateIndexBuffer();
+        CreateDefaultTexture();
         CreateUniformBuffers();
         CreateDescriptorPool();
-        CreateGraphicPipelines();
+        CreateDescriptorSetLayouts();
+        CreateGlobalDescriptorSets();
         CreateCommandBuffers();
         CreateSyncObjects();
 
-        this->m_pGraphicPipelines[EXN_DEFAULT_PIPELINE]->CreatePipeline<VkVertex>(m_pRenderPass);
+        CreatePipeline<VkVertex>(EXN_DEFAULT_PIPELINE);
 
         EX_INFO("Vulkan renderer initialized.");
     }
@@ -63,46 +63,20 @@ namespace eXngine::Renderers::Vulkan
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
         // EX_ERROR(vkBeginCommandBuffer(commandBuffer, &beginInfo) == VK_SUCCESS, "Failed to begin command buffer for recording.");
 
-        static std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_pRenderPass;
-        renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = m_szSwapChainExtent;
-        renderPassInfo.clearValueCount = static_cast<EXUINT32>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        if (m_Vertices.size() > 0 && m_Indices.size() > 0)
+        for (size_t i = 0; i < m_RenderPasses.size(); ++i)
         {
-            VkBuffer vertexBuffers[] = {m_pVertexBuffer};
-            VkDeviceSize offsets[] = {0};
+            VkRenderPassObject *pass = m_RenderPasses[i];
 
-            for (auto &pipeline_pair : m_pGraphicPipelines)
-            {
-                const auto pipeline = pipeline_pair.second;
-                const auto scissorCount = static_cast<EXUINT32>(pipeline->m_Scissors.size());
-                const auto viewportCount = static_cast<EXUINT32>(pipeline->m_Viewports.size());
+            pass->Begin(commandBuffer, imageIndex);
+            pass->RecordDraws(commandBuffer, m_currentFrame);
 
-                vkCmdSetViewport(commandBuffer, 0, viewportCount, pipeline->m_Viewports.data());
-                vkCmdSetScissor(commandBuffer, 0, scissorCount, pipeline->m_Scissors.data());
-
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pPipeline);
-                vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, m_pIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
-
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->m_pLayout, 0, 1, &pipeline->m_DescriptorSets[m_currentFrame], 0, nullptr);
-                vkCmdDrawIndexed(commandBuffer, static_cast<EXUINT32>(m_Indices.size()), 1, 0, 0, 0);
-            }
-
-            if (m_fOnRender != EXN_NULL_HANDLE)
+            // The render handler (e.g. ImGui) draws on top of everything, inside the last pass.
+            if (i + 1 == m_RenderPasses.size() && m_fOnRender != EXN_NULL_HANDLE)
                 m_fOnRender(this);
+
+            pass->End(commandBuffer);
         }
-        vkCmdEndRenderPass(commandBuffer);
+
         vkEndCommandBuffer(commandBuffer);
     }
 
@@ -160,18 +134,84 @@ namespace eXngine::Renderers::Vulkan
         vkBindBufferMemory(m_pDevice, buffer, bufferMemory, 0);
     }
 
-    void Renderer::CreateGraphicPipelines()
+    void Renderer::CreateDescriptorSetLayouts()
     {
+        const VkDescriptorSetLayoutBinding uboBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        };
+
+        const VkDescriptorSetLayoutCreateInfo globalInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = 1,
+            .pBindings = &uboBinding,
+        };
+
+        VkResult result = vkCreateDescriptorSetLayout(m_pDevice, &globalInfo, nullptr, &m_pGlobalSetLayout);
+        EX_FATAL(result == VK_SUCCESS, "Failed to create global descriptor set layout.");
+
+        const VkDescriptorSetLayoutBinding texturesBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = MAX_TEXTURE_COUNT,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
+
+        const VkDescriptorSetLayoutCreateInfo materialInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = 1,
+            .pBindings = &texturesBinding,
+        };
+
+        result = vkCreateDescriptorSetLayout(m_pDevice, &materialInfo, nullptr, &m_pMaterialSetLayout);
+        EX_FATAL(result == VK_SUCCESS, "Failed to create material descriptor set layout.");
+    }
+
+    void Renderer::CreateGlobalDescriptorSets()
+    {
+        const std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_pGlobalSetLayout);
+        std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
+
+        const VkDescriptorSetAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = m_pDescriptorPool,
+            .descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
+            .pSetLayouts = layouts.data(),
+        };
+
+        const VkResult result = vkAllocateDescriptorSets(m_pDevice, &allocInfo, descriptorSets.data());
+        EX_FATAL(result == VK_SUCCESS, "Failed to allocate global descriptor sets.");
+
         for (EXUINT32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            for (auto &pipeline_pair : m_pGraphicPipelines)
-            {
-                auto &pipeline = pipeline_pair.second;
+            auto &frame = m_pFrameObjects[i];
+            frame.descriptorSet = descriptorSets[i];
 
-                pipeline->CreateDescriptorSetLayout();
-                pipeline->CreateDescriptorSets(m_pTextureSampler, m_DefaultTexture, m_pFrameObjects[i].uniformBuffer);
-            }
+            const VkDescriptorBufferInfo bufferInfo{
+                .buffer = frame.uniformBuffer,
+                .offset = 0,
+                .range = sizeof(UniformBufferObject),
+            };
+
+            const VkWriteDescriptorSet write{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = frame.descriptorSet,
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .pBufferInfo = &bufferInfo,
+            };
+
+            vkUpdateDescriptorSets(m_pDevice, 1, &write, 0, nullptr);
         }
+    }
+
+    std::vector<VkDescriptorSetLayout> Renderer::GetPipelineSetLayouts() const
+    {
+        return {m_pGlobalSetLayout, m_pMaterialSetLayout};
     }
 
     VkCommandBuffer Renderer::BeginSingleTimeCommands()
@@ -229,7 +269,7 @@ namespace eXngine::Renderers::Vulkan
         }
 
         vkResetFences(m_pDevice, 1, &frameObject.inFlightFence);
-        // UpdateUniformBuffers();
+        UpdateUniformBuffers();
         // m_pCurrentCommandBuffer = frameObject.commandBuffer;
         // m_fOnUpdateUniformBuffers(frameObject.uniformBuffersMapped, m_currentFrame);
         RecordCommandBuffer(frameObject.commandBuffer, imageIndex);
@@ -295,11 +335,30 @@ namespace eXngine::Renderers::Vulkan
 
         m_pGraphicPipelines.clear();
 
+        for (auto &[name, material] : m_Materials)
+            delete material;
+
+        for (auto *mesh : m_Meshes)
+            delete mesh;
+
+        for (auto &[name, texture] : m_Textures)
+            delete texture;
+
+        for (auto *pass : m_RenderPasses)
+            delete pass;
+
+        m_Materials.clear();
+        m_Meshes.clear();
+        m_Textures.clear();
+        m_RenderPasses.clear();
+
         vkDestroySurfaceKHR(m_pInstance, m_pSurface, nullptr);
         // vkDestroyPipeline(m_pDevice, m_pDefaultGraphicsPipeline->m_pPipeline, nullptr);
         // vkDestroyPipelineLayout(m_pDevice, m_pDefaultGraphicsPipeline->m_pLayout, nullptr);
-        vkDestroyRenderPass(m_pDevice, m_pRenderPass, nullptr);
         vkDestroySampler(m_pDevice, m_pTextureSampler, nullptr);
+        vkDestroyDescriptorSetLayout(m_pDevice, m_pGlobalSetLayout, nullptr);
+        vkDestroyDescriptorSetLayout(m_pDevice, m_pMaterialSetLayout, nullptr);
+        vkDestroyDescriptorPool(m_pDevice, m_pDescriptorPool, nullptr);
 
         m_Depth->Release(m_pDevice);
         m_DefaultTexture->Release(m_pDevice);
@@ -611,27 +670,6 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::CreateFramebuffers()
-    {
-        m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
-
-        for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
-        {
-            std::array<VkImageView, 2> attachments = {m_swapChainImageViews[i], m_Depth->m_pView};
-
-            VkFramebufferCreateInfo framebufferInfo{};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = m_pRenderPass;
-            framebufferInfo.attachmentCount = static_cast<EXUINT32>(attachments.size());
-            framebufferInfo.pAttachments = attachments.data();
-            framebufferInfo.width = m_szSwapChainExtent.width;
-            framebufferInfo.height = m_szSwapChainExtent.height;
-            framebufferInfo.layers = 1;
-
-            EX_FATAL(vkCreateFramebuffer(m_pDevice, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) == VK_SUCCESS, "Failed to create framebuffer for swap chain image.");
-        }
-    }
-
     void Renderer::CreateCommandPool()
     {
         QueueFamilyIndices queueFamilyIndices = FindQueueFamiliesWithSurfaces(m_pSurface, m_pPhysicalDevice);
@@ -686,112 +724,30 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CreateDepthResources()
     {
+        if (m_Depth != EXN_NULL_HANDLE)
+            delete m_Depth;
+
         m_Depth = new VkTexture(this);
         m_Depth->CreateDepthImage(this->m_szSwapChainExtent, this->FindDepthFormat());
+    }
 
+    void Renderer::CreateDefaultTexture()
+    {
         m_DefaultTexture = new VkTexture(this);
         m_DefaultTexture->CreateFromImageData(EXN_DUMMY_TEXTURE, 1, 1);
-    }
-
-    void Renderer::CreateVertexBuffer()
-    {
-        const std::vector<eXngine::Utils::Vertex> vertices{
-            {{1.0f, 0.0f, 0.0f}, {-0.5f, -0.5f, 0.0f}},
-            {{0.0f, 1.0f, 0.0f}, {0.5f, -0.5f, 0.0f}},
-            {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f, 0.0f}},
-        };
-        // {
-        //     {{1.0f, 0.0f, 0.0f}, {-0.5f, -0.5f}},
-        //     {{0.0f, 1.0f, 0.0f}, {0.5f, -0.5f}},
-        //     {{0.0f, 0.0f, 1.0f}, {0.5f, 0.5f}}};
-
-        m_Vertices.insert(m_Vertices.end(), vertices.begin(), vertices.end());
-
-        // for (const auto model : m_Models)
-        // {
-        //     for (const auto mesh : model.second.m_vMeshes)
-        //     {
-        //         vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-        //     }
-        // }
-
-        const auto verticesCount = m_Vertices.size();
-
-        if (verticesCount == 0)
-            return;
-
-        const VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * verticesCount;
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void *data;
-        vkMapMemory(m_pDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, m_Vertices.data(), bufferSize);
-        vkUnmapMemory(m_pDevice, stagingBufferMemory);
-
-        CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, // vertex buffer type
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_pVertexBuffer, m_pVertexBufferMemory);
-
-        CopyBuffer(stagingBuffer, m_pVertexBuffer, bufferSize);
-
-        vkDestroyBuffer(m_pDevice, stagingBuffer, nullptr);
-        vkFreeMemory(m_pDevice, stagingBufferMemory, nullptr);
-    }
-
-    void Renderer::CreateIndexBuffer()
-    {
-        const std::vector<EXUINT16> indices{
-            0,
-            1,
-            2,
-        };
-
-        m_Indices.insert(m_Indices.end(), indices.begin(), indices.end());
-
-        // for (const auto &model : m_Models)
-        // {
-        //     for (const auto &mesh : model.second.m_vMeshes)
-        //     {
-        //         indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
-        //     }
-        // }
-
-        const auto indicesCount = m_Indices.size();
-
-        if (indicesCount == 0)
-            return;
-
-        const VkDeviceSize bufferSize = sizeof(EXUINT16) * indicesCount;
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void *data;
-        vkMapMemory(m_pDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, m_Indices.data(), (size_t)bufferSize);
-        vkUnmapMemory(m_pDevice, stagingBufferMemory);
-
-        CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, // index buffer type
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_pIndexBuffer, m_pIndexBufferMemory);
-
-        CopyBuffer(stagingBuffer, m_pIndexBuffer, bufferSize);
-
-        vkDestroyBuffer(m_pDevice, stagingBuffer, nullptr);
-        vkFreeMemory(m_pDevice, stagingBufferMemory, nullptr);
     }
 
     void Renderer::CreateDescriptorPool()
     {
         constexpr int maxCount = 10;
 
+        // Every material holds MAX_TEXTURE_COUNT samplers per frame in flight; the extra
+        // slots are for users of the pool outside the renderer (e.g. ImGui's font texture).
+        const EXUINT32 materialSamplerCount = MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT * MAX_MATERIAL_COUNT + MAX_TEXTURE_COUNT;
+
         VkDescriptorPoolSize pool_sizes[] = {
             {VK_DESCRIPTOR_TYPE_SAMPLER, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
+            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, materialSamplerCount},
             {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, MAX_TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT + MAX_FRAMES_IN_FLIGHT},
             {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, maxCount},
@@ -946,63 +902,156 @@ namespace eXngine::Renderers::Vulkan
         }
     }
 
-    void Renderer::CreateRenderPass()
+    void Renderer::CreateRenderPasses()
     {
-        VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = FindDepthFormat();
-        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        // The scene pass clears color and depth, so it has to run first.
+        if (GetRenderPass(EXN_SCENE_RENDERPASS) == EXN_NULL_HANDLE)
+            m_RenderPasses.insert(m_RenderPasses.begin(), new VkRenderPassObject(this, EXN_SCENE_RENDERPASS, {}));
 
-        VkAttachmentReference depthAttachmentRef{};
-        depthAttachmentRef.attachment = 1;
-        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        for (auto *pass : m_RenderPasses)
+        {
+            if (pass->GetHandle() == EXN_NULL_HANDLE)
+                pass->Create();
+        }
+    }
 
-        VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = m_swapChainImageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkRenderPassObject *Renderer::CreateRenderPass(const std::string &name, const VkRenderPassDescription &description)
+    {
+        if (GetRenderPass(name) != EXN_NULL_HANDLE)
+        {
+            EX_WARNING("Render pass '%s' already exists.", name.c_str());
+            return GetRenderPass(name);
+        }
 
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        auto *pass = new VkRenderPassObject(this, name, description);
+        m_RenderPasses.push_back(pass);
 
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
+        // Before Initialize() there is no swap chain yet; CreateRenderPasses() builds it then.
+        if (m_pSwapChain != EXN_NULL_HANDLE)
+            pass->Create();
 
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        return pass;
+    }
 
-        const std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+    VkRenderPassObject *Renderer::GetRenderPass(const std::string &name)
+    {
+        for (auto *pass : m_RenderPasses)
+        {
+            if (pass->GetName() == name)
+                return pass;
+        }
 
-        VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<EXUINT32>(attachments.size());
-        renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
+        return EXN_NULL_HANDLE;
+    }
 
-        const VkResult result = vkCreateRenderPass(m_pDevice, &renderPassInfo, nullptr, &m_pRenderPass);
-        EX_ERROR(result == VK_SUCCESS, "Failed to create render pass.");
+    VkTexture *Renderer::LoadTexture(const char *path)
+    {
+        if (path == EXN_NULL_HANDLE)
+            return EXN_NULL_HANDLE;
+
+        if (VkTexture *texture = GetTexture(path))
+            return texture;
+
+        if (!std::filesystem::exists(path))
+        {
+            EX_WARNING("Texture file not found: %s", path);
+            return EXN_NULL_HANDLE;
+        }
+
+        auto *texture = new VkTexture(this);
+        texture->CreateFromTextureFile(path, path);
+
+        if (texture->m_pView == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("Failed to load texture: %s", path);
+            delete texture;
+            return EXN_NULL_HANDLE;
+        }
+
+        m_Textures.emplace(path, texture);
+        return texture;
+    }
+
+    VkTexture *Renderer::CreateTexture(const char *name, const unsigned char *rgba, EXINT32 width, EXINT32 height)
+    {
+        if (name == EXN_NULL_HANDLE || rgba == EXN_NULL_HANDLE || width <= 0 || height <= 0 || m_pDevice == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("CreateTexture: invalid arguments, or the renderer is not initialized.");
+            return EXN_NULL_HANDLE;
+        }
+
+        if (GetTexture(name) != EXN_NULL_HANDLE)
+        {
+            EX_WARNING("Texture '%s' already exists.", name);
+            return GetTexture(name);
+        }
+
+        auto *texture = new VkTexture(this);
+        texture->CreateFromImageData(rgba, width, height);
+
+        m_Textures.emplace(name, texture);
+        return texture;
+    }
+
+    VkTexture *Renderer::GetTexture(const char *name)
+    {
+        const auto it = m_Textures.find(name);
+        return it != m_Textures.end() ? it->second : EXN_NULL_HANDLE;
+    }
+
+    VkMaterial *Renderer::CreateMaterial(const std::string &name, const std::string &pipeline)
+    {
+        if (VkMaterial *material = GetMaterial(name))
+        {
+            EX_WARNING("Material '%s' already exists.", name.c_str());
+            return material;
+        }
+
+        if (m_Materials.size() >= MAX_MATERIAL_COUNT)
+        {
+            EX_WARNING("Cannot create material '%s': MAX_MATERIAL_COUNT (%u) reached.", name.c_str(), MAX_MATERIAL_COUNT);
+            return EXN_NULL_HANDLE;
+        }
+
+        const auto it = m_pGraphicPipelines.find(pipeline);
+
+        if (it == m_pGraphicPipelines.end())
+        {
+            EX_WARNING("Cannot create material '%s': unknown pipeline '%s'.", name.c_str(), pipeline.c_str());
+            return EXN_NULL_HANDLE;
+        }
+
+        auto *material = new VkMaterial(this, name, it->second);
+        m_Materials.emplace(name, material);
+
+        return material;
+    }
+
+    VkMaterial *Renderer::GetMaterial(const std::string &name)
+    {
+        const auto it = m_Materials.find(name);
+        return it != m_Materials.end() ? it->second : EXN_NULL_HANDLE;
+    }
+
+    VkMesh *Renderer::CreateMesh(const std::vector<eXngine::Utils::Vertex> &vertices, const std::vector<EXUINT32> &indices)
+    {
+        if (m_pDevice == EXN_NULL_HANDLE)
+        {
+            EX_WARNING("CreateMesh: the renderer is not initialized.");
+            return EXN_NULL_HANDLE;
+        }
+
+        auto *mesh = new VkMesh(this);
+        mesh->Create(vertices, indices);
+
+        m_Meshes.push_back(mesh);
+        return mesh;
+    }
+
+    VkMesh *Renderer::CreateMesh(const eXngine::Utils::Mesh &mesh)
+    {
+        const std::vector<EXUINT32> indices(mesh.indices.begin(), mesh.indices.end());
+        return CreateMesh(mesh.vertices, indices);
     }
 
     void Renderer::CreateShaders()
@@ -1040,9 +1089,9 @@ namespace eXngine::Renderers::Vulkan
 
     void Renderer::CleanupSwapChain()
     {
-        for (auto framebuffer : m_swapChainFramebuffers)
+        for (auto *pass : m_RenderPasses)
         {
-            vkDestroyFramebuffer(m_pDevice, framebuffer, nullptr);
+            pass->DestroyFramebuffers();
         }
 
         for (auto imageView : m_swapChainImageViews)
@@ -1060,7 +1109,11 @@ namespace eXngine::Renderers::Vulkan
         CreateSwapChain();
         CreateImageViews();
         CreateDepthResources();
-        CreateFramebuffers();
+
+        for (auto *pass : m_RenderPasses)
+        {
+            pass->CreateFramebuffers();
+        }
     }
 
     void Renderer::SelectPhysicalDevice()
@@ -1509,7 +1562,10 @@ namespace eXngine::Renderers::Vulkan
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
-        assert(vkCreateImage(m_pDevice, &imageInfo, nullptr, &image) == VK_SUCCESS);
+
+        // Not inside assert(): the calls would be compiled out in Release builds.
+        const VkResult imageResult = vkCreateImage(m_pDevice, &imageInfo, nullptr, &image);
+        EX_FATAL(imageResult == VK_SUCCESS, "Failed to create image.");
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(m_pDevice, image, &memRequirements);
@@ -1517,7 +1573,9 @@ namespace eXngine::Renderers::Vulkan
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-        assert(vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &imageMemory) == VK_SUCCESS);
+
+        const VkResult memoryResult = vkAllocateMemory(m_pDevice, &allocInfo, nullptr, &imageMemory);
+        EX_FATAL(memoryResult == VK_SUCCESS, "Failed to allocate image memory.");
         vkBindImageMemory(m_pDevice, image, imageMemory, 0);
     }
 

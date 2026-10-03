@@ -22,9 +22,12 @@ namespace eXngine::Types
             this->y = other.y;
             this->z = other.z;
         }
-        eXvec3 operator=(const EXMATH::vec3& other) const
+        eXvec3& operator=(const EXMATH::vec3& other)
         {
-            return eXvec3(other.x, other.y, other.z);
+            this->x = other.x;
+            this->y = other.y;
+            this->z = other.z;
+            return *this;
         }
     };
 
@@ -41,9 +44,11 @@ namespace eXngine::Types
             this->x = other.x;
             this->y = other.y;
         }
-        eXvec2 operator=(const EXMATH::vec2& other) const
+        eXvec2& operator=(const EXMATH::vec2& other)
         {
-            return eXvec2(other.x, other.y);
+            this->x = other.x;
+            this->y = other.y;
+            return *this;
         }
     };
 
@@ -64,9 +69,13 @@ namespace eXngine::Types
             this->z = other.z;
             this->w = other.w;
         }
-        eXvec4 operator=(const EXMATH::vec4& other) const
+        eXvec4& operator=(const EXMATH::vec4& other)
         {
-            return eXvec4(other.x, other.y, other.z, other.w);
+            this->x = other.x;
+            this->y = other.y;
+            this->z = other.z;
+            this->w = other.w;
+            return *this;
         }
     };
 }

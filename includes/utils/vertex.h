@@ -16,5 +16,6 @@ namespace eXngine::Utils
     public:
         eXvec3 color;
         eXvec3 coordinates;
+        eXvec2 uv;
     };
 }

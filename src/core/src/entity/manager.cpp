@@ -15,7 +15,7 @@ namespace eXngine::Entity
     }
 
     template <std::derived_from<eXentity> T>
-    void Manager<T>::AddEntity(const T &entity, const EXUINT id = EXN_ENTITY_AUTO_ID)
+    void Manager<T>::AddEntity(const T &entity, const EXUINT id)
     {
         static EXUINT g_EntityID = 1;
 
@@ -42,4 +42,10 @@ namespace eXngine::Entity
     {
         m_Entities.clear();
     }
+
+    eXentity::eXentity() = default;
+    eXentity::~eXentity() = default;
+
+    // Members are defined here, so the manager the renderer uses must be instantiated here.
+    template class Manager<eXentity>;
 }

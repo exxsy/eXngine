@@ -36,6 +36,12 @@ namespace eXngine::Renderers::Vulkan
                 .binding = 0,
                 .format = VK_FORMAT_R32G32B32_SFLOAT,
                 .offset = offsetof(VkVertex, coordinates),
+            },
+            {
+                .location = 2,
+                .binding = 0,
+                .format = VK_FORMAT_R32G32_SFLOAT,
+                .offset = offsetof(VkVertex, uv),
             }
         };
     }

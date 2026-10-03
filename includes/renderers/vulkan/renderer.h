@@ -24,6 +24,9 @@
 #include <renderers/renderer.h>
 #include <renderers/vulkan/texture.h>
 #include <renderers/vulkan/vertex.h>
+#include <renderers/vulkan/mesh.h>
+#include <renderers/vulkan/material.h>
+#include <renderers/vulkan/renderpass.h>
 #include <renderers/vulkan/pipelines/graphics.h>
 
 #undef EXN_NULL_HANDLE
@@ -178,6 +181,8 @@ namespace eXngine::Renderers::Vulkan
 	class EXNEXPORT Renderer : public eXngine::Renderers::eXrenderer
 	{
 		friend class VkTexture;
+		friend class VkMaterial;
+		friend class VkRenderPassObject;
 
 	private:
 #ifdef NDEBUG
@@ -202,32 +207,39 @@ namespace eXngine::Renderers::Vulkan
 		std::vector<VkFrameObject> m_pFrameObjects;
 		std::vector<VkImage> m_swapChainImages;
 		std::vector<VkImageView> m_swapChainImageViews;
-		std::vector<VkFramebuffer> m_swapChainFramebuffers;
 		std::map<const char *, VkShaderModuleObject *> m_ShaderModules;
 		// std::map<const char*, VkModelObject> m_Models;
+
+		VkDescriptorSetLayout m_pGlobalSetLayout = EXN_NULL_HANDLE;	  // set 0: per-frame UBO
+		VkDescriptorSetLayout m_pMaterialSetLayout = EXN_NULL_HANDLE; // set 1: material textures
+		std::vector<VkRenderPassObject *> m_RenderPasses;			  // recorded in this order
+		std::unordered_map<std::string, VkTexture *> m_Textures;
+		std::unordered_map<std::string, VkMaterial *> m_Materials;
+		std::vector<VkMesh *> m_Meshes;
+
 	private:
 		void SelectPhysicalDevice();
 		void CreateSurface();
 		void CreateLogicalDevice();
 		void CreateSwapChain();
 		void CreateImageViews();
-		void CreateRenderPass();
+		void CreateRenderPasses();
 		void CreateDefaultGraphicsPipeline();
-		void CreateGraphicPipelines();
-		void CreateFramebuffers();
 		void CreateCommandPool();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
 		void CreateTextureSampler();
 		void CreateDepthResources();
-		void CreateVertexBuffer();
-		void CreateIndexBuffer();
+		void CreateDefaultTexture();
 		void CreateDescriptorPool();
+		void CreateDescriptorSetLayouts();
+		void CreateGlobalDescriptorSets();
 		void CreateUniformBuffers();
 		void CreateShaders();
 		void CleanupSwapChain();
 		void ResetSwapChain();
 		void DestroyDebugMessenger();
+		std::vector<VkDescriptorSetLayout> GetPipelineSetLayouts() const;
 
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, EXUINT32 imageIndex);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -244,7 +256,8 @@ namespace eXngine::Renderers::Vulkan
 
 	public:
 		const EXUINT32 MAX_FRAMES_IN_FLIGHT = 2;
-		const EXUINT32 MAX_TEXTURE_COUNT = 16;
+		const EXUINT32 MAX_TEXTURE_COUNT = 16; // texture slots per material
+		const EXUINT32 MAX_MATERIAL_COUNT = 64;
 		VkCommandBuffer m_pCommandBuffer = EXN_NULL_HANDLE;
 		std::unordered_map<std::string, VkGraphicsPipeline *> m_pGraphicPipelines;
 
@@ -256,15 +269,10 @@ namespace eXngine::Renderers::Vulkan
 		VkQueue m_pGraphicsQueue = EXN_NULL_HANDLE;
 		VkQueue m_pPresentQueue = EXN_NULL_HANDLE;
 		VkSwapchainKHR m_pSwapChain = EXN_NULL_HANDLE;
-		VkRenderPass m_pRenderPass = EXN_NULL_HANDLE;
 		VkCommandPool m_pCommandPool = EXN_NULL_HANDLE;
 		VkSurfaceKHR m_pSurface = EXN_NULL_HANDLE;
 		VkSampler m_pTextureSampler = EXN_NULL_HANDLE;
-		VkBuffer m_pVertexBuffer = EXN_NULL_HANDLE;
-		VkDeviceMemory m_pVertexBufferMemory = EXN_NULL_HANDLE;
-		VkBuffer m_pIndexBuffer = EXN_NULL_HANDLE;
-		VkDeviceMemory m_pIndexBufferMemory = EXN_NULL_HANDLE;
-		
+
 		Renderer(const EXCHAR *);
 		Renderer(const EXCHAR *, eXvec2);
 		
@@ -302,6 +310,22 @@ namespace eXngine::Renderers::Vulkan
 		VkFormat FindDepthFormat();
 		VkSurfaceKHR CreateSurface(EXVOIDPTR handle);
 
+		// Render passes run in creation order. The "scene" pass (clear color + depth) always
+		// exists and is first; passes created before Initialize() are built during it.
+		VkRenderPassObject *CreateRenderPass(const std::string &, const VkRenderPassDescription & = {});
+		VkRenderPassObject *GetRenderPass(const std::string & = EXN_SCENE_RENDERPASS);
+
+		// Resources below are owned by the renderer and released in OnExit().
+		// Textures, materials and meshes need a device: create them after Initialize().
+		VkTexture *LoadTexture(const char *path);
+		VkTexture *CreateTexture(const char *name, const unsigned char *rgba, EXINT32 width, EXINT32 height);
+		VkTexture *GetTexture(const char *name);
+		VkTexture *GetDefaultTexture() const { return m_DefaultTexture; }
+		VkMaterial *CreateMaterial(const std::string &name, const std::string &pipeline = EXN_DEFAULT_PIPELINE);
+		VkMaterial *GetMaterial(const std::string &name);
+		VkMesh *CreateMesh(const std::vector<eXngine::Utils::Vertex> &, const std::vector<EXUINT32> &);
+		VkMesh *CreateMesh(const eXngine::Utils::Mesh &);
+
 		template <typename T>
 		inline void AllocatePipeline(std::string name)
 		{
@@ -314,16 +338,21 @@ namespace eXngine::Renderers::Vulkan
 			m_pGraphicPipelines[name] = new T(&m_pDevice, &m_pDescriptorPool, &m_szSwapChainExtent);
 		}
 
+		// A pipeline is only usable inside the render pass it was created for
+		// (or one with the same attachments).
 		template <typename T>
-		inline void CreatePipeline(std::string name)
+		inline void CreatePipeline(std::string name, const std::string &renderPass = EXN_SCENE_RENDERPASS)
 		{
-			const auto pipeline = m_pGraphicPipelines[name]; // new VkGraphicsPipeline(m_pDevice);
-			// pipeline->SetExtent(m_szSwapChainExtent);
-			// pipeline->m_Scissors.clear();
-			// pipeline->m_Viewports.clear();
-			// pipeline->m_Scissors.push_back({ {0, 0}, m_szSwapChainExtent });
-			// pipeline->m_Viewports.push_back({ 0.0f, 0.0f, (float)m_szSwapChainExtent.width, (float)m_szSwapChainExtent.height, 0.0f, 1.0f });
-			pipeline->CreatePipeline<T>(m_pRenderPass);
+			const auto it = m_pGraphicPipelines.find(name);
+			const auto pass = GetRenderPass(renderPass);
+
+			if (it == m_pGraphicPipelines.end() || pass == EXN_NULL_HANDLE)
+			{
+				EX_WARNING("CreatePipeline: unknown pipeline '%s' or render pass '%s'.", name.c_str(), renderPass.c_str());
+				return;
+			}
+
+			it->second->CreatePipeline<T>(pass->GetHandle(), GetPipelineSetLayouts());
 		}
 
 		static QueueFamilyIndices FindQueueFamiliesWithSurfaces(VkSurfaceKHR, VkPhysicalDevice);
