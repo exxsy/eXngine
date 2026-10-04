@@ -28,6 +28,7 @@
 
 #include "cameras/ortographic.h"
 #include "cameras/perspective.h"
+#include "cameras/free-camera.h"
 #include "editor/asset-panel.h"
 
 using namespace eXngine;
@@ -44,7 +45,12 @@ eXvec2 window_position = eXvec2(100, 100);
 PerspectiveCamera camera;
 Renderer *renderer;
 eXwindow *app;
-float m_fRotationScale = 1.0f, m_fZoomFactor = 10.0f;
+float m_fRotationScale = 1.0f;
+
+// Keyboard and mouse of the window; the controller flies the camera with them
+// (right mouse button: look, WASD / QE: move, see cameras/free-camera.h).
+Input::eXinput input;
+FreeCameraController cameraController;
 
 // Every object of the demo lives in this world; VkRenderSystem draws the ones with a mesh.
 World::eXworld *world;
@@ -98,6 +104,13 @@ public:
         });
     }
 };
+
+// Starting view: in front of the demo objects, looking down -Z.
+void ResetCamera()
+{
+    camera.SetPosition(eXvec3(0.0f, 0.0f, 2.0f));
+    cameraController.SetRotation(-90.0f, 0.0f);
+}
 
 // Procedural RGBA texture, so the demo does not depend on image files.
 std::vector<unsigned char> MakePatternTexture(int size, int cell, bool stripes, eXcolor first, eXcolor second)
@@ -279,6 +292,9 @@ void ImGui_OnInit(eXwindow *app, Renderer *renderer)
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+    // A focused window keeps navigating with the arrow keys, but leaves WASD to the camera;
+    // only an active widget (a text field) takes the keyboard away from it.
+    io.ConfigNavCaptureKeyboard = false;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -466,15 +482,37 @@ void ImGui_OnRender(eXngine::Renderers::eXrenderer *renderer)
     ImGui::Text("Swapchain Extent: %dw %dh", vulkan->m_szSwapChainExtent.width, vulkan->m_szSwapChainExtent.height);
     ImGui::SliderFloat("Rotation Speed", &m_fRotationScale, 0.0f, 50.0f);
 
-    ImGui::BeginGroup();
-    ImGui::Text("Camera Position:");
-    ImGui::Text("X: %.2f", camera.GetPosition().x);
-    ImGui::Text("Y: %.2f", camera.GetPosition().y);
-    ImGui::Text("Z: %.2f", camera.GetPosition().z);
-    ImGui::Text("FOV: %.2f", camera.GetFieldOfView());
-    ImGui::Text("Yaw: %.2f", camera.GetYaw());
-    ImGui::Text("Pitch: %.2f", camera.GetPitch());
-    ImGui::EndGroup();
+    ImGui::SeparatorText("Camera");
+    ImGui::TextDisabled("Hold RMB: look, WASD: move, Q/E: down/up, Shift: fast\nWheel: forward/back (speed while looking), MMB: pan");
+
+    eXvec3 cameraPosition = camera.GetPosition();
+    if (ImGui::DragFloat3("Position##camera", &cameraPosition.x, 0.01f))
+        camera.SetPosition(cameraPosition);
+
+    float yawPitch[2] = {cameraController.GetYaw(), cameraController.GetPitch()};
+    if (ImGui::DragFloat2("Yaw / Pitch", yawPitch, 0.5f))
+        cameraController.SetRotation(yawPitch[0], yawPitch[1]);
+
+    float fieldOfView = camera.GetFieldOfView();
+    if (ImGui::SliderAngle("Field of view", &fieldOfView, 10.0f, 120.0f))
+        camera.SetFieldOfView(fieldOfView);
+
+    float moveSpeed = cameraController.GetMoveSpeed();
+    if (ImGui::DragFloat("Move speed", &moveSpeed, 0.05f, 0.01f, 1000.0f, "%.2f", ImGuiSliderFlags_Logarithmic))
+        cameraController.SetMoveSpeed(moveSpeed);
+
+    float lookSensitivity = cameraController.GetLookSensitivity();
+    if (ImGui::DragFloat("Look sensitivity", &lookSensitivity, 0.005f, 0.01f, 1.0f, "%.3f"))
+        cameraController.SetLookSensitivity(lookSensitivity);
+
+    bool invertY = cameraController.GetInvertY();
+    if (ImGui::Checkbox("Invert Y", &invertY))
+        cameraController.SetInvertY(invertY);
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Reset camera"))
+        ResetCamera();
 
     ImGui::SeparatorText("Materials");
 
@@ -638,6 +676,21 @@ void App_OnLoop(void *unused)
     const EXFLOAT deltaTime = std::chrono::duration<EXFLOAT>(now - lastFrameTime).count();
     lastFrameTime = now;
 
+#ifndef IMGUI_DISABLE
+    // ImGui comes first: the camera only gets the mouse and keyboard ImGui does not want.
+    const ImGuiIO &io = ImGui::GetIO();
+    const bool wasLooking = cameraController.IsLooking();
+
+    cameraController.Update(input, deltaTime, !io.WantCaptureMouse, !io.WantCaptureKeyboard);
+
+    // Looking around unfocuses the ImGui windows, like a click on the scene: the keys go to
+    // the camera then, not to a text field.
+    if (!wasLooking && cameraController.IsLooking())
+        ImGui::SetWindowFocus(nullptr);
+#else
+    cameraController.Update(input, deltaTime);
+#endif
+
     // The HUD text changes every frame: VkTextSystem rebuilds its (dynamic) mesh.
     if (Entity::eXentity *hud = world->GetEntity(hudEntity))
     {
@@ -665,6 +718,8 @@ void App_OnLoop(void *unused)
     assets->Update(*world);
     world->Update(deltaTime);
     renderer->OnRender();
+
+    input.EndFrame();
 }
 
 void App_OnCleanup(void *unused)
@@ -689,42 +744,19 @@ LRESULT WndProc(EXWND hwnd, EXUINT uMsg, WPARAM wParam, LPARAM lParam)
 
     switch (uMsg)
     {
-    // case WM_MOUSEWHEEL:
-    // {
-    //     short zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-    //     if (zDelta > 0)
-    //         m_fZoomFactor -= 1.0f;
-    //     else
-    //         m_fZoomFactor += 1.0f;
-
-    //     m_fZoomFactor = glm::clamp(m_fZoomFactor, 5.0f, 100.0f);
-    //     camera.SetFieldOfView(camera.GetFieldOfView() + m_fZoomFactor);
-    // }
-    // case WM_KEYDOWN:
-    //     if (wParam == 'W')
-    //         camera.MoveForward(0.016f);
-    //     else if (wParam == 'S')
-    //         camera.MoveBackward(0.016f);
-    //     else if (wParam == 'A')
-    //         camera.MoveLeft(0.016f);
-    //     else if (wParam == 'D')
-    //         camera.MoveRight(0.016f);
-    //     break;
-    // case WM_MOUSEMOVE:
-    //     static int mouseLastX = LOWORD(lParam);
-    //     static int mouseLastY = HIWORD(lParam);
-
-    //     camera.Rotate((LOWORD(lParam) - mouseLastX), (HIWORD(lParam) - mouseLastY));
-
-    //     mouseLastX = LOWORD(lParam);
-    //     mouseLastY = HIWORD(lParam);
-    //     break;
     case WM_SIZING:
     case WM_SIZE:
         EXINT width = LOWORD(lParam);
         EXINT height = HIWORD(lParam);
         renderer->SetFrameBufferSize(eXvec2(width, height));
         renderer->SetFrameBufferResized(true);
+
+        // The aspect ratio of the camera follows the window (WM_SIZING's lParam is a RECT *).
+        if (uMsg == WM_SIZE && width > 0 && height > 0)
+        {
+            viewport.SetWidth(width);
+            viewport.SetHeight(height);
+        }
         break;
     }
 
@@ -752,20 +784,23 @@ EXINT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInsta
     auto vert = eXngine::Utils::File::Read((shadersDir / "shader.vert.spv").string());
     auto frag = eXngine::Utils::File::Read((shadersDir / "shader.frag.spv").string());
 
-    viewport.SetWidth(window_size.x);
-    viewport.SetHeight(window_size.y);
-
     camera.SetViewport(&viewport);
-    camera.SetPosition(eXvec3(0.0f, 0.0f, 2.0f));
-    camera.SetFront(eXvec3(0.0f, 0.0f, -1.0f));
     camera.SetUp(eXvec3(0.0f, 1.0f, 0.0f));
     camera.SetFieldOfView(EXMATH::radians(60.0f));
+    cameraController.SetCamera(&camera);
+    ResetCamera();
 
     renderer = new eXngine::Renderers::Vulkan::Renderer(name, window_size);
     app = new eXngine::Windows::eXwindow(name, window_position, window_size, false);
     app->SetClassName(className);
     app->SetInstance(hInstance);
     app->Initialize();
+    app->SetInput(&input);
+
+    // window_size includes the frame; the first WM_SIZE came before WndProc was set.
+    const eXvec2 clientSize = app->GetClientSize();
+    viewport.SetWidth(static_cast<EXUINT32>(clientSize.x));
+    viewport.SetHeight(static_cast<EXUINT32>(clientSize.y));
 
     renderer->AllocatePipeline<eXngine::Renderers::Vulkan::VkGraphicsPipeline>("triangle_pipeline");
 
